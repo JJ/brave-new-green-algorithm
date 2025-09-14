@@ -29,3 +29,4 @@ JuliaLocalPreferences.toml
 
 # emacs
 auto/
+*.Rproj*
