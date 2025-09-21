@@ -79,17 +79,17 @@ library(ggplot2)
 library(tidyr)
 
 walcom_results$log_diff <- log10(walcom_results$diff_fitness)
-walcom_results$type <- as.factor(walcom_results$type)
-walcom_results$size <- as.factor(walcom_results$size)
-ggplot(walcom_results, aes(x=seconds,y=PKG,color=type,shape=size)) + geom_point() + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
+walcom_results$dimension <- as.factor(walcom_results$dimension)
+walcom_results$population_size <- as.factor(walcom_results$population_size)
+ggplot(walcom_results, aes(x=seconds,y=PKG,color=dimension,shape=population_size)) + geom_point() + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
 
 @
 
 
 <<walcom.models, echo=FALSE, results='asis'>>=
-evaluations_model <- glm(evaluations ~ type + size + max_gens + alpha, data=walcom_results)
+evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=walcom_results)
 
-walcom_results %>% group_by(type,size,max_gens,alpha) %>%
+walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
   summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
             mean_time=mean(seconds), sd_time=sd(seconds),
             mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
