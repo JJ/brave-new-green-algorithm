@@ -69,7 +69,10 @@ This will be our main intention in this paper. We will work with an algorithm pr
 The rest of the paper is organized as follows: next Section describes the state of the art in exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the tradeoffs it implies in Section \ref{sec:methodology}. Results will be presented in \ref{sec:results}, and eventually discussed in the last Section \ref{sec:discussion}.
 
 
-\section{A Brave New Algorithm}
+\section{A Brave New Algorithm}\label{sec:bna}
+
+\section{Results}\label{sec:results}
+
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
