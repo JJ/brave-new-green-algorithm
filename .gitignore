@@ -31,3 +31,11 @@ JuliaLocalPreferences.toml
 auto/
 *.Rproj*
 .Rproj.user
+
+# latex
+*.tex
+*.bbl
+*.pdf
+*.log
+*.aux
+*.gz
