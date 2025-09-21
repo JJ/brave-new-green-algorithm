@@ -60,6 +60,10 @@ All these algorithms have characteristics in common. Generally are population-ba
 \item {\em Exploitation} techniques, which try to improve existing solutions by first selecting those that are closer to the objective, and then combining them to create new solutions, thus {\em exploiting} the search directions already present in the population.
 \end{itemize}
 
+The algorithms and their specific implementations need to keep exploration in check, so that only {\em promising} parts of the search space are checked, that is, only solutions that have a certain probability of being better are generated; leaning on exploration will eventually lead to an algorithm that is even worse than exhaustive search, since probabilistically some solutions can be generated several times. Exploitation will, on the other hand, focus on some specific areas of the search space, those that already have {\em good} solutions, potentially falling into local minima and abandoning other areas that could hold much better solutions. This is why there needs to be a balanced approach to using both techniques, as most algorithms already do.
+
+The performance of these algorithms is generally measured using numbers such as the number of fitness evaluations needed to reach a certain level of quality or the time needed to reach it. However, from the point of view of modern engineering energy needed by an algorithm implementation is as important, or even more, since an efficient implementation of an algorithm needs to be energy-efficient, or at least consume the least amount of energy possible.
+
 
 
 \section{A Brave New Algorithm}
