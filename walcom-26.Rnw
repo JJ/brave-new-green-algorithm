@@ -115,11 +115,9 @@ The whole table of results is shown in Table \ref{tab:walcom.models}, showing th
 ggplot(walcom_results, aes(x=dimension, y=PKG, fill=dimension)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
 @
 
-
 Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
 
 <<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions">>=
-# loop over dimensions = 3 and 5
 
 for (dim in c(3,5)) {
   dim_results <- walcom_results[ walcom_results$dimension == dim,]
@@ -129,7 +127,28 @@ for (dim in c(3,5)) {
   p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=alpha)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
   print(p2)
 }
+
 @
+
+<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+walcom_results$point_size <- ifelse(walcom_results$alpha==10,2,4)
+ggplot(walcom_results, aes(x=PKG,y=log_diff,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=walcom_results$point_size) + theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
+  scale_x_log10()
+@
+
+Finally, Figure \ref{walcom.energy} tries to summarize the results, plotting the quality of the solution found (lower is better) as a function of energy spent in Joules. It again shows clearly that the problem with dimension 5 arrives to worse solutions, grouped in the upper part of the graph. If we look at these, we see that the energy spent to arrive more or less at the same solutions is higher when the population is higher. This points to a low diversity in the population, and a bad exploration/exploitation balance. From the point of view of energy spent, increasing the exploration capability by increasing the percentage of population in the $\alpha$ and $\beta$ castes might increase the energy spent, and in some cases obtain better solutions, leading to the best case of all experiments. However, the most important takeaway here is that there does not seem to be a correlation between energy spent and better solutions, and that tweaking the exploration/exploitation balance will not affect energy spent, having possibly a positive effect on the solutions. At any rate, solutions are suboptimal so this needs to be explored further.
+
+This trend is probably more visible for problem dimension = 3, in the lower part of the chart. The best solutions use $\alpha = 25\%$ (with, correspondingly, $\beta = 50\%$), tipping the balance slightly more towards exploitation. But the outstanding part is that better solutions are obtained without implying bigger energy expenses, on the contrary, energy spent is around 400 Joules with few outliers.
+
+This might be, in part, related to the implementation in the language Julia. Julia is extremely fast, which implies that the application of different operators has a negligible difference. The actual impact on the energy consumed must have a different origin.
+
+<<walcom.evals, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+summary(lm( PKG ~ evaluations * generations, data=walcom_results))
+ggplot(walcom_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
+@
+
+In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
+
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
