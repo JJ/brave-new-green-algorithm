@@ -111,7 +111,32 @@ kable(summary_results, digits=2, booktabs=T, col.names = c("D","Pop. size", "Gen
 
 The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
 
-Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions.
+<<walcom.dimensions, echo=FALSE, message=F, warning=F, fig.height=4, fig.cap="Box plots of energy spent for the different dimensions">>=
+ggplot(walcom_results, aes(x=dimension, y=PKG, fill=dimension)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
+@
+
+
+Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
+
+<<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions">>=
+# loop over dimensions = 3 and 5
+
+for (dim in c(3,5)) {
+  dim_results <- walcom_results[ walcom_results$dimension == dim,]
+  p1 <- ggplot(dim_results, aes(x=population_size, y=PKG, fill=population_size)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  print(p1)
+  dim_results$alpha <- as.factor(dim_results$alpha)
+  p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=alpha)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  print(p2)
+}
+@
+
+\section{Conclusion and discussion}
+\label{sec:discussion}
+
+
+A future line of work will take into account that different parametrizations are needed for different problems and sizes, so a more fair comparison of how resource consumption increases with size will need to perform some kind of parameter optimization for every size and problem, since at the end of the day what a scientist needs is to minimize the energy consumption for a solution quality level.
+
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
