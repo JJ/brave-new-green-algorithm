@@ -39,3 +39,4 @@ auto/
 *.log
 *.aux
 *.gz
+*~
