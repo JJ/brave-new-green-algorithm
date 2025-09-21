@@ -78,6 +78,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 
+walcom_results$log_diff <- log10(walcom_results$diff_fitness)
 walcom_results$type <- as.factor(walcom_results$type)
 walcom_results$size <- as.factor(walcom_results$size)
 ggplot(walcom_results, aes(x=seconds,y=PKG,color=type,shape=size)) + geom_point() + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
