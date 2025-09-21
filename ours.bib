@@ -147,3 +147,83 @@ author = {Merelo-Guervós, Juan Julián},
   biburl       = {https://dblp.org/rec/conf/wivace/Merelo-GuervosG23.bib},
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
+
+@inproceedings{10.1145/3712255.3726694,
+author = {Merelo, Juan Juli\'{a}n and Romero L\'{o}pez, Gustavo and Garc\'{\i}a-Valdez, Mario},
+title = {Analyzing per-component energy consumption of evolutionary algorithms implemented in low-level languages: Comparison of C++ and zig in key evolutionary algorithm functions},
+year = {2025},
+isbn = {9798400714641},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3712255.3726694},
+doi = {10.1145/3712255.3726694},
+abstract = {Trying to design software systems in such a way that they consume a minimal amount of energy is simply good engineering practice. Scientific software is no exception; in this case, we will put our focus on evolutionary algorithms and the energy consumption patterns in memory and CPU for two different, low-level languages: The mainstream C++ and the emerging zig. By setting up a methodology that gives us a precise measure of the energy spent by key evolutionary algorithm functions, we can give the scientific software engineer some actionable insights on how to write energy-conscious, and thus energy-thrifty, evolutionary algorithms. Our experiments show that, even with very low energy consumption in both cases, C++ can achieve a significant reduction in energy consumption for some integer-based fitness functions, as well as very good performance on classical genetic operators. Besides, the experimental results have a low variability, as compared to zig, making it in the short and medium run the best of the two languages for evolutionary algorithms.},
+booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference Companion},
+pages = {139–142},
+numpages = {4},
+keywords = {green computing, software engineering, evolutionary algorithms, genetic algorithms, energy-aware algorithms},
+location = {NH Malaga Hotel, Malaga, Spain},
+series = {GECCO '25 Companion}
+}
+
+@inproceedings{10.1145/3712255.3726764,
+author = {Romero L\'{o}pez, Gustavo and Merelo Guervos, Juan Juli\'{a}n},
+title = {Energy Efficiency of C++ Standard Random Number Generators},
+year = {2025},
+isbn = {9798400714641},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3712255.3726764},
+doi = {10.1145/3712255.3726764},
+abstract = {Random number generation is widely used in many different algorithms, yet its inner workings and performance are poorly understood among many of its users. In this paper, we aim to explore one of its lesser-known aspects: energy consumption. Most studies on the subject tend to focus on the quality of the generators or on measuring their execution times. However, energy consumption is a critical concern today, particularly for mobile devices.In this work, we have measured the energy consumption of standard C++ random number generators. The results reveal differences in energy usage of over a thousand-fold, which could be significant for applications that require the generation of large quantities of random numbers, such as learning algorithms and metaheuristics.},
+booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference Companion},
+pages = {163–166},
+numpages = {4},
+keywords = {green computing, software engineering, evolutionary algorithms, genetic algorithms, energy-aware algorithms, RNGs},
+location = {NH Malaga Hotel, Malaga, Spain},
+series = {GECCO '25 Companion}
+}
+
+@InProceedings{10.1007/978-3-031-90065-5_15,
+author="Merelo-Guerv{\'o}s, Juan J.
+and Romero L{\'o}pez, Gustavo
+and Garc{\'i}a-Valdez, Mario",
+editor="Garc{\'i}a-S{\'a}nchez, Pablo
+and Hart, Emma
+and Thomson, Sarah L.",
+title="Measuring Energy Consumption of BBOB Fitness Functions",
+booktitle="Applications of Evolutionary Computation",
+year="2025",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="240--254",
+abstract="Making software greener is a process that includes identifying the functions that consume the most energy, developing a methodology that can measure precisely that energy consumption and eventually measuring that energy under different design decisions and circumstances to be able to, eventually, produce best practices for minimizing said consumption. In this paper we are focusing on well-known floating-point fitness functions: some functions included in the black box optimization benchmark that cover all different types of functions under study. In general, these fitness functions will be the single operation that consumes the most energy; this is why in this paper we use them to test a methodology that is able to measure the energy consumed by their implementation in a low-level language C++. We test different single-element representations (single and double precision) as well as individual level representation (fixed size vs. variable size), drawing conclusions on the adequacy and accuracy of the methodology as well as which combination of the above elements would consume the least.",
+isbn="978-3-031-90065-5"
+}
+
+@inproceedings{10.1145/3672608.3707829,
+author = {Merelo, Juan Juli\'{a}n and Garcia Valdez, Mario and Romero L\'{o}pez, Gustavo},
+title = {Energy consumption of evolutionary algorithms implemented in low-level languages},
+year = {2025},
+isbn = {9798400706295},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3672608.3707829},
+doi = {10.1145/3672608.3707829},
+abstract = {In this paper, we focus on how the main operations in evolutionary algorithms spend energy in two different languages: C++ and zig. By setting up a methodology that gives us a precise measure of the energy spent by key evolutionary algorithm functions, we can give the scientific software engineer some actionable insights on how to write energy-conscious evolutionary algorithms. Our experiments show that C++ using the well-known GNU compiler can achieve a 50\% reduction in energy consumption for some integer-based fitness functions, as well as very good performance on classical genetic operators.},
+booktitle = {Proceedings of the 40th ACM/SIGAPP Symposium on Applied Computing},
+pages = {157–160},
+numpages = {4},
+keywords = {green computing, evolutionary algorithms},
+location = {Catania International Airport, Catania, Italy},
+series = {SAC '25}
+}
+
+@incollection{merelo2022brave,
+  title={A Brave New Algorithm to Maintain the Exploration/Exploitation Balance},
+  author={Merelo, Cecilia and Merelo, Juan J and Garc{\'\i}a-Valdez, Mario},
+  booktitle={New Perspectives on Hybrid Intelligent System Design based on Fuzzy Logic, Neural Networks and Metaheuristics},
+  pages={305--316},
+  year={2022},
+  publisher={Springer}
+}
