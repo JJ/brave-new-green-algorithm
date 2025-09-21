@@ -53,11 +53,22 @@ Green computing tries to push a series of best practices that, in general, reduc
 \section{Introduction}
 
 
+Goldberg in his "Zen and the art of genetic algorithms" \cite{goldberg1989zen} included as a {\em koan} "Let nature be your guide". This has spawned all kind of population-based metaheuristics that use (and possibly abuse \cite{soni2021critical}) metaphors to inspire all kind of optimization algorithms, in most cases population-based.
+
+All these algorithms have characteristics in common. Generally are population-based, that is, they work with a population of individuals that are (possibly encoded) solutions to a problem. There possible solutions are evaluated via a so-called {\em fitness} or {\em objective} function, according to which population is modified so that it is increasingly more likely to find solutions that are closer to the objective. What the algorithms do is explore the search space, using a combination of techniques:\begin{itemize}
+\item {\em Exploration} techniques, which sample the search space looking for new solutions, generally via variation of the existing solutions.
+\item {\em Exploitation} techniques, which try to improve existing solutions by first selecting those that are closer to the objective, and then combining them to create new solutions, thus {\em exploiting} the search directions already present in the population.
+\end{itemize}
+
+
+
+\section{A Brave New Algorithm}
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
 \section*{References}
+\bibliographystyle{splncs04}
 \bibliography{ours,ga-energy,GAs}
 
 
