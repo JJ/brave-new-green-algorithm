@@ -10,15 +10,9 @@
 % Other font encondings may result in incorrect characters.
 %
 \usepackage{graphicx}
-% Used for displaying a sample figure. If possible, figure files should
-% be included in EPS format.
-%
-% If you use the hyperref package, please uncomment the following two lines
-% to display URLs in blue roman font according to Springer's eBook style:
-%\usepackage{color}
-%\renewcommand\UrlFont{\color{blue}\rmfamily}
-%\urlstyle{rm}
-%
+\usepackage{booktabs}
+\usepackage{color}
+
 \begin{document}
 %
 \title{Analyzing how the exploration/exploitation trade off in biologically-inspired algorithms affects energy consumption}
@@ -94,7 +88,8 @@ The results of the experiments have been summarized in Figure \ref{fig:walcom.re
 
 This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
 
-<<walcom.models, echo=FALSE, results='asis'>>=
+<<walcom.models, echo=FALSE, message=F, warning=F>>=
+library(kableExtra)
 evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=walcom_results)
 
 walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
@@ -102,9 +97,21 @@ walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
             mean_time=mean(seconds), sd_time=sd(seconds),
             mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
             mean_generations=mean(generations), sd_gens=sd(generations),
-            mean_diff_fitness=mean(diff_fitness), sd_diff_fitness=sd(diff_fitness)) -> summary_results
+            mean_diff_fitness=mean(log_diff), sd_diff_fitness=sd(log_diff)) -> summary_results
+
+summary_results$energy <- paste0(round(summary_results$mean_energy,2), " (", round(summary_results$sd_energy,2), ")")
+summary_results$time <- paste0(round(summary_results$mean_time,2), " (", round(summary_results$sd_time,2), ")")
+summary_results$evaluations <- paste0(round(summary_results$mean_evaluations,2), " (", round(summary_results$sd_evaluations,2), ")")
+summary_results$generations <- paste0(round(summary_results$mean_generations,2), " (", round(summary_results$sd_gens,2), ")")
+summary_results$diff_fitness <- paste0(round(summary_results$mean_diff_fitness,2), " (", round(summary_results$sd_diff_fitness,2), ")")
+
+summary_results <- summary_results[,c("dimension","population_size","max_gens","alpha","energy","time","evaluations","generations","diff_fitness")]
+kable(summary_results, digits=2, booktabs=T, col.names = c("D","Pop. size", "Gens.", "Alpha %", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
 @
 
+The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
+
+Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions.
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
