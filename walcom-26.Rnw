@@ -72,6 +72,29 @@ The rest of the paper is organized as follows: next Section describes the state 
 \section{A Brave New Algorithm}\label{sec:bna}
 
 \section{Results}\label{sec:results}
+<<walcom.results, echo=FALSE, results='asis', fig.cap="Energy as a function of time for all experiments">>=
+walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+walcom_results$type <- as.factor(walcom_results$type)
+walcom_results$size <- as.factor(walcom_results$size)
+ggplot(walcom_results, aes(x=seconds,y=PKG,color=type,shape=size)) + geom_point() + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
+
+@
+
+
+<<walcom.models, echo=FALSE, results='asis'>>=
+evaluations_model <- glm(evaluations ~ type + size + max_gens + alpha, data=walcom_results)
+
+walcom_results %>% group_by(type,size,max_gens,alpha) %>%
+  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
+            mean_time=mean(seconds), sd_time=sd(seconds),
+            mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
+            mean_generations=mean(generations), sd_gens=sd(generations),
+            mean_diff_fitness=mean(diff_fitness), sd_diff_fitness=sd(diff_fitness)) -> summary_results
+@
 
 
 \section*{Acknowledgements}
