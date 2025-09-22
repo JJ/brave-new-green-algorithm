@@ -106,7 +106,11 @@ In order to experiment with different configurations with a different exploratio
 \item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly, changing the percentage of the $\gamma$ caste (which performs local search) and keeping the percentage of the $\delta$ and $\epsilon$ castes always the same and equal to 5\%.
 \end{itemize}
 
-Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}. The results will be examined next.
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+
+A difference between the methodology used here and what we used before is the absence of a series of measurements used as baseline, in order to discount the energy consumption of the background tasks, and, especially in this case, the time and energy taken by Julia to compile the code. The main issue here is that establishing what could be a significant baseline is not trivial, since it would need to use the exact same code so that compilation time (and energy spent) would be the same.
+
+The results will be examined next.
 
 <<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
 walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
@@ -199,6 +203,7 @@ In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the numb
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
+In this paper we set out to analyze the influence of parameters that control the exploration/exploitation balance in a population based metaheuristic called Brave New Algorithm, implemented in a language called Julia. Using a methodology that follows best practices
 
 A future line of work will take into account that different parametrizations are needed for different problems and sizes, so a more fair comparison of how resource consumption increases with size will need to perform some kind of parameter optimization for every size and problem, since at the end of the day what a scientist needs is to minimize the energy consumption for a solution quality level.
 
