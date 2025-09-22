@@ -62,7 +62,7 @@ This will be our main intention in this paper. We will work with an algorithm pr
 
 As secondary objective, we will be exploring the possibilities of implementation of metaheuristics in the language called Julia \cite{perkel2019julia}, a just-in-time compiled language that has an interesting way of dealing with allocation of memory; we will need to find out how, in this specific case, working with memory will affect consumption and how these mechanisms can be leveraged to optimize energy consumption.
 
-The rest of the paper is organized as follows: next Section describes the state of the art in exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the tradeoffs it implies in Section \ref{sec:methodology}. Results will be presented in \ref{sec:results}, and eventually discussed in the last Section \ref{sec:discussion}.
+The rest of the paper is organized as follows: next Section describes the state of the art in exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the tradeoffs it implies, together with te results, in Section \ref{sec:methodology}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
 
 \section{State of the art}
 
@@ -79,11 +79,35 @@ The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary al
 \item $\beta$ caste needs to reproduce a member of of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
 \item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
 \item $\gamma$ generates new members by mutation, but mutation might be applied several times if the new individual is better than the previous one.
+
+
+There are many possible choices for mutation and crossover operators. In this phase we will not focus so much in efficiency as in ease of implementation. This is what we will use for operators:\begin{itemize}
+\item Mutation will be governed by a probability that indicates whether one specific component of the vector is going to be changed or not; when it changes, a new number is generated within the original range\footnote{Please note that we are not using the usual Gaussian Mutation here. It can be argued that a simple random mutation will have more or less the same effect; however, from our point of view, we are mainly interested in an operator that has a certain energy consumption and that performs exploration}.
+\item Crossover is a many-point crossover, with several elements of the chromosomes selected randomly and interchanged between them.
+\item Selection uses binary tournament \cite{blickle1996comparison}, also a very simple method that involves only a comparison.
+\end{itemize}
+
+These specific versions of the operators are not essential to the algorithm, and can be changed at will; however, these are the ones used in this paper.
+
 \end{itemize}
 
 After every generation, the population is re-organized again according to the fitness of its members and a percentage for each caste that is pre-set. These percentages are one of the parameters that have the biggest influence in the balance exploration/exploitation: only the higher casters perform exploitation, so the percentage of members of those castes is the main lever for this balance. There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest.
 
-\section{Results}\label{sec:results}
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+
+\section{Experimental methodology and results}\label{sec:results}
+
+In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
+
+In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value; this is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
+\item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
+\item Population size: 200 or 400 individuals, which has an impact in the diversity of the population and thus the exploitation capabilities of the algorithm.
+\item Maximum number of generations without improvement: 10 or 50, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will generate (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
+\item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly, changing the percentage of the $\gamma$ caste (which performs local search) and keeping the percentage of the $\delta$ and $\epsilon$ castes always the same and equal to 5\%.
+\end{itemize}
+
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+
 <<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
 walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
 library(dplyr)
