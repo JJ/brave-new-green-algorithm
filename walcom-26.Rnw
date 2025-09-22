@@ -97,7 +97,7 @@ The implementation of the algorithm used is available under a free license at \u
 
 \section{Experimental methodology and results}\label{sec:results}
 
-In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
+qIn order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
 
 In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value; this is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
 \item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
