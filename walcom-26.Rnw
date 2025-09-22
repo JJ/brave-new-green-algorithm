@@ -60,6 +60,8 @@ The performance of these algorithms is generally measured using quantities such 
 
 This will be our main intention in this paper. We will work with an algorithm proposed in \cite{merelo2022brave} called Brave New Algorithm, which, instead of being biologically inspired directly, gets its main population structures from the dystopic novel Brave New World by Aldous Huxley \cite{huxley2022brave}; hence the name. This algorithm was designed with the main objective of keeping a healthy exploration/exploitation balance, which besides can be easily tuned through algorithm parameters. This makes it a good candidate for the analysis we will perform on this paper.
 
+As secondary objective, we will be exploring the possibilities of implementation of metaheuristics in the language called Julia \cite{perkel2019julia}, a just-in-time compiled language that has an interesting way of dealing with allocation of memory; we will need to find out how, in this specific case, working with memory will affect consumption and how these mechanisms can be leveraged to optimize energy consumption.
+
 The rest of the paper is organized as follows: next Section describes the state of the art in exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the tradeoffs it implies in Section \ref{sec:methodology}. Results will be presented in \ref{sec:results}, and eventually discussed in the last Section \ref{sec:discussion}.
 
 
@@ -162,7 +164,7 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 
 \section*{References}
 \bibliographystyle{splncs04}
-\bibliography{ours,ga-energy,GAs}
+\bibliography{ours,ga-energy,GAs,julia}
 
 
 \end{document}
