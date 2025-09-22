@@ -106,7 +106,7 @@ In order to experiment with different configurations with a different exploratio
 \item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly, changing the percentage of the $\gamma$ caste (which performs local search) and keeping the percentage of the $\delta$ and $\epsilon$ castes always the same and equal to 5\%.
 \end{itemize}
 
-Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}. The results will be examined next.
 
 <<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
 walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
@@ -171,6 +171,10 @@ for (dim in c(3,5)) {
 }
 
 @
+
+Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, with the intention of comparing how different parametrizations spend energy. The top two plots refer to the problem with dimension = 3. The interesting thing in violin plots is that we can see more clearly the worst case scenario, with parts of the "violin" indicating the amount of cases that fall in that range; in that sense, we can see that in the worst case scenario, population 200 is worse than 400 and that an $\alpha$ percentage of 10\% is better than 25\% since it concentrates most of its results in the 400-450 Joules area. $\alpha$ = 25\% has a wider distribution does have many results in the low-400 Joules area, however there are relatively more cases that fall in the 500 Joules range or beyond. We will have to conclude in this case that we need to keep exploitation to a low rate with a {\em small} $\alpha$ caste, coupled, in this case, with a large population.
+
+The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
 
 <<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
 walcom_results$point_size <- ifelse(walcom_results$alpha==10,2,4)
