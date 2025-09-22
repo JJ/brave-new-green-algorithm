@@ -74,6 +74,15 @@ In this paper we will be focusing on such a parametrization mainly, applied to t
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction takes place is similar to how the novel Brave New World organized society: in castes. \begin{itemize}
+\item $\alpha$ generates new members by coupling the best individuals in its caste between them, to then undergo mutation and crossover.
+\item $\beta$ caste needs to reproduce a member of of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
+\item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
+\item $\gamma$ generates new members by mutation, but mutation might be applied several times if the new individual is better than the previous one.
+\end{itemize}
+
+After every generation, the population is re-organized again according to the fitness of its members and a percentage for each caste that is pre-set. These percentages are one of the parameters that have the biggest influence in the balance exploration/exploitation: only the higher casters perform exploitation, so the percentage of members of those castes is the main lever for this balance. There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest.
+
 \section{Results}\label{sec:results}
 <<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
 walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
