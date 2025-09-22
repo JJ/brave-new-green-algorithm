@@ -206,7 +206,6 @@ A future line of work will take into account that different parametrizations are
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
-\section*{References}
 \bibliographystyle{splncs04}
 \bibliography{ours,energy,ga-energy,GAs,julia}
 
