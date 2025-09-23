@@ -29,8 +29,12 @@ JuliaLocalPreferences.toml
 
 # emacs
 auto/
+
+# R
 *.Rproj*
 .Rproj.user
+.Rhistory
+
 
 # latex
 *.tex
