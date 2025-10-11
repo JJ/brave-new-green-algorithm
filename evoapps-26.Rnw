@@ -1,0 +1,224 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{color}
+
+\begin{document}
+%
+\title{Analyzing how the exploration/exploitation trade off in biologically-inspired algorithms affects energy consumption}
+%
+\titlerunning{Energy consumption of exploration/exploitation balance}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and
+Cecilia Merelo-Molina\inst{3}}
+%
+\authorrunning{Merelo and Merelo}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
+CITIC, UGR, Spain
+\and
+Zenzorrito, Granada, Spain}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+Green computing tries to push a series of best practices that, in general, reduce the amount of energy consumed to perform a given piece of work. There are no fixed rules for {\em greening} an algorithm implementation, which means that we need to create a methodology that, after profiling the energy spent by an algorithm implementation, comes up with specific rules that will optimize the amount of energy spent. In population based algorithms, the exploration/exploitation balance is one of the most critical aspects. The algorithm we will be working with in this paper called Brave New Algorithm was designed with the main objective of keeping that balance in an optimal way through the stratification of the population. In this paper we will analyze how this balance affects the energy consumption of the algorithm.
+
+
+\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\end{abstract}
+%
+%
+%
+\section{Introduction}
+
+
+Goldberg in his "Zen and the art of genetic algorithms" \cite{goldberg1989zen} included as a {\em koan} "Let nature be your guide". This has spawned all kind of population-based metaheuristics that use (and possibly abuse \cite{soni2021critical}) metaphors to inspire all kind of optimization algorithms, in most cases population-based.
+
+All these algorithms have characteristics in common. Generally are population-based, that is, they work with a population of individuals that are (possibly encoded) solutions to a problem. There possible solutions are evaluated via a so-called {\em fitness} or {\em objective} function, according to which population is modified so that it is increasingly more likely to find solutions that are closer to the objective. What the algorithms do is explore the search space, using a combination of techniques:\begin{itemize}
+\item {\em Exploration} techniques, which sample the search space looking for new solutions, generally via variation of the existing solutions.
+\item {\em Exploitation} techniques, which try to improve existing solutions by first selecting those that are closer to the objective, and then combining them to create new solutions, thus {\em exploiting} the search directions already present in the population.
+\end{itemize}
+
+The algorithms and their specific implementations need to keep exploration in check, so that only {\em promising} parts of the search space are checked, that is, only solutions that have a certain probability of being better are generated; leaning on exploration will eventually lead to an algorithm that is even worse than exhaustive search, since probabilistically some solutions can be generated several times. Exploitation will, on the other hand, focus on some specific areas of the search space, those that already have {\em good} solutions, potentially falling into local minima and abandoning other areas that could hold much better solutions. This is why there needs to be a balanced approach to using both techniques, as most algorithms already do.
+
+The performance of these algorithms is generally measured using quantities such as the number of fitness evaluations needed to reach a certain level of quality or the time needed to reach it. However, from the point of view of modern engineering energy needed by an algorithm implementation is as important, or even more, since an efficient implementation of an algorithm needs to be energy-efficient, or at least consume the least amount of energy possible.
+
+This will be our main intention in this paper. We will work with an algorithm proposed in \cite{merelo2022brave} called Brave New Algorithm, which, instead of being biologically inspired directly, gets its main population structures from the dystopic novel Brave New World by Aldous Huxley \cite{huxley2022brave}; hence the name. This algorithm was designed with the main objective of keeping a healthy exploration/exploitation balance, which besides can be easily tuned through algorithm parameters. This makes it a good candidate for the analysis we will perform on this paper.
+
+As secondary objective, we will be exploring the possibilities of implementation of metaheuristics in the language called Julia \cite{perkel2019julia}, a just-in-time compiled language that has an interesting way of dealing with allocation of memory; we will need to find out how, in this specific case, working with memory will affect consumption and how these mechanisms can be leveraged to optimize energy consumption.
+
+The rest of the paper is organized as follows: next Section describes the state of the art in exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the tradeoffs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
+
+\section{State of the art}
+
+As a secondary objective in this paper, we have wanted to deal with implementation issues in a non-mainstream language; as a matter of fact, there are several implementations of evolutionary algorithms in Julia, such as \cite{sanchez2023evolp}. Before that, we had used in \cite{merelo2016comparison} Julia as a baseline for comparing performance in basic evolutionary algorithms; as a matter of fact, we used Julia as a baseline, with its performance being more or less the median of all languages tested. Some other languages like Java or C++ might be several orders of magnitude faster. However, performance does not translate directly to energy consumption, and besides, back then Julia was still in its early versions vs. the more mature implementation that is now in production.
+
+Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level, clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper. One of these was \cite{diaz2022population}, where they work mainly on the population, and conclude that an increasing population, which implies increased diversity and possibly better overall performance, has a complex relationship with energy consumption that might not be a direct one. If we just equate energy consumption with time needed to reach a solution, finding a parametrization that finds solution faster will always be a way of reducing it.
+
+In this paper we will be focusing on such a parametrization mainly, applied to the Brave New Algorithm, which is essentially an evolutionary algorithm with population reproduction restrictions. We will describe this algorithm next.
+
+\section{A Brave New Algorithm}\label{sec:bna}
+
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction takes place is similar to how the novel Brave New World organized society: in castes. \begin{itemize}
+\item $\alpha$ generates new members by coupling the best individuals in its caste between them, to then undergo mutation and crossover.
+\item $\beta$ caste needs to reproduce a member of of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
+\item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
+\item $\gamma$ generates new members by mutation, but mutation might be applied several times if the new individual is better than the previous one.
+
+
+There are many possible choices for mutation and crossover operators. In this phase we will not focus so much in efficiency as in ease of implementation. This is what we will use for operators:\begin{itemize}
+\item Mutation will be governed by a probability that indicates whether one specific component of the vector is going to be changed or not; when it changes, a new number is generated within the original range\footnote{Please note that we are not using the usual Gaussian Mutation here. It can be argued that a simple random mutation will have more or less the same effect; however, from our point of view, we are mainly interested in an operator that has a certain energy consumption and that performs exploration}.
+\item Crossover is a many-point crossover, with several elements of the chromosomes selected randomly and interchanged between them.
+\item Selection uses binary tournament \cite{blickle1996comparison}, also a very simple method that involves only a comparison.
+\end{itemize}
+
+These specific versions of the operators are not essential to the algorithm, and can be changed at will; however, these are the ones used in this paper.
+
+\end{itemize}
+
+After every generation, the population is re-organized again according to the fitness of its members and a percentage for each caste that is pre-set. These percentages are one of the parameters that have the biggest influence in the balance exploration/exploitation: only the higher casters perform exploitation, so the percentage of members of those castes is the main lever for this balance. There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest.
+
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+
+\section{Experimental methodology and results}\label{sec:results}
+
+qIn order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
+
+In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value; this is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
+\item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
+\item Population size: 200 or 400 individuals, which has an impact in the diversity of the population and thus the exploitation capabilities of the algorithm.
+\item Maximum number of generations without improvement: 10 or 50, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will generate (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
+\item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly, changing the percentage of the $\gamma$ caste (which performs local search) and keeping the percentage of the $\delta$ and $\epsilon$ castes always the same and equal to 5\%.
+\end{itemize}
+
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+
+A difference between the methodology used here and what we used before is the absence of a series of measurements used as baseline, in order to discount the energy consumption of the background tasks, and, especially in this case, the time and energy taken by Julia to compile the code. The main issue here is that establishing what could be a significant baseline is not trivial, since it would need to use the exact same code so that compilation time (and energy spent) would be the same.
+
+The results will be examined next.
+
+<<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
+walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+walcom_results$log_diff <- log10(walcom_results$diff_fitness)
+walcom_results$dimension <- as.factor(walcom_results$dimension)
+walcom_results$population_size <- as.factor(walcom_results$population_size)
+walcom_results$point_size <- ifelse(walcom_results$max_gens==10,2,4)
+ggplot(walcom_results, aes(x=seconds,y=PKG,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=walcom_results$point_size) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
+
+walcom_anova_pkg <- aov( lm ( PKG ~ dimension + population_size + max_gens + alpha, data=walcom_results ) )
+walcom_anova_result_3 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=walcom_results[ walcom_results$dimension == 3,] ) )
+walcom_anova_result_5 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=walcom_results[ walcom_results$dimension == 5,] ) )
+@
+
+
+The results of the experiments have been summarized in Figure \ref{fig:walcom.results}, which plots energy consumption in Joules vs time spent, representing problem dimension with different shapes and population size with different colors. It is interesting to note that problem dimension is not really a factor in energy consumption, since the algorithm runs until the maximum number of generations without change is reached; when the problem dimension is higher, it simply stops in a worse solution. Most points, however, independently of the problem dimension or other factors, are in the 400-450 Joules and 8-8.5 seconds range. At the end of the day, this means that any optimization we might be able to make in this specific problem will, at most, be in the 10\% range in the average case. This is why in most cases optimization will should focus on the worst case scenario, as we will see later.
+
+This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
+
+<<walcom.models, echo=FALSE, message=F, warning=F>>=
+library(kableExtra)
+evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=walcom_results)
+
+walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
+  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
+            mean_time=mean(seconds), sd_time=sd(seconds),
+            mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
+            mean_generations=mean(generations), sd_gens=sd(generations),
+            mean_diff_fitness=mean(log_diff), sd_diff_fitness=sd(log_diff)) -> summary_results
+
+summary_results$energy <- paste0(round(summary_results$mean_energy,2), " (", round(summary_results$sd_energy,2), ")")
+summary_results$time <- paste0(round(summary_results$mean_time,2), " (", round(summary_results$sd_time,2), ")")
+summary_results$evaluations <- paste0(round(summary_results$mean_evaluations,2), " (", round(summary_results$sd_evaluations,2), ")")
+summary_results$generations <- paste0(round(summary_results$mean_generations,2), " (", round(summary_results$sd_gens,2), ")")
+summary_results$diff_fitness <- paste0(round(summary_results$mean_diff_fitness,2), " (", round(summary_results$sd_diff_fitness,2), ")")
+
+summary_results <- summary_results[,c("dimension","population_size","max_gens","alpha","energy","time","evaluations","generations","diff_fitness")]
+kable(summary_results, digits=2, booktabs=T, col.names = c("D","Pop. size", "Gens.", "Alpha %", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
+@
+
+The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
+
+<<walcom.dimensions, echo=FALSE, message=F, warning=F, fig.height=4, fig.cap="Box plots of energy spent for the different dimensions">>=
+ggplot(walcom_results, aes(x=dimension, y=PKG, fill=dimension)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
+@
+
+Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
+
+<<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions">>=
+
+for (dim in c(3,5)) {
+  dim_results <- walcom_results[ walcom_results$dimension == dim,]
+  p1 <- ggplot(dim_results, aes(x=population_size, y=PKG, fill=population_size)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  print(p1)
+  dim_results$alpha <- as.factor(dim_results$alpha)
+  p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=alpha)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  print(p2)
+}
+
+@
+
+Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, with the intention of comparing how different parametrizations spend energy. The top two plots refer to the problem with dimension = 3. The interesting thing in violin plots is that we can see more clearly the worst case scenario, with parts of the "violin" indicating the amount of cases that fall in that range; in that sense, we can see that in the worst case scenario, population 200 is worse than 400 and that an $\alpha$ percentage of 10\% is better than 25\% since it concentrates most of its results in the 400-450 Joules area. $\alpha$ = 25\% has a wider distribution does have many results in the low-400 Joules area, however there are relatively more cases that fall in the 500 Joules range or beyond. We will have to conclude in this case that we need to keep exploitation to a low rate with a {\em small} $\alpha$ caste, coupled, in this case, with a large population.
+
+The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
+
+<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+walcom_results$point_size <- ifelse(walcom_results$alpha==10,2,4)
+ggplot(walcom_results, aes(x=PKG,y=log_diff,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=walcom_results$point_size) + theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
+  scale_x_log10()
+@
+
+Finally, Figure \ref{fig:walcom.energy} tries to summarize the results, plotting the quality of the solution found (lower is better) as a function of energy spent in Joules. It again shows clearly that the problem with dimension 5 arrives to worse solutions, grouped in the upper part of the graph. If we look at these, we see that the energy spent to arrive more or less at the same solutions is higher when the population is higher. This points to a low diversity in the population, and a bad exploration/exploitation balance. From the point of view of energy spent, increasing the exploration capability by increasing the percentage of population in the $\alpha$ and $\beta$ castes might increase the energy spent, and in some cases obtain better solutions, leading to the best case of all experiments. However, the most important takeaway here is that there does not seem to be a correlation between energy spent and better solutions, and that tweaking the exploration/exploitation balance will not affect energy spent, having possibly a positive effect on the solutions. At any rate, solutions are suboptimal so this needs to be explored further.
+
+This trend is probably more visible for problem dimension = 3, in the lower part of the chart. The best solutions use $\alpha = 25\%$ (with, correspondingly, $\beta = 50\%$), tipping the balance slightly more towards exploitation. But the outstanding part is that better solutions are obtained without implying bigger energy expenses, on the contrary, energy spent is around 400 Joules with few outliers.
+
+This might be, in part, related to the implementation in the language Julia. Julia is extremely fast, which implies that the application of different operators has a negligible difference. The actual impact on the energy consumed must have a different origin.
+
+<<walcom.evals, echo=FALSE, message=F , warning= F,  error=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=walcom_results))
+ggplot(walcom_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
+@
+
+In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
+
+
+\section{Conclusion and discussion}
+\label{sec:discussion}
+
+In this paper we set out to analyze the influence of parameters that control the exploration/exploitation balance in a population based metaheuristic called Brave New Algorithm, implemented in a language called Julia. Using a methodology that follows best practices, we have measured energy spent by the algorithm parametrized in a series of different ways that affect the exploration/exploitation balance, in order to obtain rules that allow any user to minimize the amount of energy spent. These experiments, however, have yielded mixed results, the main of which being that parametrization needs to take care first of obtaining a good solution, and then, next, on minimizing the amount of energy. The exploration/exploitation balance is tricky in that sense, because it will affect the number of evaluations needed to find a solution with a certain level, but also the amount of energy consumed.
+
+In our experiments, however, what we find is that maintaining a low percentage of {\em exploitative} population will lead, if not to an overall lower energy consumption, it will minimize the probability of spending too much energy to find a solution. This might have to do with the fact that  the "explorative" operators will consume {\em less} energy to arrive to a solution than the equivalent {\em explorative} operators, which need two operands, as well as more interchange of information. Even if the difference per call is small, these operators are called many times so it might add up to a considerable difference. This effect will add to the fact that, in general, a lower degree of exploitation is the usual practice in evolutionary algorithms such as this one.
+
+A matter of discussion would be the best way to eliminate the overhead in this case. The main issue here is that if the overhead is relatively high, the differences between different parametrizations might be compressed and thus will become much more difficult to detect. If we simply take into account the wallclock time it takes to run every script, simply the compiler overhead might have double digits. We will need to take that into account in the future.
+
+A different issue is also the optimality of the operators used; real-valued optimization has a host of different mutation and crossover operators, out of which the most popular is probably the Gaussian mutation operator. Although from the point of view of the energy spent the difference with a random mutation operator might be small, the time it would take to reach the solution would probably be smaller, which of course matters for the overall energy spent. This operator, however, is more {\em exploitative}, since it will generate solutions around those that are already there, so there should be a different way of adding a explorative component. Fortunately, the caste system used in BNA allows for different operators used in different parts of the population, so it would be relatively easy to accomodate. This is proposed as a future line of work, together with other operators such as BLX-$\alpha$ or arithmetic crossover operators. Once again, different version of the operator could be applied to different castes.
+
+Other future lines of work will take into account that different parametrizations are needed for different problems and sizes, so a more fair comparison of how resource consumption increases with size will need to perform some kind of parameter optimization for every size and problem, since at the end of the day what a scientist needs is to minimize the energy consumption for a solution quality level. An important issue that needs to be addressed is to take into account the overhead introduced by the compiler every time a Julia script is run, as well as the overhead of the rest of the system.
+
+
+\section*{Acknowledgements}
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+
+\bibliographystyle{splncs04}
+\bibliography{ours,energy,ga-energy,GAs,julia}
+
+
+\end{document}
