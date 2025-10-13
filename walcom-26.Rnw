@@ -112,8 +112,8 @@ A difference between the methodology used here and what we used before is the ab
 
 The results will be examined next.
 
-<<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
-walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
+<<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
+walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
 library(dplyr)
 library(ggplot2)
 library(tidyr)

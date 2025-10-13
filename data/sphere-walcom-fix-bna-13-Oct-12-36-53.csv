@@ -1,4 +1,4 @@
-work,type,size,max_gens,alpha,PKG,seconds,generations,diff_fitness,evaluations
+work,dimension,population_size,max_gens,alpha,PKG,seconds,generations,diff_fitness,evaluations
 bna, 3, 200, 10, 10, 433.16, 8.40285417, 19, 0.0103350000000013, 34936
 bna, 3, 200, 10, 10, 450.62, 8.34572147, 15, 0.161000000000001, 27777
 bna, 3, 200, 10, 10, 433.60, 8.30852225, 23, 0.0953960000000009, 42317
