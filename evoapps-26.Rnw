@@ -21,17 +21,19 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and
-Cecilia Merelo-Molina\inst{3}}
+%\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and
+%Cecilia Merelo-Molina\inst{3}}
+\author{No Author\inst{1}}
 %
-\authorrunning{Merelo and Merelo}
+%\authorrunning{Merelo and Merelo}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
-CITIC, UGR, Spain
-\and
-Zenzorrito, Granada, Spain}
+\institute{No Institute}
+%\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
+%CITIC, UGR, Spain
+%\and
+%Zenzorrito, Granada, Spain}
 %
 \maketitle              % typeset the header of the contribution
 %
@@ -46,6 +48,7 @@ Green computing tries to push a series of best practices that, in general, reduc
 %
 \section{Introduction}
 
+% We need to rewrite this
 
 Goldberg in his "Zen and the art of genetic algorithms" \cite{goldberg1989zen} included as a {\em koan} "Let nature be your guide". This has spawned all kind of population-based metaheuristics that use (and possibly abuse \cite{soni2021critical}) metaphors to inspire all kind of optimization algorithms, in most cases population-based.
 
@@ -209,13 +212,15 @@ In our experiments, however, what we find is that maintaining a low percentage o
 
 A matter of discussion would be the best way to eliminate the overhead in this case. The main issue here is that if the overhead is relatively high, the differences between different parametrizations might be compressed and thus will become much more difficult to detect. If we simply take into account the wallclock time it takes to run every script, simply the compiler overhead might have double digits. We will need to take that into account in the future.
 
-A different issue is also the optimality of the operators used; real-valued optimization has a host of different mutation and crossover operators, out of which the most popular is probably the Gaussian mutation operator. Although from the point of view of the energy spent the difference with a random mutation operator might be small, the time it would take to reach the solution would probably be smaller, which of course matters for the overall energy spent. This operator, however, is more {\em exploitative}, since it will generate solutions around those that are already there, so there should be a different way of adding a explorative component. Fortunately, the caste system used in BNA allows for different operators used in different parts of the population, so it would be relatively easy to accomodate. This is proposed as a future line of work, together with other operators such as BLX-$\alpha$ or arithmetic crossover operators. Once again, different version of the operator could be applied to different castes.
+A different issue is also the optimality of the operators used; real-valued optimization has a host of different mutation and crossover operators, out of which the most popular is probably the Gaussian mutation operator. Although from the point of view of the energy spent the difference with a random mutation operator might be small, the time it would take to reach the solution would probably be smaller, which of course matters for the overall energy spent. This operator, however, is more {\em exploitative}, since it will generate solutions around those that are already there, so there should be a different way of adding a explorative component. Fortunately, the caste system used in BNA allows for different operators used in different parts of the population, so it would be relatively easy to accommodate. This is proposed as a future line of work, together with other operators such as BLX-$\alpha$ or arithmetic crossover operators. Once again, different version of the operator could be applied to different castes.
 
 Other future lines of work will take into account that different parametrizations are needed for different problems and sizes, so a more fair comparison of how resource consumption increases with size will need to perform some kind of parameter optimization for every size and problem, since at the end of the day what a scientist needs is to minimize the energy consumption for a solution quality level. An important issue that needs to be addressed is to take into account the overhead introduced by the compiler every time a Julia script is run, as well as the overhead of the rest of the system.
 
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+Acnowledgements taking\\
+this much space
 
 \bibliographystyle{splncs04}
 \bibliography{ours,energy,ga-energy,GAs,julia}
