@@ -115,27 +115,37 @@ A difference between the methodology used here and what we used before is the ab
 
 The results will be examined next.
 
-<<walcom.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations">>=
-walcom_results <- read.csv("data/sphere-walcom-bna-21-Sep-10-40-09.csv")
+<<evoapps.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
+walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
+walcom_results$work <- "BNA-baseline"
+evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
+evoapps_results$work <- "BNA-mutation-perf-boost"
+
+all_results <- rbind(walcom_results, evoapps_results)
+
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 
-walcom_results$log_diff <- log10(walcom_results$diff_fitness)
-walcom_results$dimension <- as.factor(walcom_results$dimension)
-walcom_results$population_size <- as.factor(walcom_results$population_size)
-walcom_results$point_size <- ifelse(walcom_results$max_gens==10,2,4)
-ggplot(walcom_results, aes(x=seconds,y=PKG,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=walcom_results$point_size) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
+all_results$log_diff <- log10(all_results$diff_fitness)
+all_results$dimension <- as.factor(all_results$dimension)
+all_results$work <- as.factor(all_results$work)
+all_results$population_size <- as.factor(all_results$population_size)
+all_results$point_size <- ifelse(all_results$max_gens==10,2,4)
+all_results$fill <- ifelse(all_results$work=="BNA-baseline","white","black")
+all_results$shape <- ifelse(all_results$population_size==200,21,24)
+ggplot(all_results, aes(x=seconds,y=PKG,color=dimension)) + geom_point(shape=all_results$shape,alpha=0.5,fill=all_results$fill,size=all_results$point_size) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
 
-walcom_anova_pkg <- aov( lm ( PKG ~ dimension + population_size + max_gens + alpha, data=walcom_results ) )
-walcom_anova_result_3 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=walcom_results[ walcom_results$dimension == 3,] ) )
-walcom_anova_result_5 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=walcom_results[ walcom_results$dimension == 5,] ) )
+results_anova_pkg <- aov( lm ( PKG ~ dimension + population_size + max_gens + alpha, data=all_results ) )
+results_anova_result_3 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=all_results[ all_results$dimension == 3,] ) )
+results_anova_result_5 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=all_results[ all_results$dimension == 5,] ) )
+results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + alpha + work, data=all_results ) )
 @
 
 
-The results of the experiments have been summarized in Figure \ref{fig:walcom.results}, which plots energy consumption in Joules vs time spent, representing problem dimension with different shapes and population size with different colors. It is interesting to note that problem dimension is not really a factor in energy consumption, since the algorithm runs until the maximum number of generations without change is reached; when the problem dimension is higher, it simply stops in a worse solution. Most points, however, independently of the problem dimension or other factors, are in the 400-450 Joules and 8-8.5 seconds range. At the end of the day, this means that any optimization we might be able to make in this specific problem will, at most, be in the 10\% range in the average case. This is why in most cases optimization will should focus on the worst case scenario, as we will see later.
+% The results of the experiments have been summarized in Figure \ref{fig:walcom.results}, which plots energy consumption in Joules vs time spent, representing problem dimension with different shapes and population size with different colors. It is interesting to note that problem dimension is not really a factor in energy consumption, since the algorithm runs until the maximum number of generations without change is reached; when the problem dimension is higher, it simply stops in a worse solution. Most points, however, independently of the problem dimension or other factors, are in the 400-450 Joules and 8-8.5 seconds range. At the end of the day, this means that any optimization we might be able to make in this specific problem will, at most, be in the 10\% range in the average case. This is why in most cases optimization will should focus on the worst case scenario, as we will see later.
 
-This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
+% This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
 
 <<walcom.models, echo=FALSE, message=F, warning=F>>=
 library(kableExtra)
