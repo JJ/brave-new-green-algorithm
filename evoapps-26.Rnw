@@ -152,6 +152,7 @@ ggplot(all_results, aes(x=evaluations,y=PKG,color=work)) + geom_point(alpha=0.5)
 all_results$joules_per_eval <- all_results$PKG / all_results$evaluations
 ggplot(all_results, aes(x=work,y=joules_per_eval))+ geom_boxplot(notch=T) + theme_minimal() + labs(x="Work", y="Joules per evaluation")
 comparison <- wilcox.test(all_results$joules_per_eval[ all_results$work == "BNA-baseline"], all_results$joules_per_eval[ all_results$work == "BNA-mutation-perf-boost"])
+energy_anova_boost <- aov( lm ( joules_per_eval ~ dimension + population_size + work, data=all_results ) )
 @
 
 <<walcom.models, echo=FALSE, message=F, warning=F>>=
