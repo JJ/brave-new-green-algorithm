@@ -115,7 +115,7 @@ A difference between the methodology used here and what we used before is the ab
 
 The results will be examined next.
 
-<<evoapps.results, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
+<<evoapps.results, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
 walcom_results$work <- "BNA-baseline"
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
@@ -147,7 +147,7 @@ results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + 
 
 % This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
 %
-<<evoapps.evaluations, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.pos="h!tb", fig.cap="Energy consumption vs number of evaluations">>=
+<<evoapps.evaluations, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Energy consumption vs number of evaluations">>=
 ggplot(all_results, aes(x=evaluations,y=PKG,color=work)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
 all_results$joules_per_eval <- all_results$PKG / all_results$evaluations
 ggplot(all_results, aes(x=work,y=joules_per_eval))+ geom_boxplot(notch=T) + theme_minimal() + labs(x="Work", y="Joules per evaluation")
@@ -201,7 +201,7 @@ Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, 
 
 The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
 
-<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fit.pos="h!tb",fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=4, fit.pos="h!tb",fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
 all_results$point_size <- ifelse(all_results$alpha==10,2,4)
 ggplot(all_results, aes(x=PKG,y=log_diff,color=dimension)) +
   geom_point(alpha=0.5,size=all_results$point_size,shape=all_results$shape,fill=all_results$fill) +
