@@ -184,14 +184,14 @@ ggplot(all_results, aes(x=dimension, y=PKG, fill=work)) + geom_boxplot( notch=T)
 
 Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
 
-<<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions">>=
+<<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions, algorithm parameters and population size.">>=
 
 for (dim in c(3,5)) {
   dim_results <- all_results[ all_results$dimension == dim,]
-  p1 <- ggplot(dim_results, aes(x=work, y=PKG, group=population_size)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  p1 <- ggplot(dim_results, aes(x=population_size, y=PKG, fill=work)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim))
   print(p1)
   dim_results$alpha <- as.factor(dim_results$alpha)
-  p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=alpha)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=work)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
   print(p2)
 }
 
@@ -201,9 +201,11 @@ Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, 
 
 The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
 
-<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fit.pos="h!tb",fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
 all_results$point_size <- ifelse(all_results$alpha==10,2,4)
-ggplot(all_results, aes(x=PKG,y=log_diff,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=all_results$point_size) + theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
+ggplot(all_results, aes(x=PKG,y=log_diff,color=dimension)) +
+  geom_point(alpha=0.5,size=all_results$point_size,shape=all_results$shape,fill=all_results$fill) +
+  theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
   scale_x_log10()
 @
 
