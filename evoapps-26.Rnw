@@ -146,10 +146,17 @@ results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + 
 % The results of the experiments have been summarized in Figure \ref{fig:walcom.results}, which plots energy consumption in Joules vs time spent, representing problem dimension with different shapes and population size with different colors. It is interesting to note that problem dimension is not really a factor in energy consumption, since the algorithm runs until the maximum number of generations without change is reached; when the problem dimension is higher, it simply stops in a worse solution. Most points, however, independently of the problem dimension or other factors, are in the 400-450 Joules and 8-8.5 seconds range. At the end of the day, this means that any optimization we might be able to make in this specific problem will, at most, be in the 10\% range in the average case. This is why in most cases optimization will should focus on the worst case scenario, as we will see later.
 
 % This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
+%
+<<evoapps.evaluations, echo=FALSE, warnings=FALSE, message=F, fig.height=5, fig.pos="h!tb", fig.cap="Energy consumption vs number of evaluations">>=
+ggplot(all_results, aes(x=evaluations,y=PKG,color=work)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
+all_results$joules_per_eval <- all_results$PKG / all_results$evaluations
+ggplot(all_results, aes(x=work,y=joules_per_eval))+ geom_boxplot(notch=T) + theme_minimal() + labs(x="Work", y="Joules per evaluation")
+comparison <- wilcox.test(all_results$joules_per_eval[ all_results$work == "BNA-baseline"], all_results$joules_per_eval[ all_results$work == "BNA-mutation-perf-boost"])
+@
 
 <<walcom.models, echo=FALSE, message=F, warning=F>>=
 library(kableExtra)
-evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=walcom_results)
+evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=all_results)
 
 walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
   summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
