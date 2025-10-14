@@ -159,7 +159,7 @@ energy_anova_boost <- aov( lm ( joules_per_eval ~ dimension + population_size + 
 library(kableExtra)
 evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=all_results)
 
-walcom_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
+all_results %>% group_by(dimension,population_size,max_gens,alpha,work) %>%
   summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
             mean_time=mean(seconds), sd_time=sd(seconds),
             mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
@@ -172,14 +172,14 @@ summary_results$evaluations <- paste0(round(summary_results$mean_evaluations,2),
 summary_results$generations <- paste0(round(summary_results$mean_generations,2), " (", round(summary_results$sd_gens,2), ")")
 summary_results$diff_fitness <- paste0(round(summary_results$mean_diff_fitness,2), " (", round(summary_results$sd_diff_fitness,2), ")")
 
-summary_results <- summary_results[,c("dimension","population_size","max_gens","alpha","energy","time","evaluations","generations","diff_fitness")]
-kable(summary_results, digits=2, booktabs=T, col.names = c("D","Pop. size", "Gens.", "Alpha %", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
+summary_results <- summary_results[,c("dimension","population_size","max_gens","alpha","work","energy","time","evaluations","generations","diff_fitness")]
+kable(summary_results, digits=2, booktabs=T, col.names = c( "D","Pop. size", "Gens.", "Alpha %", "Mutation op", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
 @
 
 The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
 
 <<walcom.dimensions, echo=FALSE, message=F, warning=F, fig.height=4, fig.cap="Box plots of energy spent for the different dimensions">>=
-ggplot(walcom_results, aes(x=dimension, y=PKG, fill=dimension)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
+ggplot(all_results, aes(x=dimension, y=PKG, fill=work)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
 @
 
 Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
@@ -187,8 +187,8 @@ Since the main objective of this paper was not to optimize the performance of th
 <<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions">>=
 
 for (dim in c(3,5)) {
-  dim_results <- walcom_results[ walcom_results$dimension == dim,]
-  p1 <- ggplot(dim_results, aes(x=population_size, y=PKG, fill=population_size)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
+  dim_results <- all_results[ all_results$dimension == dim,]
+  p1 <- ggplot(dim_results, aes(x=work, y=PKG, group=population_size)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
   print(p1)
   dim_results$alpha <- as.factor(dim_results$alpha)
   p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=alpha)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
@@ -202,8 +202,8 @@ Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, 
 The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
 
 <<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
-walcom_results$point_size <- ifelse(walcom_results$alpha==10,2,4)
-ggplot(walcom_results, aes(x=PKG,y=log_diff,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=walcom_results$point_size) + theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
+all_results$point_size <- ifelse(all_results$alpha==10,2,4)
+ggplot(all_results, aes(x=PKG,y=log_diff,color=dimension,shape=population_size)) + geom_point(alpha=0.5,size=all_results$point_size) + theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
   scale_x_log10()
 @
 
@@ -213,12 +213,12 @@ This trend is probably more visible for problem dimension = 3, in the lower part
 
 This might be, in part, related to the implementation in the language Julia. Julia is extremely fast, which implies that the application of different operators has a negligible difference. The actual impact on the energy consumed must have a different origin.
 
-<<walcom.evals, echo=FALSE, message=F , warning= F,  error=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
-summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=walcom_results))
-ggplot(walcom_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
-@
+%<<walcom.evals, echo=FALSE, message=F , warning= F,  error=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. %Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
+%summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=walcom_results))
+%ggplot(walcom_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
+%
 
-In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
+%In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
 
 
 \section{Conclusion and discussion}
