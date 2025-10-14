@@ -78,7 +78,7 @@ In this paper we will be focusing on such a parametrization mainly, applied to t
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
-The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction takes place is similar to how the novel Brave New World organized society: in castes. \begin{itemize}
+The Brave New Algorithm \cite{merelo2022brave-anon} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction takes place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
 \item $\alpha$ generates new members by coupling the best individuals in its caste between them, to then undergo mutation and crossover.
 \item $\beta$ caste needs to reproduce a member of of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
 \item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
@@ -224,7 +224,7 @@ Acnowledgements taking\\
 this much space
 
 \bibliographystyle{splncs04}
-\bibliography{ours,energy,ga-energy,GAs,julia}
+\bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
 
 
 \end{document}
