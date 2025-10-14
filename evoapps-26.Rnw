@@ -15,9 +15,9 @@
 
 \begin{document}
 %
-\title{Analyzing how the exploration/exploitation trade off in biologically-inspired algorithms affects energy consumption}
+\title{}
 %
-\titlerunning{Energy consumption of exploration/exploitation balance}
+\titlerunning{}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
