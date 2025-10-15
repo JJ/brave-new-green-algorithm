@@ -120,7 +120,12 @@ The results will be examined next.
 walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
 walcom_results$work <- "BNA-baseline"
 
-walcom_lm <- lm ( PKG ~ evaluations, data = walcom_results )
+walcom_lm <- glm ( PKG ~ evaluations, data = walcom_results )
+
+# plot energy vs. evaluations with linear model walcom_lm
+library(ggplot2)
+ggplot(walcom_results, aes(x=evaluations,y=seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
+
 PKG_0_evaluations <- unname(walcom_lm$coefficients[1])
 
 walcom_results$diff_PKG <- walcom_results$PKG - PKG_0_evaluations
