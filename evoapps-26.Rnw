@@ -96,7 +96,8 @@ These specific versions of the operators are not essential to the algorithm, and
 
 After every generation, the population is re-organized again according to the fitness of its members and a percentage for each caste that is pre-set. These percentages are one of the parameters that have the biggest influence in the balance exploration/exploitation: only the higher casters perform exploitation, so the percentage of members of those castes is the main lever for this balance. There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest.
 
-The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+The implementation of the algorithm used is available under a free license at \url{hidden.url}.
+%\url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
@@ -118,6 +119,12 @@ The results will be examined next.
 <<evoapps.results, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
 walcom_results$work <- "BNA-baseline"
+
+walcom_lm <- lm ( PKG ~ evaluations, data = walcom_results )
+PKG_0_evaluations <- unname(walcom_lm$coefficients[1])
+
+walcom_results$diff_PKG <- walcom_results$PKG - PKG_0_evaluations
+
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
 evoapps_results$work <- "BNA-mutation-perf-boost"
 
