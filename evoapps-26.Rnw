@@ -13,7 +13,13 @@
 \usepackage{color}
 
 \begin{document}
+%\SweaveOpts{concordance=TRUE}
 %
+
+<<setup, include=FALSE>>=
+knitr::opts_chunk$set(concordance = TRUE)
+@
+
 \title{}
 %
 \titlerunning{}
@@ -116,7 +122,7 @@ A difference between the methodology used here and what we used before is the ab
 
 The results will be examined next.
 
-<<evoapps.results, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
+<<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
 walcom_results$work <- "BNA-baseline"
 
