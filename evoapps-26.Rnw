@@ -100,7 +100,8 @@ These specific versions of the operators are not essential to the algorithm, and
 
 \end{itemize}
 
-After every generation, the population is re-organized again according to the fitness of its members and a percentage for each caste that is pre-set. These percentages are one of the parameters that have the biggest influence in the balance exploration/exploitation: only the higher casters perform exploitation, so the percentage of members of those castes is the main lever for this balance. There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest.
+After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
+There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
 The implementation of the algorithm used is available under a free license at \url{hidden.url}.
 %\url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
@@ -109,14 +110,29 @@ The implementation of the algorithm used is available under a free license at \u
 
 In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{low-level-anon}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7. It is now in a different version, but we kept it the same so that we could compare to our previous results.
 
-In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value; this is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
+In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value. The implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
 \item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
 \item Population size: 200 or 400 individuals, which has an impact in the diversity of the population and thus the exploitation capabilities of the algorithm.
-\item Maximum number of generations without improvement: 10 or 50, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will generate (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
-\item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly, changing the percentage of the $\gamma$ caste (which performs local search) and keeping the percentage of the $\delta$ and $\epsilon$ castes always the same and equal to 5\%.
+\item Maximum number of generations without improvement: 10 or 50, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will explore in fruitless directions generating (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
+\item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly: $\beta$ percentage will be double that value. $\gamma$ caste will hold a proportion equal to the $\alpha$ and $\beta$ percentages subtracted from 90.
+$\delta$ and $\epsilon$ castes will always have the same proportion, each equal to 5\%.
 \end{itemize}
 
-Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+\begin{table}[h!tb]
+\centering
+\caption{Caste percentages depending on $\alpha$ proportion used.}\label{tab:params}
+\begin{tabular}{lcc}
+\toprule
+$\alpha$ percentage & Exploration proportion & Exploitation proportion \\
+\midrule
+10\% & 30\% & 70\% \\
+25\% & 75\% & 25\% \\
+\end{tabular}
+\end{table}
+
+This means that teh $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depeding on the values used.
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{hidden.url}.
+%\url{https://github.com/JJ/brave-new-green-algorithm}.
 
 A difference between the methodology used here and what we used before is the absence of a series of measurements used as baseline, in order to discount the energy consumption of the background tasks, and, especially in this case, the time and energy taken by Julia to compile the code. The main issue here is that establishing what could be a significant baseline is not trivial, since it would need to use the exact same code so that compilation time (and energy spent) would be the same.
 
