@@ -139,23 +139,26 @@ A difference between the methodology used here and what we used before is the ab
 The results will be examined next.
 
 <<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
-walcom_results <- read.csv("data/sphere-walcom-fix-bna-13-Oct-12-36-53.csv")
-walcom_results$work <- "BNA-baseline"
+library(dplyr)
+baseline_results <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+baseline_results$work <- "BNA-baseline"
 
-walcom_lm <- glm ( PKG ~ evaluations, data = walcom_results )
+baseline_results %>% group_by(dimension,population_size) %>%
+  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
+            mean_time=mean(seconds), sd_time=sd(seconds)) -> summary_baseline_results
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
-ggplot(walcom_results, aes(x=evaluations,y=seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
+ggplot(baseline_results, aes(x=evaluations,y=seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
 
 PKG_0_evaluations <- unname(walcom_lm$coefficients[1])
 
-walcom_results$diff_PKG <- walcom_results$PKG - PKG_0_evaluations
+baseline_results$diff_PKG <- baseline_results$PKG - PKG_0_evaluations
 
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
 evoapps_results$work <- "BNA-mutation-perf-boost"
 
-all_results <- rbind(walcom_results, evoapps_results)
+all_results <- rbind(baseline_results, evoapps_results)
 
 library(dplyr)
 library(ggplot2)
@@ -250,8 +253,8 @@ This trend is probably more visible for problem dimension = 3, in the lower part
 This might be, in part, related to the implementation in the language Julia. Julia is extremely fast, which implies that the application of different operators has a negligible difference. The actual impact on the energy consumed must have a different origin.
 
 %<<walcom.evals, echo=FALSE, message=F , warning= F,  error=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. %Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
-%summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=walcom_results))
-%ggplot(walcom_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
+%summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=baseline_results))
+%ggplot(baseline_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
 %
 
 %In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
