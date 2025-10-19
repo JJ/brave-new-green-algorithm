@@ -148,8 +148,8 @@ baseline_results <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-1
 baseline_results$work <- "BNA-baseline"
 
 baseline_results %>% group_by(dimension,population_size) %>%
-  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
-            mean_time=mean(seconds), sd_time=sd(seconds)) -> summary_baseline_results
+  summarise(median_energy=median(PKG), sd_energy=sd(PKG),
+            median_time=median(seconds), sd_time=sd(seconds)) -> summary_baseline_results
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
@@ -160,7 +160,7 @@ ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_resu
 
 Figure \ref{fig:evoapps.baseline.results} plots the energy vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundreds of Joules, although most results are below 350 Joules and 6.8 seconds. We will need, however, to average these results and use them as baseline from now on.
 
-Since there is a well-known dispersion effect in these measurements, we will run the experiments for the actual workload 30 times for every parameter combination.
+This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide issues might affect one of the parameter combinations more than others. % Plot the energy vs. time, also quote our former paper - JJ
 
 The results will be examined next.
 
@@ -176,11 +176,11 @@ for (dim in c(3,5)) {
     number_of_rows <- nrow(evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,])
     evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$delta_PKG <-
       evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$PKG  -
-      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$mean_energy,number_of_rows)
+      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$median_energy,number_of_rows)
 
     evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$delta_seconds <-
       evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$seconds  -
-      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$mean_time,number_of_rows)
+      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$median_time,number_of_rows)
   }
 }
 
