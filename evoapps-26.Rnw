@@ -166,12 +166,27 @@ The results will be examined next.
 
 <<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 library(dplyr)
-baseline_results <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
-baseline_results$work <- "BNA-baseline"
+evoapps_results <- read.csv("data/sphere-evoapps-1.11.7-full-bna-16-Oct-17-32-01.csv")
 
-baseline_results %>% group_by(dimension,population_size) %>%
-  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
-            mean_time=mean(seconds), sd_time=sd(seconds)) -> summary_baseline_results
+evoapps_results$delta_PKG <- 0
+evoapps_results$delta_seconds <- 0
+
+for (dim in c(3,5)) {
+  for ( pop_size in c(200,400)) {
+    number_of_rows <- nrow(evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,])
+    evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$delta_PKG <-
+      evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$PKG  -
+      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$mean_energy,number_of_rows)
+
+    evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$delta_seconds <-
+      evoapps_results[ evoapps_results$dimension==dim & evoapps_results$population_size==pop_size,]$seconds  -
+      rep(summary_baseline_results[ summary_baseline_results$population_size == pop_size & summary_baseline_results$dimension==dim, ]$mean_time,number_of_rows)
+  }
+}
+
+evoapps_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
+  summarise(mean_energy=mean(delta_PKG), sd_energy=sd(delta_PKG),
+            mean_time=mean(delta_seconds), sd_time=sd(delta_seconds)) -> summary_evoapps_results
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
