@@ -96,7 +96,7 @@ There are many possible choices for mutation and crossover operators. In this ph
 \item Selection uses binary tournament \cite{blickle1996comparison}, also a very simple method that involves only a comparison.
 \end{itemize}
 
-These specific versions of the operators are not essential to the algorithm, and can be changed at will; however, these are the ones used in this paper.
+These specific operator versions of the operators are not essential to the algorithm, and can be changed at will; however, these are the ones used in this paper.
 
 \end{itemize}
 
@@ -108,10 +108,13 @@ The implementation of the algorithm used is available under a free license at \u
 
 \section{Experimental methodology and results}\label{sec:results}
 
-In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{low-level-anon}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7. It is now in a different version, but we kept it the same so that we could compare to our previous results.
+In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{low-level-anon}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been $1.11.7$.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
 
-In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value. The implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
-\item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
+We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia.
+
+Our initial experimental design includes two problem sizes: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties. This corresponds to the low end of the BBOB benchmark suites; remember that we are using this suit just for the purpose of profiling the energy for this language and algorithm, so for the time being we did not find it necessary to go into higher dimensions.
+
+\begin{itemize}
 \item Population size: 200 or 400 individuals, which has an impact in the diversity of the population and thus the exploitation capabilities of the algorithm.
 \item Maximum number of generations without improvement: 10 or 50, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will explore in fruitless directions generating (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
 \item Percentage of population in the $\alpha$ caste: 10\% or 25\%, which is the main parameter that controls the exploration/exploitation balance, since only the $\alpha$ and $\beta$ castes perform exploitation. The rest of the parameters will be set accordingly: $\beta$ percentage will be double that value. $\gamma$ caste will hold a proportion equal to the $\alpha$ and $\beta$ percentages subtracted from 90.
@@ -134,7 +137,28 @@ This means that teh $\alpha$ percentage is the main one governing this explorati
 Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{hidden.url}.
 %\url{https://github.com/JJ/brave-new-green-algorithm}.
 
-A difference between the methodology used here and what we used before is the absence of a series of measurements used as baseline, in order to discount the energy consumption of the background tasks, and, especially in this case, the time and energy taken by Julia to compile the code. The main issue here is that establishing what could be a significant baseline is not trivial, since it would need to use the exact same code so that compilation time (and energy spent) would be the same.
+
+Until version 1.11, Julia does not produce executables. Julia loads the script every time it is run, uses just-in-time compilation to generate low-level code, and this code is then run within its own virtual machine. This compilation, which might include recompilation of modules, takes a certain amount of time and consumes a certain amount of energy, adding to the system overhead. This is why in this case it is specially important to make baseline measurements to discount these two quantities when we make measurements on the actual workload.
+
+The main issue is {\em what} to consider baseline. One well-established principle is that you need to use exactly the same code for it and the workload, so a common option is to use a command line flag to indicate, in runtime, what kind of workload is being run. The second issue is what to run as such baseline workload. Since we are dealing with population-based algorithms, a straightforward option is to use generation of the population as such baseline workload. This is what we have done in this case: a flag indicates whether the program should stop after the initial generation or continue to perform the algorithm. This in turn means that there will be different baselines depending on the chromosome dimension and population size, four in total. For every parametrization, we will run 120 experiments.
+
+<<evoapps.baseline.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="PKG energy (in Joules) as a function of time for baseline experiments; shapes are related to population size and color to problem dimension">>=
+library(dplyr)
+baseline_results <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+baseline_results$work <- "BNA-baseline"
+
+baseline_results %>% group_by(dimension,population_size) %>%
+  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
+            mean_time=mean(seconds), sd_time=sd(seconds)) -> summary_baseline_results
+
+# plot energy vs. evaluations with linear model walcom_lm
+library(ggplot2)
+baseline_results$shape <- ifelse(baseline_results$population_size==200,21,24)
+baseline_results$color <- ifelse(baseline_results$dimension==3,"red","blue")
+ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_results$shape, color=baseline_results$color) + geom_smooth(method="lm", formula=y~x, se=FALSE)
+@
+
+Figure \ref{fig:evoapps.baseline.results} plots the energy vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundreds of Joules, although most results are below 350 Joules and 6.8 seconds. We will need, however, to average these results and use them as baseline from now on.
 
 The results will be examined next.
 
