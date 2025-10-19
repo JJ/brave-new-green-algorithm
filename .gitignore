@@ -44,3 +44,4 @@ auto/
 *.aux
 *.gz
 *~
+.RData
