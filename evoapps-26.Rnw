@@ -163,8 +163,8 @@ ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_resu
 
 Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundreds of Joules, although most results are below 350 Joules and 6.8 seconds. This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide issues might affect one of the parameter combinations more than others.
 
-<<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy values for every parameter value">>=
-ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension and population size", y="Energy (J)") + scale_y_log10()
+<<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy values for every parameter value">>=
+ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension", y="Energy (J)") + scale_y_log10()
 @
 
 What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, over all for the combination of dimension = 3 and population = 200; not only that, but there are three clusters along the "violin". These three accumulations for certain energy values happen all across the parameter values.
@@ -173,7 +173,7 @@ Any of these variables have a high variance and many outliers. This is why we ne
 
 We should take into account that, as stated elsewhere \cite{cpp.vs.zig-anon}, profiling for every kind of algorithm needs its own methodology that is adequate to the dispersion in the measurements taken; however, a high dispersion combined with time (or temperature) related effects will always lead to a certain amount of uncertainty in the conclusions. That will not invalidate these conclusions, but they will have to be explained and factored in when  any kind of result is reached.
 
-The results will be examined next.
+The results obtained after performing measurements with the actual workload will be examined next. We will be running the full algorithm with the indicated termination condition for 30 runs. We will subtract the baseline trimmed average for PKG energy as well as time from every result. The PKG energy vs. time chart is shown in Figure \ref{fig:evoapps.results}.
 
 <<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy spent by the workload as a function of time for all experiments; point size is related to the max number of generations without change; fill color is blue for dimension =5, red for dimension = 3; shapes are related to population size and finally point size to the number of generations without improvement.">>=
 library(dplyr)
@@ -208,6 +208,15 @@ evoapps_results$color <- ifelse(evoapps_results$dimension==3,"red","blue")
 ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds,fill=color)) + geom_point(size=evoapps_results$point_size,shape=evoapps_results$shape) + geom_smooth(method="lm", formula=y~x, se=FALSE)+theme(legend.position="none") + labs(x="Energy (J)", y="Time (s)")
 @
 
+We see again that energy is roughly related to the time taken, but we can also draw more conclusions. In general, "triangles" with population size = 400 are {\em above} the line, that is, they consume less energy that would be usual for the time taken. If we take into account that the generation of the population is included in the baseline, this essentially means that most of the energy needed for bigger populations is consumed when that population is generated for the first time; population size does not need so much energy for the rest of the algorithm. Circles are below, so the opposite is true. What does seem to have certain importance is the dimension of the problem: dimension = 5 in blue are placed, in general, to the right hand side indicating they need more time and also more energy. Finally, the point size, which is related to the maximum number of generations without improvement, seems to be  related to energy consumption: more generations without improvement means more consumption.
+
+We are more interested, however, in the exploration vs. exploitation balance, which is governed by the amount of individuals in the $\alpha$ caste. The results for different combinations are shown in Figure \ref{fig:evoapps.alpha}.
+
+<<evoapps.alpha, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="">>=
+evoapps_results$alpha <- as.factor(evoapps_results$alpha)
+evoapps_results$dim_pop <- paste0("D:",evoapps_results$dimension," Pop:",evoapps_results$population_size)
+ggplot(evoapps_results, aes(x=dim_pop, y=delta_PKG,fill=factor(alpha))) + geom_boxplot( notch=T, position="dodge") + theme_minimal() + labs(x="Dimension", y="Energy (J)")
+@
 
 <<evoapps.perf.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
