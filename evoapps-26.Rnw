@@ -133,7 +133,7 @@ $\alpha$ percentage & Exploration proportion & Exploitation proportion \\
 \end{tabular}
 \end{table}
 
-This means that teh $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depeding on the values used.
+This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depeding on the values used.
 Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{hidden.url}.
 %\url{https://github.com/JJ/brave-new-green-algorithm}.
 
@@ -205,18 +205,29 @@ evoapps_results$population_size <- as.factor(evoapps_results$population_size)
 evoapps_results$point_size <- ifelse(evoapps_results$max_gens==10,2,4)
 evoapps_results$shape <- ifelse(evoapps_results$population_size==200,21,24)
 evoapps_results$color <- ifelse(evoapps_results$dimension==3,"red","blue")
-ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds,fill=color)) + geom_point(size=evoapps_results$point_size,shape=evoapps_results$shape) + geom_smooth(method="lm", formula=y~x, se=FALSE)+theme(legend.position="none") + labs(x="Energy (J)", y="Time (s)")
+ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds)) + geom_point(fill=evoapps_results$color,size=evoapps_results$point_size,shape=evoapps_results$shape) + geom_smooth(method="lm", formula=y~x, se=FALSE)+theme(legend.position="none") + labs(x="Energy (J)", y="Time (s)")
 @
 
 We see again that energy is roughly related to the time taken, but we can also draw more conclusions. In general, "triangles" with population size = 400 are {\em above} the line, that is, they consume less energy that would be usual for the time taken. If we take into account that the generation of the population is included in the baseline, this essentially means that most of the energy needed for bigger populations is consumed when that population is generated for the first time; population size does not need so much energy for the rest of the algorithm. Circles are below, so the opposite is true. What does seem to have certain importance is the dimension of the problem: dimension = 5 in blue are placed, in general, to the right hand side indicating they need more time and also more energy. Finally, the point size, which is related to the maximum number of generations without improvement, seems to be  related to energy consumption: more generations without improvement means more consumption.
 
-We are more interested, however, in the exploration vs. exploitation balance, which is governed by the amount of individuals in the $\alpha$ caste. The results for different combinations are shown in Figure \ref{fig:evoapps.alpha}.
+We are more interested, however, in the exploration vs. exploitation balance, which is governed by the amount of individuals in the $\alpha$ caste. The results for different combinations are shown in Figure \ref{fig:evoapps.alpha}. The boxplot reveals that the difference in energy spent is not really significant, at least for this version of the algorithm, which has some issues.
 
-<<evoapps.alpha, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="">>=
+<<evoapps.alpha, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Boxplot of energy spent for different population/dimension combinations and the percentage of population in the alpha caste.">>=
 evoapps_results$alpha <- as.factor(evoapps_results$alpha)
 evoapps_results$dim_pop <- paste0("D:",evoapps_results$dimension," Pop:",evoapps_results$population_size)
 ggplot(evoapps_results, aes(x=dim_pop, y=delta_PKG,fill=factor(alpha))) + geom_boxplot( notch=T, position="dodge") + theme_minimal() + labs(x="Dimension", y="Energy (J)")
 @
+
+We should conclude from this chart that the exploration/exploitation balance is not really affecting the amount of energy spent. However we would like to know if there is some correspondence between the amount of extra energy spent and the fitness achieved. We show this in Figure \ref{fig:evoapps.fitness.vs.energy}.
+
+<<evoapps.fitness.vs.energy, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments; point size is related to the max number of generations without change; fill color is blue for dimension =5, red for dimension = 3; shapes are related to population size and finally point size to the number of generations without improvement. Lower is better for fitness value">>=
+evoapps_results$log_diff <- log10(evoapps_results$diff_fitness)
+ggplot(evoapps_results, aes(x=delta_PKG,y=log_diff)) + geom_point(,fill=evoapps_results$color,size=evoapps_results$point_size,shape=evoapps_results$shape) + theme(legend.position="none") + labs(x="Energy (J)", y="log(diff. target)")
+@
+
+In this chart, that follows the usual convention, we see that when dimension is equal to 5 very little energy is spent, but in fact fitness level is not very good. Triangles (population size = 200) seem to need less energy, or at least a more consistent amount of energy, to achieve a certain value. Finally when too many generations without change are used, that will result in general in more energy needed for achieving a fitness level. What we want, however, for this chart to move left (less energy) and down (better fitness), if possible at the same time. However, that will not generally be possible, so we will have to settle with approaching every one of the problems in turn.
+
+
 
 <<evoapps.perf.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
