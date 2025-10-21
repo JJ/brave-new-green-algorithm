@@ -140,16 +140,19 @@ Every parametrization runs 30 times sequentially in a single core. Results writt
 
 Until version 1.11, Julia does not produce executables. Julia loads the script every time it is run, uses just-in-time compilation to generate low-level code, and this code is then run within its own virtual machine. This compilation, which might include recompilation of modules, takes a certain amount of time and consumes a certain amount of energy, adding to the system overhead. This is why in this case it is specially important to make baseline measurements to discount these two quantities when we make measurements on the actual workload.
 
-The main issue is {\em what} to consider baseline. One well-established principle is that you need to use exactly the same code for it and the workload, so a common option is to use a command line flag to indicate, in runtime, what kind of workload is being run. The second issue is what to run as such baseline workload. Since we are dealing with population-based algorithms, a straightforward option is to use generation of the population as such baseline workload. This is what we have done in this case: a flag indicates whether the program should stop after the initial generation or continue to perform the algorithm. This in turn means that there will be different baselines depending on the chromosome dimension and population size, four in total. For every parametrization, we will run 120 experiments.
+The main issue is {\em what} to consider baseline. One well-established principle is that you need to use exactly the same code for it and the workload, so a common option is to use a command line flag to indicate, in runtime, what kind of workload is being run. The second issue is what to run as such baseline workload. Since we are dealing with population-based algorithms, a straightforward option is to use generation of the population as such baseline workload. This is what we have done in this case: a flag indicates whether the program should stop after the initial generation or continue to perform the algorithm. This in turn means that there will be different baselines depending on the chromosome dimension and population size, four in total. For every parametrization, we will run 240 experiments; after an initial run with 120, we performed another one to increment the statistical accuracy.
 
 <<evoapps.baseline.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="PKG energy (in Joules) as a function of time for baseline experiments; shapes are related to population size and color to problem dimension">>=
 library(dplyr)
-baseline_results <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+# read RDS file data/energy-full-data.rds
+readRDS("data/energy-full-data.rds") -> baseline_results
 baseline_results$work <- "BNA-baseline"
 
 baseline_results %>% group_by(dimension,population_size) %>%
   summarise(median_energy=median(PKG), sd_energy=sd(PKG),
-            median_time=median(seconds), sd_time=sd(seconds)) -> summary_baseline_results
+            trimmed_mean_energy=mean(PKG,trim=0.2),
+            median_time=median(seconds), sd_time=sd(seconds),
+            trimmed_mean_time=mean(seconds, trim=0.2)) -> summary_baseline_results
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
@@ -158,9 +161,15 @@ baseline_results$color <- ifelse(baseline_results$dimension==3,"red","blue")
 ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_results$shape, color=baseline_results$color) + geom_smooth(method="lm", formula=y~x, se=FALSE)
 @
 
-Figure \ref{fig:evoapps.baseline.results} plots the energy vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundreds of Joules, although most results are below 350 Joules and 6.8 seconds. We will need, however, to average these results and use them as baseline from now on.
+Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundreds of Joules, although most results are below 350 Joules and 6.8 seconds. This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide issues might affect one of the parameter combinations more than others.
 
-This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide issues might affect one of the parameter combinations more than others. % Plot the energy vs. time, also quote our former paper - JJ
+<<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy values for every parameter value">>=
+ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension and population size", y="Energy (J)") + scale_y_log10()
+@
+
+What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, over all for the combination of dimension = 3 and population = 200; not only that, but there are three clusters along the line. These three accumulations for certain energy values happen all across the parameter values. Any of these variables have a high variance and many outliers. This is why we need to carefully consider what kind of statistical measure we should use for summarizing the results so that they can be subtracted from the measurements that carry the workload. Finally we settled on the {\em trimmed mean}, eliminating the 20\% values with the highest and lowest values. This gives a more robust central tendency measure, which is also closer to the median.
+
+We should take into account that, as stated elsewhere \cite{cpp.vs.zig-anon}, profiling for every kind of algorithm needs its own methodology that is adequate to the dispersion in the measurements taken; however, a high dispersion combined with time (or temperature) related effects will always lead to a certain amount of uncertainty in the conclusions. That will not invalidate these conclusions, but they will have to be explained and factored in when  any kind of result is reached.
 
 The results will be examined next.
 
@@ -186,11 +195,11 @@ for (dim in c(3,5)) {
 
 evoapps_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
   summarise(mean_energy=mean(delta_PKG), sd_energy=sd(delta_PKG),
-            mean_time=mean(delta_seconds), sd_time=sd(delta_seconds)) -> summary_evoapps_results
+            mean_time=mean(delta_seconds,trim = 0.1), sd_time=sd(delta_seconds)) -> summary_evoapps_results
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
-ggplot(baseline_results, aes(x=evaluations,y=seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
+ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
 
 PKG_0_evaluations <- unname(walcom_lm$coefficients[1])
 
