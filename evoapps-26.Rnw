@@ -167,13 +167,15 @@ Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. t
 ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension and population size", y="Energy (J)") + scale_y_log10()
 @
 
-What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, over all for the combination of dimension = 3 and population = 200; not only that, but there are three clusters along the line. These three accumulations for certain energy values happen all across the parameter values. Any of these variables have a high variance and many outliers. This is why we need to carefully consider what kind of statistical measure we should use for summarizing the results so that they can be subtracted from the measurements that carry the workload. Finally we settled on the {\em trimmed mean}, eliminating the 20\% values with the highest and lowest values. This gives a more robust central tendency measure, which is also closer to the median.
+What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, over all for the combination of dimension = 3 and population = 200; not only that, but there are three clusters along the "violin". These three accumulations for certain energy values happen all across the parameter values.
+
+Any of these variables have a high variance and many outliers. This is why we need to carefully consider what kind of statistical measure we should use for summarizing the results so that they can be subtracted from the measurements that carry the workload. Finally we settled on the {\em trimmed mean}, eliminating the 20\% values with the highest and lowest values. This gives a more robust central tendency measure, which is also closer to the median.
 
 We should take into account that, as stated elsewhere \cite{cpp.vs.zig-anon}, profiling for every kind of algorithm needs its own methodology that is adequate to the dispersion in the measurements taken; however, a high dispersion combined with time (or temperature) related effects will always lead to a certain amount of uncertainty in the conclusions. That will not invalidate these conclusions, but they will have to be explained and factored in when  any kind of result is reached.
 
 The results will be examined next.
 
-<<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy as a function of time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
+<<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy spent by the workload as a function of time for all experiments; point size is related to the max number of generations without change; fill color is blue for dimension =5, red for dimension = 3; shapes are related to population size and finally point size to the number of generations without improvement.">>=
 library(dplyr)
 evoapps_results <- read.csv("data/sphere-evoapps-1.11.7-full-bna-16-Oct-17-32-01.csv")
 
@@ -199,12 +201,15 @@ evoapps_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
 
 # plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
-ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds)) + geom_point() + geom_smooth(method="lm", formula=y~x, se=FALSE)
+evoapps_results$population_size <- as.factor(evoapps_results$population_size)
+evoapps_results$point_size <- ifelse(evoapps_results$max_gens==10,2,4)
+evoapps_results$shape <- ifelse(evoapps_results$population_size==200,21,24)
+evoapps_results$color <- ifelse(evoapps_results$dimension==3,"red","blue")
+ggplot(evoapps_results, aes(x=delta_PKG,y=delta_seconds,fill=color)) + geom_point(size=evoapps_results$point_size,shape=evoapps_results$shape) + geom_smooth(method="lm", formula=y~x, se=FALSE)+theme(legend.position="none") + labs(x="Energy (J)", y="Time (s)")
+@
 
-PKG_0_evaluations <- unname(walcom_lm$coefficients[1])
 
-baseline_results$diff_PKG <- baseline_results$PKG - PKG_0_evaluations
-
+<<evoapps.perf.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs time for all experiments; point size is related to the max number of generations without change; fill color is white for baseline, black for mutation with improved performance; shapes are related to population size and finally color to problem dimension">>=
 evoapps_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
 evoapps_results$work <- "BNA-mutation-perf-boost"
 
