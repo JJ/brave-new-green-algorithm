@@ -262,91 +262,19 @@ all_results <- rbind(evoapps_perf_results, evoapps_results)
 all_results$fill <- ifelse(all_results$work=="bna","white","black")
 ggplot(all_results, aes(x=delta_seconds,y=delta_PKG)) + geom_point(shape=all_results$shape,alpha=0.5,fill=all_results$fill,size=all_results$point_size,color=all_results$color) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
 
-results_anova_pkg <- aov( lm ( PKG ~ work + dimension + population_size + max_gens + alpha, data=all_results ) )
+results_anova_pkg <- aov( lm ( delta_PKG ~ work + dimension + population_size + max_gens + alpha, data=all_results ) )
 results_anova_result_3 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=all_results[ all_results$dimension == 3,] ) )
 results_anova_result_5 <- aov( lm ( log_diff ~ population_size + max_gens + alpha, data=all_results[ all_results$dimension == 5,] ) )
 results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + alpha + work, data=all_results ) )
 @
 
+Figure \ref{fig:evoapps.perf.boost} shows how the optimized mutation changes the energy profile of the implemented algorithm; in general, and as anticipated above, it consumes less energy for the same time, with black points representing it taking the lower half of the figure, in general. We still see that the dispersion of results is a problem: these new measurements still have energy differences over baseline which are close to 0, but do not reach the (false) negative values they did before. This is why we will need to compare for every parametrization, checking if the differences advice in favor of this change for these sizes.
 
-% The results of the experiments have been summarized in Figure \ref{fig:walcom.results}, which plots energy consumption in Joules vs time spent, representing problem dimension with different shapes and population size with different colors. It is interesting to note that problem dimension is not really a factor in energy consumption, since the algorithm runs until the maximum number of generations without change is reached; when the problem dimension is higher, it simply stops in a worse solution. Most points, however, independently of the problem dimension or other factors, are in the 400-450 Joules and 8-8.5 seconds range. At the end of the day, this means that any optimization we might be able to make in this specific problem will, at most, be in the 10\% range in the average case. This is why in most cases optimization will should focus on the worst case scenario, as we will see later.
-
-% This is an usual result, but we are more interested in checking what is the dependence of energy consumed on the different parameters of the algorithm. In order to check this, we have performed an ANOVA analysis of the results, which yields that the variation is significant below the 0.05 threshold for 3 of the 4 components: all but the maximum number of generations, which is used as a stopping criterion. Increasing the number of generations that the algorithm will run without finding a better solution seems to be mostly {\em free}, giving the algorithm designer a certain amount of freedom when choosing this parameter. This price might not be extended to other sizes or problems, so as is usual in the energy profiling of any metaheuristic, it is advisable to perform a specific analysis for each problem and size. Performing an analysis on the fitness obtained, the results are similar: there is no significant dependence on the result achieved.
-%
-<<evoapps.evaluations, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Energy consumption vs number of evaluations">>=
-ggplot(all_results, aes(x=evaluations,y=PKG,color=work)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
-all_results$joules_per_eval <- all_results$PKG / all_results$evaluations
-ggplot(all_results, aes(x=work,y=joules_per_eval))+ geom_boxplot(notch=T) + theme_minimal() + labs(x="Work", y="Joules per evaluation")
-comparison <- wilcox.test(all_results$joules_per_eval[ all_results$work == "BNA-baseline"], all_results$joules_per_eval[ all_results$work == "BNA-mutation-perf-boost"])
-energy_anova_boost <- aov( lm ( joules_per_eval ~ dimension + population_size + work, data=all_results ) )
+<<evoapps.compare, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Comparing energy consumption for original mutation vs. optimized one.">>=
+ggplot(all_results, aes(x=dim_pop,y=delta_PKG, color=work)) + geom_violin() + theme_minimal() + labs(y="Energy (J)")
 @
 
-<<walcom.models, echo=FALSE, message=F, warning=F>>=
-library(kableExtra)
-evaluations_model <- glm(evaluations ~ dimension + population_size + max_gens + alpha, data=all_results)
-
-all_results %>% group_by(dimension,population_size,max_gens,alpha,work) %>%
-  summarise(mean_energy=mean(PKG), sd_energy=sd(PKG),
-            mean_time=mean(seconds), sd_time=sd(seconds),
-            mean_evaluations=mean(evaluations), sd_evaluations=sd(evaluations),
-            mean_generations=mean(generations), sd_gens=sd(generations),
-            mean_diff_fitness=mean(log_diff), sd_diff_fitness=sd(log_diff)) -> summary_results
-
-summary_results$energy <- paste0(round(summary_results$mean_energy,2), " (", round(summary_results$sd_energy,2), ")")
-summary_results$time <- paste0(round(summary_results$mean_time,2), " (", round(summary_results$sd_time,2), ")")
-summary_results$evaluations <- paste0(round(summary_results$mean_evaluations,2), " (", round(summary_results$sd_evaluations,2), ")")
-summary_results$generations <- paste0(round(summary_results$mean_generations,2), " (", round(summary_results$sd_gens,2), ")")
-summary_results$diff_fitness <- paste0(round(summary_results$mean_diff_fitness,2), " (", round(summary_results$sd_diff_fitness,2), ")")
-
-summary_results <- summary_results[,c("dimension","population_size","max_gens","alpha","work","energy","time","evaluations","generations","diff_fitness")]
-kable(summary_results, digits=2, booktabs=T, col.names = c( "D","Pop. size", "Gens.", "Alpha %", "Mutation op", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
-@
-
-The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
-
-<<walcom.dimensions, echo=FALSE, message=F, warning=F, fig.height=4, fig.cap="Box plots of energy spent for the different dimensions">>=
-ggplot(all_results, aes(x=dimension, y=PKG, fill=work)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
-@
-
-Since the main objective of this paper was not to optimize the performance of the algorithm, we clearly observe that the fitness results for the Sphere function and the problem with 5 dimensions are not really competitive. This might explain why, in general, all dependent results are inferior: there are less evaluations, it takes less time on average and it stops sooner. We can obviously reverse this result: you normally need more energy to find better solutions. Please check Figure \ref{fig:walcom.dimensions} for a boxplot that compares energy needed for 3 and 5 dimensions, showing how the median is higher for the smaller problem, but again it is mainly because they explore better the solution space, finding better solutions. In this paper we were more interested in the exploration/exploitation balance for specific problem sizes, so we will analyze this in more detail for every problem size separately.
-
-<<walcom.violin, echo=FALSE, message=F, warning=F, fig.height=3, fig.show='hold', fig.cap="Violin plots for the different dimensions, algorithm parameters and population size.">>=
-
-for (dim in c(3,5)) {
-  dim_results <- all_results[ all_results$dimension == dim,]
-  p1 <- ggplot(dim_results, aes(x=population_size, y=PKG, fill=work)) + geom_violin() + theme_minimal() + labs(x="Population size", y="Energy (J)", title=paste("Energy distribution for dimension", dim))
-  print(p1)
-  dim_results$alpha <- as.factor(dim_results$alpha)
-  p2 <- ggplot(dim_results, aes(x=alpha, y=PKG, fill=work)) + geom_violin() + theme_minimal() + labs(x="Alpha", y="Energy(J)", title=paste("Energy distribution for dimension", dim)) + theme(legend.position="none")
-  print(p2)
-}
-
-@
-
-Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, with the intention of comparing how different parametrizations spend energy. The top two plots refer to the problem with dimension = 3. The interesting thing in violin plots is that we can see more clearly the worst case scenario, with parts of the "violin" indicating the amount of cases that fall in that range; in that sense, we can see that in the worst case scenario, population 200 is worse than 400 and that an $\alpha$ percentage of 10\% is better than 25\% since it concentrates most of its results in the 400-450 Joules area. $\alpha$ = 25\% has a wider distribution does have many results in the low-400 Joules area, however there are relatively more cases that fall in the 500 Joules range or beyond. We will have to conclude in this case that we need to keep exploitation to a low rate with a {\em small} $\alpha$ caste, coupled, in this case, with a large population.
-
-The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
-
-<<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=4, fit.pos="h!tb",fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
-all_results$point_size <- ifelse(all_results$alpha==10,2,4)
-ggplot(all_results, aes(x=PKG,y=log_diff,color=dimension)) +
-  geom_point(alpha=0.5,size=all_results$point_size,shape=all_results$shape,fill=all_results$fill) +
-  theme_minimal() + labs(x="Energy (J)", y="log(diff. target)")+
-  scale_x_log10()
-@
-
-Finally, Figure \ref{fig:walcom.energy} tries to summarize the results, plotting the quality of the solution found (lower is better) as a function of energy spent in Joules. It again shows clearly that the problem with dimension 5 arrives to worse solutions, grouped in the upper part of the graph. If we look at these, we see that the energy spent to arrive more or less at the same solutions is higher when the population is higher. This points to a low diversity in the population, and a bad exploration/exploitation balance. From the point of view of energy spent, increasing the exploration capability by increasing the percentage of population in the $\alpha$ and $\beta$ castes might increase the energy spent, and in some cases obtain better solutions, leading to the best case of all experiments. However, the most important takeaway here is that there does not seem to be a correlation between energy spent and better solutions, and that tweaking the exploration/exploitation balance will not affect energy spent, having possibly a positive effect on the solutions. At any rate, solutions are suboptimal so this needs to be explored further.
-
-This trend is probably more visible for problem dimension = 3, in the lower part of the chart. The best solutions use $\alpha = 25\%$ (with, correspondingly, $\beta = 50\%$), tipping the balance slightly more towards exploitation. But the outstanding part is that better solutions are obtained without implying bigger energy expenses, on the contrary, energy spent is around 400 Joules with few outliers.
-
-This might be, in part, related to the implementation in the language Julia. Julia is extremely fast, which implies that the application of different operators has a negligible difference. The actual impact on the energy consumed must have a different origin.
-
-%<<walcom.evals, echo=FALSE, message=F , warning= F,  error=F, fig.height=5, fig.cap="Energy consumption as a function of evaluations for all experiments. %Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
-%summary_pkg <- summary(lm( PKG ~ evaluations * generations, data=baseline_results))
-%ggplot(baseline_results, aes(x=evaluations,y=PKG,color=generations)) + geom_point(alpha=0.5) + theme_minimal() + labs(x="Evaluations", y="Energy (J)")
-%
-
-%In Figure \ref{fig:walcom.evals} we plot the energy consumed by PKG vs. the number of evaluations, with the color related to the number of generations needed. A linear model shows significant dependence of energy consumed with the number of evaluations, the number of generations and also the interaction between the two variables. This dependence goes in an unexpected direction: energy spent decreases with the number of evaluations, but increases with the number of generations; in the chart, we can see that as we go to higher energy consumption values, the points are lighter, that is, the algorithm has run for more generations. This would encourage us to create populations that are as small as possible, and cramming as many evaluations as possible into every one of them, putting more elements of the population into the $\epsilon$ caste, which is the one that performs local search.
+If we compare the new results against the basic implementation, which is what we do in Figure \ref{fig:evoapps.compare}, what we see is an obvious superiority of the old vs. the new implementation. We can argue that the number of allocations is not so important for the chromosome sizes we are using, 3 and 5; however, what we see is that while, as seen above in Figure \ref{fig:evoapps.perf.boost}, the new mutation implementation would consume less energy for the same amount of time, the original one is still faster, and that adds up to a lower overall energy consumption. As is usual in this line of research, even if intuitively we assume that some kind of programming improvement might lead to better energy consumption, we still need to make measurements to check what is the actual improvement observed. We do not even observe an improvement in the dispersion of the results: although the distribution of the original implementation has several "ridges", the new one is longer, indicating a bigger dispersion.
 
 
 \section{Conclusion and discussion}
