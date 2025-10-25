@@ -311,8 +311,8 @@ new_results <- rbind(evoapps_perf_results, evoapps_uniform_results)
 new_results$fill <- ifelse(new_results$work=="bna-fix-rand","black","white")
 # ggplot(new_results, aes(x=delta_seconds,y=delta_PKG)) +
 #   geom_point(shape=all_results$shape,alpha=0.5,fill=all_results$fill,size=all_results$point_size,color=all_results$color) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
-ggplot(new_results, aes(x=delta_PKG,y=log_diff)) +
-  geom_point(fill=new_results$fill,alpha=0.5,size=new_results$point_size,shape=new_results$shape) + theme(legend.position="none") + labs(x="Energy (J)", y="log(diff. target)")
+ggplot(new_results, aes(x=delta_PKG,y=log_diff,group=work,color=work)) +
+  geom_line() + geom_point() + labs(x="Log(diff to target)", y="energy")
 @
 
 As we can see in Figure \ref{fig:evoapps.uniform.mutation}, we can obtain much better fitness values, and even, in some cases, better energy expenses for the same fitness level. We represent in Figure \ref{fig:evoapps.energy.compare} a violin plot for both implementations, showing that for dimension 3 energy consumption is slightly better, as well as less dispersed, while for dimension 5 there is little difference.
