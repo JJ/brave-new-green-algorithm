@@ -283,7 +283,7 @@ ggplot(all_results, aes(x=delta_PKG,y=log_diff)) + geom_point(fill=all_results$f
 %
 The looking from left to right, we see that, in general, and as seen in \ref{fig:evoapps.compare}, for a certain fitness level the original implementation spends less energy. However, we can also see that, since the exploration is improved, we can reach better (lower) fitness levels, below -2 which was the lowest the original implementation was able to go. At the end of the day, in an {\em green} evolutionary algorithm we are trying to optimize two independent targets: energy consumption and fitness; we have to find a trade-off between them, but clearly obtaining better fitness values the highest priority. So we will try to examine the current implementation from that point of view, and as a matter of fact, the mutation can be improved, since it is not guaranteed to generate individuals in the whole BBOB range, which is [-5,5]. We will make a new optimization by using a random number generator that is guaranteed to generate values with an uniform distribution in that range. The results are shown next.
 
-<<evoapps.uniform.mutation, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments. It follows the usual conventions, with black-filled points corresponding to the new implementation, white for the previous one.">>=
+<<evoapps.uniform.mutation, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments for all parameter combinations.">>=
 evoapps_uniform_results <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
 evoapps_uniform_results$delta_PKG <- 0
 evoapps_uniform_results$delta_seconds <- 0
@@ -312,35 +312,35 @@ new_results <- rbind(evoapps_perf_results, evoapps_uniform_results)
 new_results$fill <- ifelse(new_results$work=="bna-fix-rand","black","white")
 # ggplot(new_results, aes(x=delta_seconds,y=delta_PKG)) +
 #   geom_point(shape=all_results$shape,alpha=0.5,fill=all_results$fill,size=all_results$point_size,color=all_results$color) + theme_minimal() + labs(x="Time (s)", y="Energy (J)")
-ggplot(new_results, aes(x=delta_PKG,y=log_diff,group=work,color=work)) +
-  geom_line() + geom_point() + labs(x="Log(diff to target)", y="energy")
+ggplot(new_results, aes(x=delta_PKG,y=log_diff,color=work)) +
+  geom_point(alpha=0.5) + labs(y="Log(diff to target)", x="energy") + theme_minimal() + facet_wrap(~dim_pop)
 @
 
-As we can see in Figure \ref{fig:evoapps.uniform.mutation}, we can obtain much better fitness values, and even, in some cases, better energy expenses for the same fitness level. We represent in Figure \ref{fig:evoapps.energy.compare} a violin plot for both implementations, showing that for dimension 3 energy consumption is slightly better, as well as less dispersed, while for dimension 5 there is little difference.
+As we can see in Figure \ref{fig:evoapps.uniform.mutation}, we can obtain much better fitness values, and even, in some cases, better energy expenses for the same fitness level; if we look at the top charts, for dimension = 3, we see that in some cases the energy levels of the optimized mutation ({\tt BNA-mutation-perf-boost}) are, in some cases, smaller than the new implementation for the same fitness reached; however, all panels show that for the same energy expenses, the fitness that is going to be obtained with the new implementation is much better. We need to look at the big picture, howerer. We represent in Figure \ref{fig:evoapps.energy.compare} a violin plot for both implementations, showing that for dimension 3 energy consumption for the implementation with the fixed random generator is slightly better, as well as less dispersed, while for dimension 5 there is little difference. Again, we find that tradeoff between energy consumption and fitness reached, although in this case, obtaining much better fitness for less or more or less the same energy is, all things considered, a good tradeoff.
 %
 <<evoapps.energy.compare, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Comparing energy consumption for previous mutation vs. uniform random one.">>=
 ggplot(new_results, aes(x=dim_pop,y=delta_PKG, color=work)) + geom_violin() + theme_minimal() + labs(y="Energy (J)")
 @
 %
-However, let us look at the fitness values obtained in Figure \ref{fig:evoapps.fitness.compare}.
+We can see in Figure \ref{fig:evoapps.fitness.compare} how fitness levels reached are much better in this case, when the random generator has been fixed ({\tt BNA-fix-rand}).
 %
 <<evoapps.fitness.compare, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Comparing energy consumption for previous mutation vs. uniform random one.">>=
 ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)")
 @
 
+Since we have reached a level that is good enough to be considered in production, we can now turn our sight to how the other parameters, the one that govern the exploration/exploitation balance, affect the outcomes we are interested in.
+
+<<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.width="50%", fig.show='hold', fig.pos="h!tb", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
+ggplot(new_results, aes(color=factor(alpha),y=delta_PKG,x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Alpha value")+ facet_wrap(~dimension)
+ggplot(new_results, aes(color=factor(alpha),y=log_diff, x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")+ facet_wrap(~dimension)
+ggplot(new_results, aes(x=factor(max_gens),y=delta_PKG,color=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens")+ facet_wrap(~dimension)
+ggplot(new_results, aes(x=factor(max_gens),y=log_diff,color=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")+ facet_wrap(~dimension)
+
+@
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-In this paper we set out to analyze the influence of parameters that control the exploration/exploitation balance in a population based metaheuristic called Brave New Algorithm, implemented in a language called Julia. Using a methodology that follows best practices, we have measured energy spent by the algorithm parametrized in a series of different ways that affect the exploration/exploitation balance, in order to obtain rules that allow any user to minimize the amount of energy spent. These experiments, however, have yielded mixed results, the main of which being that parametrization needs to take care first of obtaining a good solution, and then, next, on minimizing the amount of energy. The exploration/exploitation balance is tricky in that sense, because it will affect the number of evaluations needed to find a solution with a certain level, but also the amount of energy consumed.
-
-In our experiments, however, what we find is that maintaining a low percentage of {\em exploitative} population will lead, if not to an overall lower energy consumption, it will minimize the probability of spending too much energy to find a solution. This might have to do with the fact that  the "explorative" operators will consume {\em less} energy to arrive to a solution than the equivalent {\em explorative} operators, which need two operands, as well as more interchange of information. Even if the difference per call is small, these operators are called many times so it might add up to a considerable difference. This effect will add to the fact that, in general, a lower degree of exploitation is the usual practice in evolutionary algorithms such as this one.
-
-A matter of discussion would be the best way to eliminate the overhead in this case. The main issue here is that if the overhead is relatively high, the differences between different parametrizations might be compressed and thus will become much more difficult to detect. If we simply take into account the wallclock time it takes to run every script, simply the compiler overhead might have double digits. We will need to take that into account in the future.
-
-A different issue is also the optimality of the operators used; real-valued optimization has a host of different mutation and crossover operators, out of which the most popular is probably the Gaussian mutation operator. Although from the point of view of the energy spent the difference with a random mutation operator might be small, the time it would take to reach the solution would probably be smaller, which of course matters for the overall energy spent. This operator, however, is more {\em exploitative}, since it will generate solutions around those that are already there, so there should be a different way of adding a explorative component. Fortunately, the caste system used in BNA allows for different operators used in different parts of the population, so it would be relatively easy to accommodate. This is proposed as a future line of work, together with other operators such as BLX-$\alpha$ or arithmetic crossover operators. Once again, different version of the operator could be applied to different castes.
-
-Other future lines of work will take into account that different parametrizations are needed for different problems and sizes, so a more fair comparison of how resource consumption increases with size will need to perform some kind of parameter optimization for every size and problem, since at the end of the day what a scientist needs is to minimize the energy consumption for a solution quality level. An important issue that needs to be addressed is to take into account the overhead introduced by the compiler every time a Julia script is run, as well as the overhead of the rest of the system.
 
 
 \section*{Acknowledgements}
