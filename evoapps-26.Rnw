@@ -20,7 +20,7 @@
 knitr::opts_chunk$set(concordance = TRUE)
 @
 
-\title{}
+\title{Is there a (carbon-) free lunch? Energy/performance tradeoffs in population based metaheuristics}
 %
 \titlerunning{}
 % If the paper title is too long for the running head, you can set
