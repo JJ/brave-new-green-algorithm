@@ -316,7 +316,7 @@ As we can see in Figure \ref{fig:evoapps.uniform.mutation}, we can obtain much b
 ggplot(new_results, aes(x=dim_pop,y=delta_PKG, color=work)) + geom_violin() + theme_minimal() + labs(y="Energy (J)")
 @
 %
-We can see in Figure \ref{fig:evoapps.fitness.compare} how fitness levels reached are much better in this case, when the random generator has been fixed ({\tt BNA-fix-rand}).
+We can see in Figure \ref{fig:evoapps.fitness.compare} how fitness levels reached are much better in this case, when a new random generator has been employed ({\tt BNA-fix-rand}).
 %
 <<evoapps.fitness.compare, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Comparing energy consumption for previous mutation vs. uniform random one.">>=
 ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Logarithm of difference to target")
