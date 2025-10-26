@@ -330,12 +330,13 @@ ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=
 
 Since we have reached a level that is good enough to be considered in production, we can now turn our sight to how the other parameters, the one that govern the exploration/exploitation balance, affect the outcomes we are interested in.
 
-<<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.width="50%", fig.show='hold', fig.pos="h!tb", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
-ggplot(new_results, aes(color=factor(alpha),y=delta_PKG,x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Alpha value")+ facet_wrap(~dimension)
-ggplot(new_results, aes(color=factor(alpha),y=log_diff, x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")+ facet_wrap(~dimension)
-ggplot(new_results, aes(x=factor(max_gens),y=delta_PKG,color=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens")+ facet_wrap(~dimension)
-ggplot(new_results, aes(x=factor(max_gens),y=log_diff,color=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")+ facet_wrap(~dimension)
-
+<<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2, fig.width="50%", fig.show='hold', fig.pos="h!tb", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
+ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=delta_PKG,x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Alpha value")+ facet_wrap(~dimension)
+ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=log_diff, x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")+ facet_wrap(~dimension)
+ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=delta_PKG,x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens")+ facet_wrap(~dimension)
+ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=log_diff,x=population_size)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")+ facet_wrap(~dimension)
+anova_uniform_pkg <- aov( lm ( delta_PKG ~ dimension * population_size * max_gens * alpha, data=evoapps_uniform_results ) )
+anova_uniform_fitness <- aov( lm ( log_diff ~ dimension * population_size * max_gens * alpha, data=evoapps_uniform_results ) )
 @
 
 \section{Conclusion and discussion}
