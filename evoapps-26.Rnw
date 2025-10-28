@@ -79,20 +79,10 @@ The Brave New Algorithm \cite{merelo2022brave-anon} is essentially an evolutiona
 \item $\alpha$ generates new members by coupling the best individuals in its caste between them, to then undergo mutation and crossover.
 \item $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
 \item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
-\item $\gamma$ generates new members by mutation, but mutation might be applied several times if the new individual is better than the previous one.
-
-
-There are many possible choices for mutation and crossover operators. In this phase we will not focus so much in efficiency as in ease of implementation. This is what we will use for operators:\begin{itemize}
-\item Mutation will be governed by a probability that indicates whether one specific component of the vector is going to be changed or not; when it changes, a new number is generated within the original range\footnote{Please note that we are not using the usual Gaussian Mutation here. It can be argued that a simple random mutation will have more or less the same effect; however, from our point of view, we are mainly interested in an operator that has a certain energy consumption and that performs exploration}.
-\item Crossover is a many-point crossover, with several elements of the chromosomes selected randomly and interchanged between them.
-\item Selection uses binary tournament \cite{blickle1996comparison}, also a very simple method that involves only a comparison.
+\item $\gamma$ generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
 \end{itemize}
 
-These specific operator versions of the operators are not essential to the algorithm, and can be changed at will; however, these are the ones used in this paper.
-
-\end{itemize}
-
-After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
+The operators used will be: mutation, that will change 40\% of the elements of the vector generating a new, random element, crossover will be two-point, and selection will be binary tournament \cite{blickle1996comparison}. After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
 There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
 The implementation of the algorithm used is available under a free license at \url{hidden.url}.
