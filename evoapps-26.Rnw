@@ -48,9 +48,7 @@ There are many levels at which the implementation of an algorithm can be made {\
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
-%
-%
-%
+
 \section{Introduction}
 
 Creating greener algorithms and implementations is the new frontier of software development: most performance gains usually carry heavier energy costs. Since the end of Moore's Law \cite{theis2017end} we usually have to choose between performance and energy improvements, rarely being able to have both. In the case of optimization algorithms, there is another view of performance: how close you get to the (known) optimal solution of the problem we are seeking. Many low-level optimizations at the data structure or implementation level are, in general, performance-neutral: the algorithm will behave exactly the same way regardless of its implementation, so the only difference will be the energy or time spent running it. However, when we carry those changes at the algorithm level, the scenario might change. Since some operators might have improved their energy profile more than others, applying them in a different proportion to reduce the carbon footprint might result in different algorithmic performance. Furthermore, in general, implementation choices might also have an impact on algorithmic performance: fixing a bug that improves performance, for instance, might result in better (or worse) performance.
