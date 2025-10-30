@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 % T1 fonts will be used to generate the final print and online PDFs,
 % so please use T1 fonts in your manuscript whenever possible.
-% Other font encondings may result in incorrect characters.
+% Other font encodings may result in incorrect characters.
 %
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -44,7 +44,7 @@ knitr::opts_chunk$set(concordance = TRUE)
 %
 \begin{abstract}
 
-There are many levels at which the implementation of an algorithm can be made {\em greener}, that is, more energy efficient; improving efficiency piecewise will is one of them, but at the highest level energy efficiency will impact the algorithm results, with different choices having an independent impact on energy and algorithmic efficiency. In this paper we will explore this tradeoff in the Brave New Algorithm, a population-based metaheuristic implemented in the language Julia, analyzing how different operator optimizations impact the performance and energy consumption and finally, once a certain level of algorithmic performance is reached, how different parametrizations will impact both outcomes. We will specially look at the possibility of improving energy and algorithmic efficiency at the same time, if that is possible, and how it relates to the exploration/exploitation balance in this algorithm that is specifically designed for an easy tuning of this balance.
+There are many levels at which the implementation of an algorithm can be made {\em greener}, that is, more energy efficient; improving efficiency piecewise will is one of them, but at the highest level energy efficiency will impact the algorithm results, with different choices having an independent impact on energy and algorithmic efficiency. In this paper we will explore this trade-off in the Brave New Algorithm, a population-based metaheuristic implemented in the language Julia, analyzing how different operator optimizations impact the performance and energy consumption and finally, once a certain level of algorithmic performance is reached, how different parametrizations will impact both outcomes. We will specially look at the possibility of improving energy and algorithmic efficiency at the same time, if that is possible, and how it relates to the exploration/exploitation balance in this algorithm that is specifically designed for an easy tuning of this balance.
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
@@ -115,7 +115,7 @@ $\alpha$ percentage & Exploration proportion & Exploitation proportion \\
 \end{tabular}
 \end{table}
 
-This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depeding on the values used.
+This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
 Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed, and are available from this paper's repository at \url{hidden.url}.
 %\url{https://github.com/JJ/brave-new-green-algorithm}.
 
@@ -181,7 +181,6 @@ evoapps_results %>% group_by(dimension,population_size,max_gens,alpha) %>%
   summarise(mean_energy=mean(delta_PKG), sd_energy=sd(delta_PKG),
             mean_time=mean(delta_seconds,trim = 0.1), sd_time=sd(delta_seconds)) -> summary_evoapps_results
 
-# plot energy vs. evaluations with linear model walcom_lm
 library(ggplot2)
 evoapps_results$population_size <- as.factor(evoapps_results$population_size)
 evoapps_results$point_size <- ifelse(evoapps_results$max_gens==10,2,4)
@@ -307,7 +306,7 @@ ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=log_diff, x=dim_pop)) 
 ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
 ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=log_diff,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
 
-# Non-printed anove analysis
+# Non-printed ANOVA analysis
 anova_uniform_pkg <- aov( lm ( delta_PKG ~ dimension * population_size * max_gens * alpha, data=evoapps_uniform_results ) )
 anova_uniform_fitness <- aov( lm ( log_diff ~ dimension * population_size * max_gens * alpha, data=evoapps_uniform_results ) )
 @
