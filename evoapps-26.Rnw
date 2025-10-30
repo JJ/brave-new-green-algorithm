@@ -15,7 +15,7 @@
 %
 %\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and
 %Cecilia Merelo-Molina\inst{3}}
-\author{No Author\inst{1}}
+\author{No Authors\inst{1}}
 %
 %\authorrunning{Merelo and Merelo}
 % First names are abbreviated in the running head.
