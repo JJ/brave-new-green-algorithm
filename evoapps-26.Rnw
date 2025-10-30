@@ -1,24 +1,11 @@
-% LLNCS macro package for Springer Computer Science proceedings;
-% Version 2.21 of 2022/01/12
-%
 \documentclass[runningheads]{llncs}
-%
 \usepackage[T1]{fontenc}
-% T1 fonts will be used to generate the final print and online PDFs,
-% so please use T1 fonts in your manuscript whenever possible.
-% Other font encodings may result in incorrect characters.
-%
+
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{color}
 
 \begin{document}
-%\SweaveOpts{concordance=TRUE}
-%
-
-<<setup, include=FALSE>>=
-knitr::opts_chunk$set(concordance = TRUE)
-@
 
 \title{Is there a (carbon-) free lunch? Energy/performance tradeoffs in population-based metaheuristics}
 %
@@ -330,7 +317,6 @@ But still our focus is on making the algorithm greener, so finally we changed th
 
 That could be an possible future line of work, but one of the main issues is still the measuring methodology, which for the time being cannot distinguish per-process energy usage and, even if we take into account just the process, the additional overhead incurred by bookkeeping and program processing operations, including also the fact that measuring energy has time, and possibly temperature, dependent effects. These methodological issues will be tackled along with additional optimizations on different algorithm implementation or running levels.
 
-
 \section*{Acknowledgements}
 % This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 Acknowledgements taking\\
@@ -338,6 +324,5 @@ this much space
 
 \bibliographystyle{splncs04}
 \bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
-
 
 \end{document}
