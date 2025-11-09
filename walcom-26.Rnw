@@ -89,7 +89,7 @@ The implementation of the algorithm used is available under a free license at \u
 
 \section{Experimental methodology and results}\label{sec:results}
 
-qIn order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
+In order to carry out these experiments, we have used a methodology that is similar to the one used in our previous papers: \cite{10.1145/3672608.3707829}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been 1.11.7, which was the current one when we started the experiments.
 
 In order to experiment with different configurations with a different exploration/exploitation balance, we have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value; this is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. The parameters we have changed are: \begin{itemize}
 \item Problem dimension: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties
@@ -147,7 +147,7 @@ summary_results <- summary_results[,c("dimension","population_size","max_gens","
 kable(summary_results, digits=2, booktabs=T, col.names = c("D","Pop. size", "Gens.", "Alpha %", "Energy", "Time (s)", "Evals", "Gens.", "log(diff. target)"),  caption="Summary of results") %>% kable_styling(full_width=F)
 @
 
-The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logaritm of the difference between the fitness objective and the best fitness found.
+The whole table of results is shown in Table \ref{tab:walcom.models}, showing the average and standard deviation for the measures obtained for every combination of values: the average energy consumed in Joules, time in seconds, number of evaluations until completion, how many generations are needed, and finally the logarithm of the difference between the fitness objective and the best fitness found.
 
 <<walcom.dimensions, echo=FALSE, message=F, warning=F, fig.height=4, fig.cap="Box plots of energy spent for the different dimensions">>=
 ggplot(walcom_results, aes(x=dimension, y=PKG, fill=dimension)) + geom_boxplot( notch=T) + theme_minimal() + labs(x="Dimension", y="Energy (J)", title="Energy distribution by dimension") + theme(legend.position="none") + scale_y_log10()
@@ -170,7 +170,7 @@ for (dim in c(3,5)) {
 
 Figure \ref{fig:walcom.violin} shows violin plots for the different dimensions, with the intention of comparing how different parametrizations spend energy. The top two plots refer to the problem with dimension = 3. The interesting thing in violin plots is that we can see more clearly the worst case scenario, with parts of the "violin" indicating the amount of cases that fall in that range; in that sense, we can see that in the worst case scenario, population 200 is worse than 400 and that an $\alpha$ percentage of 10\% is better than 25\% since it concentrates most of its results in the 400-450 Joules area. $\alpha$ = 25\% has a wider distribution does have many results in the low-400 Joules area, however there are relatively more cases that fall in the 500 Joules range or beyond. We will have to conclude in this case that we need to keep exploitation to a low rate with a {\em small} $\alpha$ caste, coupled, in this case, with a large population.
 
-The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behaviour with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
+The problem with dimension = 5 behaves in the same way with respect to the $\alpha$ percentage: higher is worse, making it more likely to spend too much energy; however, the behavior with respect to the population is totally different, with more population making it more likely to spend more energy in the worst case scenario.
 
 <<walcom.energy, echo=FALSE, message=F, warning=F, fig.height=5, fig.cap="Result as a function of energy spent for all experiments. Point size is related to the alpha caste percentage. Lower is better in the y axis.">>=
 walcom_results$point_size <- ifelse(walcom_results$alpha==10,2,4)
