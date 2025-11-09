@@ -1,14 +1,6 @@
-% This is samplepaper.tex, a sample chapter demonstrating the
-% LLNCS macro package for Springer Computer Science proceedings;
-% Version 2.21 of 2022/01/12
-%
 \documentclass[runningheads]{llncs}
-%
 \usepackage[T1]{fontenc}
-% T1 fonts will be used to generate the final print and online PDFs,
-% so please use T1 fonts in your manuscript whenever possible.
-% Other font encondings may result in incorrect characters.
-%
+
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{color}
@@ -17,7 +9,7 @@
 %
 \title{Analyzing how the exploration/exploitation trade off in biologically-inspired algorithms affects energy consumption}
 %
-\titlerunning{Energy consumption of exploration/exploitation balance}
+\titlerunning{Energy consumption for exploration/exploitation balance}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
