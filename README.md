@@ -23,3 +23,9 @@ title = {Analyzing how the exploration/exploitation trade off in biologically-in
 author = {Merelo Guervos, Juan Julián and Merelo-Molina, Cecilia},
 }
 ```
+
+## Open science
+
+This is open science. A bit of orientation
+
+- [`data`](data/) contains the results of the different experiments
