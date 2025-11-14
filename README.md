@@ -29,3 +29,7 @@ author = {Merelo Guervos, Juan Julián and Merelo-Molina, Cecilia},
 This is open science. A bit of orientation
 
 - [`data`](data/) contains the results of the different experiments
+
+## License
+
+(c) Authors, 2025, released under the Affero GPL Please read [`LICENSE`](LICENSE/)
