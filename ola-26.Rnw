@@ -7,42 +7,35 @@
 
 \begin{document}
 
-\title{Is there a (carbon-) free lunch? Energy/performance tradeoffs in population-based metaheuristics}
+\title{Best practices in measuring energy consumption in population-based metaheuristics}
 %
 \titlerunning{}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-%\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and
-%Cecilia Merelo-Molina\inst{3}}
-\author{No Authors\inst{1}}
+\author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and Cecilia Merelo-Molina\inst{3}}
+
 %
-%\authorrunning{Merelo and Merelo}
+\authorrunning{Merelo and Merelo}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-\institute{No Institute}
-%\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
-%CITIC, UGR, Spain
-%\and
-%Zenzorrito, Granada, Spain}
-%
+
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
+CITIC, UGR, Spain
+\and
+Zenzorrito, Granada, Spain}
+
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
 
-There are many levels at which the implementation of an algorithm can be made {\em greener}, that is, more energy efficient; improving efficiency piecewise will is one of them, but at the highest level energy efficiency will impact the algorithm results, with different choices having an independent impact on energy and algorithmic efficiency. In this paper we will explore this trade-off in the Brave New Algorithm, a population-based metaheuristic implemented in the language Julia, analyzing how different operator optimizations impact the performance and energy consumption and finally, once a certain level of algorithmic performance is reached, how different parametrizations will impact both outcomes. We will specially look at the possibility of improving energy and algorithmic efficiency at the same time, if that is possible, and how it relates to the exploration/exploitation balance in this algorithm that is specifically designed for an easy tuning of this balance.
 
-\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\keywords{Green computing  \and Energy profiling \and Metaheuristics \and Software Engineering.}
 \end{abstract}
 
 \section{Introduction}
 
-Creating greener algorithms and implementations is the new frontier of software development: most performance gains usually carry heavier energy costs. Since the end of Moore's Law \cite{theis2017end} we usually must choose between performance and energy improvements, rarely being able to have both. In the case of optimization algorithms, there is another view of performance: how close you get to the (known) optimal solution of the problem we are seeking. Many low-level optimizations at the data structure or implementation level are, in general, performance-neutral: the algorithm will behave exactly the same way regardless of its implementation, so the only difference will be the energy or time spent running it. However, when we carry those changes at the algorithm level, the scenario might change. Since some operators might have improved their energy profile more than others, applying them in a different proportion to reduce the carbon footprint might result in different algorithmic performance. Furthermore, in general, implementation choices might also have an impact on algorithmic performance: fixing a bug that improves performance, for instance, might result in better (or worse) performance.
-
-This is especially true for one of the most important factors in population-based optimization: the exploration/exploitation balance: they use different operators, and these operators generate new individuals spending a different amount of energy; besides, it will lead to a change in performance, making the algorithm create more individuals or achieve a better fitness level. There is a version of an evolutionary algorithm called the Brave New Algorithm \cite{merelo2022brave-anon} which was designed with this balance in mind. The current version of the algorithm is implemented in the programming language Julia, leaving open different possibilities of optimization at multiple levels.
-
-Since it is already well established that it is very difficult, or impossible, to know in advance how the energy profile for an implementation might change: following a sound methodology for measuring the impact of changes and measuring every single one for different scenarios is the only way to put a solid foundation to any kind of decision you might take on the implementation of the algorithm. This is what we will do in this paper: we will try to establish a methodology for measuring energy consumption for the algorithm run itself, discarding the overhead created by the system and the language runtime; then we will try to perform optimizations of the implementation at different levels and check the impact they have on the energy consumption and fitness achieved. Once a certain level of algorithmic performance is reached, we will try to explore this exploration/exploitation balance via different parameters and look for the way of achieving better energy efficiency without sacrificing algorithmic performance, if that is possible within the current setup.
 
 The rest of the paper is organized as follows: the next Section describes the state of the art in the exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the trade-offs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
 
