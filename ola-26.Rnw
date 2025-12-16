@@ -55,7 +55,7 @@ In this paper we will be focusing on such a parametrization mainly, applied to t
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
-The Brave New Algorithm \cite{merelo2022brave-anon} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
 \item $\alpha$ generates new members by coupling the best individuals among them, to then undergo mutation and crossover.
 \item $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
 \item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
@@ -65,8 +65,7 @@ The Brave New Algorithm \cite{merelo2022brave-anon} is essentially an evolutiona
 The operators used will be mutation, that will change 40\% of the elements of the vector generating a new, random element, crossover will be two-point, and selection will be binary tournament \cite{blickle1996comparison}. After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
 There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
-The implementation of the algorithm used is available under a free license at \url{hidden.url}.
-%\url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
