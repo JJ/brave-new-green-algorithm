@@ -65,12 +65,19 @@ Because, in essence, the Brave New Algorithm \cite{merelo2022brave} (BNA) uses m
 \item $\gamma$ generates new members by applying mutation repeatedly until a better individual is found.
 \end{itemize}
 
-All the new individuals of the population are ranked after generation and assigned to a caste according to the percentage that has been assigned to every one of them; the $\alpha$ caste will hold the best $\%\alpha$ of the population, and so on.
+All the new individuals of the population are ranked after being generated and assigned to a caste according to the percentage that has been assigned to every one of them; the $\alpha$ caste will hold the best $\%\alpha$ of the population, and so on.
 
-% The operators used will be mutation, that will change 40\% of the elements of the vector generating a new, random element, crossover will be two-point, and selection will be binary tournament \cite{blickle1996comparison}. After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
-There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
+The parametrization of the algorithm operators is as follows:\begin{itemize}
+\item Mutation is applied every time a new individual is generated and changes 40\% of the chromosome elements. Since we are using low dimensions (3,5), this means that one or two elements will be generated randomly at most.
+\item We use a two-point crossover.
+\item The reproductive pool is created via binary tournament selection.
+\end{itemize}
 
-The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+These are mainstream choices in evolutionary algorithms; for the time being our focus is on the energy measuring methodology as well as optimizing the performance of the framework.
+
+Castes are, however, the main differentiation feature of this algorithm, with the percentage allotted to every caste being our main control parameter;  these have some restrictions in, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste. This is why we will use the percentage of population in the $\alpha$ caste as the main lever,as it can be used to generate the rest if we keep $\%\delta$ and $\%\epsilon$ fixed to a low value. In practice, then, after setting $\%\alpha$, we will set $\%\beta = 2 * \%\alpha$ and $\%\gamma = 100\% - (\%\alpha + \%\beta + \%\delta + \%\epsilon)$.
+
+The implementation of the algorithm, as well as all the parameters used, are available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
