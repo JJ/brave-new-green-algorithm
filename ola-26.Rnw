@@ -75,7 +75,7 @@ The parametrization of the algorithm operators is as follows:\begin{itemize}
 
 These are mainstream choices in evolutionary algorithms; for the time being our focus is on the energy measuring methodology as well as optimizing the performance of the framework.
 
-Castes are, however, the main differentiation feature of this algorithm, with the percentage allotted to every caste being our main control parameter;  these have some restrictions in, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste. This is why we will use the percentage of population in the $\alpha$ caste as the main lever,as it can be used to generate the rest if we keep $\%\delta$ and $\%\epsilon$ fixed to a low value. In practice, then, after setting $\%\alpha$, we will set $\%\beta = 2 * \%\alpha$ and $\%\gamma = 100\% - (\%\alpha + \%\beta + \%\delta + \%\epsilon)$.
+Castes are, however, the main differentiation feature of this algorithm, with the percentage allotted to every caste being our main control parameter; these have some restrictions in, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste \cite{bna25}. This is why we will use the percentage of population in the $\alpha$ caste as the main lever,as it can be used to generate the rest if we keep $\%\delta$ and $\%\epsilon$ fixed to a low value. In practice, then, after setting $\%\alpha$, we will set $\%\beta = 2 * \%\alpha$ and $\%\gamma = 100\% - (\%\alpha + \%\beta + \%\delta + \%\epsilon)$.
 
 The implementation of the algorithm, as well as all the parameters used, are available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
