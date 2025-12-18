@@ -44,9 +44,10 @@ The rest of the paper is organized as follows: the next Section describes the st
 
 Our main focus has been on optimizing energy consumption in implementation of metaheuristics; in general, this research thrust shares many features with other optimization and machine learning algorithms. Large language models, for instance, have lately received intensified attention, with papers focused as much on the the optimization part as on the measurement axis \cite{10549890}. This falls within a context where calls for a better knowledge of energy consumption \cite{7155416}, more efficient software and more energy-aware optimizations have been made \cite{fonseca2019manifesto}. At the end of the day, energy-efficient software is better software and, as with any other implementation issue, understanding better how algorithm implementations spend their time and energy will lead to algorithmic insights that will, eventually, lead to better algorithms \cite{merelo2011implementation}.
 
-The main issue, however, is still a lack of sound methodology, or even a set of best practices, for measuring energy consumption for specific algorithm implementations, not to mention specific functions within them. The challenges were already identified in \cite{von2018measuring}: benchmarking methodologies need to be fair, verifiable, usable but, over all, reproducible. \cite{10549890} presents a finer analysis of these problems, emphasizing the accessibility problem, the power-measuring architecture, and finally the bigger issue from the point of view of algorithms: separating the power consumed by the workload from the overhead caused by the rest of the system.
+The main issue, however, is still a lack of sound methodology, or even a set of best practices, for measuring energy consumption for specific algorithm implementations, not to mention specific functions within them. The challenges were already identified in \cite{von2018measuring}: benchmarking methodologies need to be fair, verifiable, usable but, over all, reproducible. \cite{10549890} presents a finer analysis of these problems, emphasizing the accessibility problem, the power-measuring architecture, and finally the bigger issue from the point of view of algorithms: separating the power consumed by the workload from the overhead caused by the rest of the system. Several recommendations for a {\em green} software engineering have been issued \cite{cruz21b}, with an emphasis on reproducibility \cite{song2025reproducible}. This, indeed, might be the biggest issue. \cite{cotta25} shows that time-related, possibly hysteretic effects due to changes in the physical parameters of the hardware platform will affect the measurements taken by as much as 10\%. As a matter of fact, what we want in this kind of optimization is to ensure that energy consumption is measured and eventually lowered in regular lab conditions, so trying to fix physical conditions in different ways is not really an option.
 
-Reproducibility might be the biggest issue, however. \cite{cotta25} shows that time-related, possibly hysteretic effects due to changes in the physical parameters of the hardware platform will affect the measurements taken by as much as 10\%.
+In this paper we will try to contribute to this line of research, looking mainly at improving reproducibility of results, but also at making the measurements of the workload of interest more precise.
+
 \section{A Brave New Algorithm}\label{sec:bna}
 
 Despite the scathing sentence by Sörensen \cite{sorensen} that most biologically inspired metaheuristics "take the field of metaheuristics a step backward", we can affirm that in the case of the Brave New Algorithm that is inspired on how selection and reproduction happened in novel Brave New World \cite{huxley2022brave}, we are not dealing with biological, but {\em literary} inspiration, so that does not apply. On the other hand, we are fully aware of the disadvantages of proposing a new terminology for a population-based evolutionary algorithm, so we will explain the algorithm used here in terms of the more widely known evolutionary algorithms, from which it basically departs on the reproduction scheme it uses \cite{blickle1996comparison}.
@@ -88,17 +89,6 @@ Our initial experimental design includes two problem sizes: vectors with 3 or 5 
 $\delta$ and $\epsilon$ castes will always have the same proportion, each equal to 5\%.
 \end{itemize}
 
-\begin{table}[h!tb]
-\centering
-\caption{Caste percentages depending on the $\alpha$ proportion used.}\label{tab:params}
-\begin{tabular}{lcc}
-\toprule
-$\alpha$ percentage & Exploration proportion & Exploitation proportion \\
-\midrule
-10\% & 30\% & 70\% \\
-25\% & 75\% & 25\% \\
-\end{tabular}
-\end{table}
 
 This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
 Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed and are available from this paper's repository at \url{hidden.url}.
