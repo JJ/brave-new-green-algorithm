@@ -81,7 +81,9 @@ In order to carry out these experiments, we have used a methodology that is like
 
 We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. This function is also lightweight enough to allow us to compare the energy profiles of different combinations of genetic operators, which will then have a bigger impact on overall consumption.
 
-<<ola.base.frequency, echo=FALSE, fig.height=3, fig.cap="Changing the sampling frequency">>=
+We have first tried to follow the best practices in sampling. We were previously using the default value of 50ms. In general, it is advised to increase the sampling period to avoid errors in the estimation, so we have doubled it to 100ms.
+
+<<ola.base.frequency, echo=FALSE, warning=F, message=F>>=
 null_baseline_columns <- c("alpha", "max_gens", "different_seeds", "diff_fitness", "generations", "evaluations")
 baseline_data_evoapps <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
 baseline_data_evoapps[ null_baseline_columns ] <- NULL
@@ -91,12 +93,66 @@ baseline_data_ola_100s$work <- "ola-baseline"
 baseline_data_ola_100s[null_baseline_columns] <- NULL
 
 initial_baseline_data <- rbind(baseline_data_evoapps, baseline_data_ola_100s)
+initial_baseline_data$power <- initial_baseline_data$PKG / initial_baseline_data$seconds
 library(ggplot2)
-ggplot(initial_baseline_data,aes(x=PKG,y=seconds,color=work))+geom_point() + theme_minimal() +
-  xlab("Package energy (Joules)") +
-  ylab("Time (seconds)")
+#ggplot(initial_baseline_data,aes(x=PKG,y=seconds,color=work))+geom_point() + theme_minimal() +
+  # xlab("Package energy (Joules)") +
+  # ylab("Time (seconds)")
+
+library(dplyr)
+initial_baseline_data %>% group_by(population_size, dimension, work) %>% summarise(
+    mean_pkg = mean(PKG),
+    sd_pkg = sd(PKG),
+    mean_time = mean(seconds),
+    sd_time = sd(seconds),
+    mean_power = mean(power),
+    sd_power = sd(power)
+  ) -> initial_baseline_data_summary
+
+# compute wilcoxon tests between work values for every population_size and dimension
+wilcoxon_results <- data.frame()
+for (pop_size in unique(initial_baseline_data$population_size)) {
+  for (dim in unique(initial_baseline_data$dimension)) {
+    data_subset <- initial_baseline_data %>% filter(population_size == pop_size, dimension == dim)
+    work_values <- unique(data_subset$work)
+    if (length(work_values) == 2) {
+      work1_data <- data_subset %>% filter(work == work_values[1]) %>% pull(power)
+      work2_data <- data_subset %>% filter(work == work_values[2]) %>% pull(power)
+      wilcox_test <- wilcox.test(work1_data, work2_data)
+      wilcoxon_results <- rbind(wilcoxon_results, data.frame(
+        population_size = pop_size,
+        dimension = dim,
+        work1 = work_values[1],
+        work2 = work_values[2],
+        p_value = wilcox_test$p.value
+      ))
+    }
+  }
+}
+
+initial_baseline_data_summary$sd_and_mean_pkg <- paste0("$",
+  round(initial_baseline_data_summary$mean_pkg, 2), " \\pm", round(initial_baseline_data_summary$sd_pkg, 2), "$"
+)
+
+library(reshape2)
+initial_baseline_table <- reshape2::dcast(
+  initial_baseline_data_summary,
+  population_size + dimension ~ work,
+  value.var = "sd_and_mean_pkg"
+)
+
+library(kableExtra)
+
+kable(initial_baseline_table, "latex",
+      col.names = c("Population size","Chromosome dimension","Baseline PKG (J)","Sampling = 100s"),
+      caption = "Baseline energy consumption for different sampling frequencies",
+      escape=FALSE) %>%
+  kable_styling( full_width = F)
 
 @
+
+Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}.
+
 
 
 \section{Conclusion and discussion}
