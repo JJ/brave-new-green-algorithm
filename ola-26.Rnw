@@ -77,9 +77,26 @@ The implementation of the algorithm, as well as all the parameters used, are ava
 
 \section{Experimental methodology and results}\label{sec:results}
 
-In order to carry out these experiments, we have used a methodology that is like that used in our previous papers: \cite{low-level-anon}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Julia version has been $1.11.7$.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
+In order to carry out these experiments, we have used a methodology that is like that used in our previous papers: \cite{low-level-anon}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-37-generic. Julia version has been $1.11.7$.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
 
 We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. This function is also lightweight enough to allow us to compare the energy profiles of different combinations of genetic operators, which will then have a bigger impact on overall consumption.
+
+<<ola.base.frequency, echo=FALSE, fig.height=3, fig.cap="Changing the sampling frequency">>=
+null_baseline_columns <- c("alpha", "max_gens", "different_seeds", "diff_fitness", "generations", "evaluations")
+baseline_data_evoapps <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+baseline_data_evoapps[ null_baseline_columns ] <- NULL
+
+baseline_data_ola_100s <- read.csv( "data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_data_ola_100s$work <- "ola-baseline"
+baseline_data_ola_100s[null_baseline_columns] <- NULL
+
+initial_baseline_data <- rbind(baseline_data_evoapps, baseline_data_ola_100s)
+library(ggplot2)
+ggplot(initial_baseline_data,aes(x=PKG,y=seconds,color=work))+geom_point() + theme_minimal() +
+  xlab("Package energy (Joules)") +
+  ylab("Time (seconds)")
+
+@
 
 
 \section{Conclusion and discussion}
