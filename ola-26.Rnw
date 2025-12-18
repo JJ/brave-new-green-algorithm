@@ -153,7 +153,37 @@ kable(initial_baseline_table, "latex",
 
 Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}.
 
+<<ola.deltas, echo=FALSE, warning=F, message=F>>=
+compute_deltas <- function( baseline_summary, workload ) {
+  workload$delta_PKG <-0
+  workload$delta_seconds <- 0
+  for (dim in c(3,5)) {
+    for ( pop_size in c(200,400)) {
+      number_of_rows <- nrow(workload[ workload$dimension==dim & workload$population_size==pop_size,])
+      workload[ workload$dimension==dim & workload$population_size==pop_size,]$delta_PKG <-
+      workload[ workload$dimension==dim & workload$population_size==pop_size,]$PKG  -
+      rep(baseline_summary[ baseline_summary$population_size == pop_size & baseline_summary$dimension==dim, ]$median_energy,number_of_rows)
 
+      workload[ workload$dimension==dim & workload$population_size==pop_size,]$delta_seconds <-
+      workload[ workload$dimension==dim & workload$population_size==pop_size,]$seconds  -
+      rep(baseline_summary[ baseline_summary$population_size == pop_size & baseline_summary$dimension==dim, ]$median_time,number_of_rows)
+    }
+  }
+}
+
+baseline_data_evoapps %>% group_by(dimension,population_size) %>%
+  summarise(median_energy=median(PKG), sd_energy=sd(PKG),
+            trimmed_mean_energy=mean(PKG,trim=0.2),
+            median_time=median(seconds), sd_time=sd(seconds),
+            trimmed_mean_time=mean(seconds, trim=0.2)) -> summary_baseline_data_evoapps
+
+workload_data_evoapps <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
+compute_deltas( summary_baseline_data_evoapps, workload_data_evoapps )
+
+workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+compute_deltas( summary_baseline_data_ola, workload_data_ola )
+
+@
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
