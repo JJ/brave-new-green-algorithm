@@ -153,7 +153,7 @@ kable(initial_baseline_table, "latex",
 
 Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}.
 
-<<ola.deltas, echo=FALSE, warning=F, message=F>>=
+<<ola.deltas, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for the initial configuration vs. measurements with sampling period = 100 ms", fig.height=3>>=
 compute_deltas <- function( baseline_summary, workload ) {
   workload$delta_PKG <-0
   workload$delta_seconds <- 0
@@ -169,6 +169,7 @@ compute_deltas <- function( baseline_summary, workload ) {
       rep(baseline_summary[ baseline_summary$population_size == pop_size & baseline_summary$dimension==dim, ]$median_time,number_of_rows)
     }
   }
+  return (workload)
 }
 
 baseline_data_evoapps %>% group_by(dimension,population_size) %>%
@@ -178,12 +179,36 @@ baseline_data_evoapps %>% group_by(dimension,population_size) %>%
             trimmed_mean_time=mean(seconds, trim=0.2)) -> summary_baseline_data_evoapps
 
 workload_data_evoapps <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
-compute_deltas( summary_baseline_data_evoapps, workload_data_evoapps )
+workload_data_evoapps <- compute_deltas( summary_baseline_data_evoapps, workload_data_evoapps )
+
+workload_data_evoapps %>% group_by(dimension,population_size,max_gens,alpha) %>%
+  summarise(median_delta_energy=median(delta_PKG), sd_delta_energy=sd(delta_PKG),
+            trimmed_mean_delta_energy=mean(delta_PKG,trim=0.2),
+            median_delta_time=median(delta_seconds), sd_delta_time=sd(delta_seconds),
+            trimmed_mean_delta_time=mean(delta_seconds, trim=0.2)) -> summary_workload_data_evoapps
+
+baseline_data_ola_100s %>% group_by(dimension,population_size) %>%
+  summarise(median_energy=median(PKG), sd_energy=sd(PKG),
+            trimmed_mean_energy=mean(PKG,trim=0.2),
+            median_time=median(seconds), sd_time=sd(seconds),
+            trimmed_mean_time=mean(seconds, trim=0.2)) -> summary_baseline_data_ola
 
 workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
-compute_deltas( summary_baseline_data_ola, workload_data_ola )
+workload_data_ola <- compute_deltas( summary_baseline_data_ola, workload_data_ola )
 
+workload_data <- rbind( workload_data_evoapps, workload_data_ola )
+
+ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) +
+  geom_point() +
+  theme_minimal() +
+  xlab("Delta Time (seconds)") +
+  ylab("Delta Package energy (Joules)") +
+  labs(color="Measurement frequency")
 @
+
+In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below one second. This will be addressed later.
+
+
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
