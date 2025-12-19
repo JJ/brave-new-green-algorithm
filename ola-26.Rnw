@@ -304,6 +304,19 @@ What we see in Figure \ref{ola.micro.hysteresis} is a a plot of the PKG energy m
 
 There are many possible ways of mitigating the effect of external factors on the measurements.
 
+<<ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=4, fig.pos="h!tb">>=
+ola_mixed_v11_8 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
+ola_mixed_v11_8$accumulated_time <- cumsum(ola_mixed_v11_8$seconds)
+
+ggplot( ola_mixed_v11_8, aes(x=accumulated_time, y=PKG, color=as.factor(work)), group=as.factor(work) ) +
+  geom_point() + geom_smooth() +
+  theme_minimal() +
+  xlab("Cumulative Time (seconds)") +
+  ylab("Package energy (Joules)")
+@
+
+In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it.
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
