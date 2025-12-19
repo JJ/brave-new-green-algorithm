@@ -306,19 +306,19 @@ What we see in Figure \ref{ola.micro.hysteresis} is a a plot of the PKG energy m
 There are many possible ways of mitigating the effect of external factors on the measurements.
 
 <<ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=4, fig.pos="h!tb">>=
-ola_mixed_v11_8 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
-ola_mixed_v11_8$cumulative_time <- cumsum(ola_mixed_v11_8$seconds)
+ola_mixed_v11_7 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
+ola_mixed_v11_7$cumulative_time <- cumsum(ola_mixed_v11_7$seconds)
 
-for (i in 2:nrow(ola_mixed_v11_8)) {
-  if (ola_mixed_v11_8$work[i] == "ola-mixed") {
-    ola_mixed_v11_8$delta_seconds[i] <- ola_mixed_v11_8$seconds[i] - ola_mixed_v11_8$seconds[i-1]
-    ola_mixed_v11_8$delta_PKG[i] <- ola_mixed_v11_8$PKG[i] - ola_mixed_v11_8$PKG[i-1]
+for (i in 2:nrow(ola_mixed_v11_7)) {
+  if (ola_mixed_v11_7$work[i] == "ola-mixed") {
+    ola_mixed_v11_7$delta_seconds[i] <- ola_mixed_v11_7$seconds[i] - ola_mixed_v11_7$seconds[i-1]
+    ola_mixed_v11_7$delta_PKG[i] <- ola_mixed_v11_7$PKG[i] - ola_mixed_v11_7$PKG[i-1]
   }
 }
 
-ggplot( ola_mixed_v11_8, aes(x=cumulative_time, y=PKG, color=as.factor(work)), group=as.factor(work) ) +
+ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), group=as.factor(work) ) +
   geom_point() + geom_smooth() +
-  geom_bar(ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed", ], mapping=aes(x=cumulative_time, y=delta_PKG), stat="identity", alpha=0.2, color="blue" ) +
+  geom_bar(ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed", ], mapping=aes(x=cumulative_time, y=delta_PKG), stat="identity", alpha=0.2, color="blue" ) +
   theme_minimal() +
   xlab("Cumulative Time (seconds)") +
   ylab("Package energy (Joules)")
@@ -327,7 +327,7 @@ ggplot( ola_mixed_v11_8, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
 In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it; these are represented as blue bars in the figure. As it can be seen, even with some variability (and some negative values with which we will deal later) there seems to be a better fit, since, as the smoothed line shows, when the underlying system changes its energy profile it does so for both, mitigating to a certain extent the system overhead effect.
 
 <<ola.mixed.comparison, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent compared with different ways of measuring the workload effect; we also compare for two values of the maximum number of generations run without improving fitness.",fig.height=4, fig.pos="h!tb">>=
-ola_mixed_v11_8_summary_data <- ola_mixed_v11_8 %>%
+ola_mixed_v11_7_summary_data <- ola_mixed_v11_7 %>%
   group_by(work,population_size, dimension, max_gens) %>%
   summarise(
     mean_PKG = mean(PKG),
@@ -338,7 +338,7 @@ ola_mixed_v11_8_summary_data <- ola_mixed_v11_8 %>%
     sd_delta_PKG = sd(delta_PKG)
   )
 
-ola_mixed_v11_8_deltas_summary_data <- ola_mixed_v11_8 %>%
+ola_mixed_v11_7_deltas_summary_data <- ola_mixed_v11_7 %>%
   group_by(work,population_size, dimension, max_gens) %>%
   summarise(
     mean_PKG = mean(PKG),
@@ -355,7 +355,7 @@ workload_ola_v2_data %>% group_by(dimension,population_size,max_gens,alpha) %>%
                           median_delta_time=median(delta_seconds), sd_delta_time=sd(delta_seconds),
                           trimmed_mean_delta_time=mean(delta_seconds, trim=0.2)) -> summary_workload_ola_v2_data
 
-ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed", ] %>%
+ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed", ] %>%
   group_by(population_size, dimension, max_gens) %>%
   summarise(
     median_delta_energy = median(delta_PKG),
@@ -366,7 +366,7 @@ ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed", ] %>%
     trimmed_mean_delta_time=mean(delta_seconds, trim=0.2)
   ) -> summary_ola_mixed_deltas
 
-mixed_vs_separated_workload <- rbind( workload_ola_v2_data, ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed", ] )
+mixed_vs_separated_workload <- rbind( workload_ola_v2_data, ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed", ] )
 mixed_vs_separated_workload$population_dimension <- paste0(
   "Pop. size: ", mixed_vs_separated_workload$population_size,
   ", Dim.: ", mixed_vs_separated_workload$dimension
@@ -380,11 +380,18 @@ ggplot(mixed_vs_separated_workload, aes(x=population_dimension, y=delta_PKG, col
   labs(color="Implementation version") + # x ticks rotated
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap( ~ max_gens )
+
+# ggplot(mixed_vs_separated_workload, aes(x=population_dimension, y=delta_PKG, color=as.factor(max_gens))) +
+#   geom_boxplot(position="dodge") +
+#   theme_minimal() +
+#   xlab("Version") +
+#   ylab("Delta Package energy (Joules)") +
+#   labs(color="Implementation version") + # x ticks rotated
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   facet_wrap( ~ work )
 @
 
-
-
-
+In Figure \ref{fig:ola.mixed.comparison} we start to compare the effects of changes in measurement methodology together with the effects of different parametrization of the algorithm. Again, since these parametrizations might have a small effect, increasing the precision in the measures will help us assess and understand them.
 
 
 \section{Conclusion and discussion}
