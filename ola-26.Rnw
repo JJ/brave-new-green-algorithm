@@ -393,6 +393,37 @@ ggplot(mixed_vs_separated_workload, aes(x=population_dimension, y=delta_PKG, col
 
 In Figure \ref{fig:ola.mixed.comparison} we start to compare the effects of changes in measurement methodology together with the effects of different parametrization of the algorithm. Again, since these parametrizations might have a small effect, increasing the precision in the measures will help us assess and understand them.
 
+<<ola.v11_8, echo=F, fig.cap="Comparing Julia versions">>=
+ola_mixed_v11_8 <- read.csv("data/ola-1.11.8-mixed-inverted-ola-mixed-inverted-16-Dec-09-02-52.csv")
+ola_mixed_v11_8$cumulative_time <- cumsum(ola_mixed_v11_8$seconds)
+for (i in 2:nrow(ola_mixed_v11_8)) {
+  if (ola_mixed_v11_8$work[i] == "ola-mixed-inverted") {
+    ola_mixed_v11_8$delta_seconds[i] <- ola_mixed_v11_8$seconds[i] - ola_mixed_v11_8$seconds[i-1]
+    ola_mixed_v11_8$delta_PKG[i] <- ola_mixed_v11_8$PKG[i] - ola_mixed_v11_8$PKG[i-1]
+  }
+}
+
+ola_mixed_v11_7_workload <- ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed",]
+ola_mixed_v11_7_workload$work <- "v1.11.7"
+ola_mixed_v11_8_workload <- ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed-inverted",]
+ola_mixed_v11_8_workload$work <- "v1.11.8"
+
+ola_v11_7_vs_8_data  <- rbind(ola_mixed_v11_7_workload,ola_mixed_v11_8_workload)
+ola_v11_7_vs_8_data$population_dimension <- paste0(
+  "Pop. size: ", ola_v11_7_vs_8_data$population_size,
+  ", Dim.: ", ola_v11_7_vs_8_data$dimension
+)
+
+ggplot(ola_v11_7_vs_8_data, aes(x=population_dimension, y=delta_PKG, color=as.factor(work))) +
+  geom_boxplot(position="dodge",notch=T) +
+  theme_minimal() +
+  xlab("Version") +
+  ylab("Delta Package energy (Joules)") +
+  labs(color="Implementation version") + # x ticks rotated
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylim(0,250)+
+  facet_wrap(~ max_gens)
+@
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
