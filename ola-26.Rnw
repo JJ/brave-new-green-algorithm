@@ -249,7 +249,7 @@ kable(initial_vs_v2_baseline_table, "latex",
   kable_styling( full_width = F)
 @
 
-What we see in Table \ref{tab:ola.micro}, computed for the baseline runs, can lead to relatively important improvements for some combinationn of dimensions and population sizes, but also to some regressions. But this is just the baseline, we need to compute the actual workload energy consumption.
+What we see in Table \ref{tab:ola.micro}, computed for the baseline runs, can lead to relatively important improvements for some combination of dimensions and population sizes, but also to some regressions. But this is just the baseline, we need to compute the actual workload energy consumption.
 
 <<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators",fig.height=4, fig.pos="h!tb">>=
 workload_ola_v2_data <- read.csv("data/ola-1.11.7-v2-ola-v2-15-Dec-13-18-43.csv")
@@ -433,7 +433,7 @@ ggplot(ola_v11_7_vs_8_data, aes(x=population_dimension, y=delta_PKG, color=as.fa
 
 With this we can compare, for instance, different versions of the Julia compiler. In Figure \ref{fig:ola.v11_8} we compare side by side experiments that only change the version of Julia, v1.11.7 vs v1.11.8, which was recently released in December 2025. It is considered a good practice, in general to test for the latest version of the compiler for the language  you are using, not only because it will be, in general, the one that needs to be used, but also because they normally have improvements in efficiency. That need not be the case always: some changes will include performance regressions, but in that case carrying out an energy profile will also allow you to check when that happens and start mitigating measures in the implementation. That has not been the case here: for any number of generations till ending the run, the new version spends less energy than the previous one, considerably so in the case of having the max number of generations = 25.
 
-There is a remaining issue, however; as it can be seen in Figure \ref{fig:ola.mixed.comparison} and \ref{fig:ola.v11_8} there are some occasions when {\sf pinpoint} returns a 0 measurement. In the previous version of the experiment runner, this was avoided by repeating any runs until the required number had been reached, but this was dropped in this case. We changed it back again wo that in case a run reported no energy, we repeated it until it did. This can certainly "separate" the baseline from the workload run, but it is preferable to reporting erroneous results that skew the comparison.
+There is a remaining issue, however; as it can be seen in Figure \ref{fig:ola.mixed.comparison} and \ref{fig:ola.v11_8} there are some occasions when {\sf pinpoint} returns a 0 measurement. In the previous version of the experiment runner, this was avoided by repeating any runs until the required number had been reached, but this was dropped in this case. We changed it back again so that in case a run reported no energy, we repeated it until it did. This can certainly "separate" the baseline from the workload run, but it is preferable to reporting erroneous results that skew the comparison.
 
 <<ola.no0, echo=F, fig.height=4, fig.cap="Avoiding zero energy runs, comparison of results">>=
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
