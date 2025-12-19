@@ -206,8 +206,80 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   labs(color="Measurement frequency")
 @
 
-In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below one second. This will be addressed later.
+In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
 
+With this higher precision, we can approach micro-optimizations of the implementation.
+
+<<ola.micro, echo=FALSE, warning=F, message=F>>=
+baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
+baseline_ola_v2_data[ null_baseline_columns ] <- NULL
+initial_vs_v2_baseline <- rbind(
+  baseline_data_ola_100s %>% mutate( work = "ola-baseline-v1"),
+  baseline_ola_v2_data %>% mutate( work = "ola-baseline-v2")
+)
+
+initial_vs_v2_baseline %>% group_by(population_size, dimension, work) %>% summarise(
+    mean_pkg = mean(PKG),
+    sd_pkg = sd(PKG),
+    mean_time = mean(seconds),
+    sd_time = sd(seconds)
+  ) -> initial_vs_v2_baseline_summary
+
+initial_vs_v2_baseline_summary$sd_and_mean_pkg <- paste0("$",
+  round(initial_vs_v2_baseline_summary$mean_pkg, 2), " \\pm", round(initial_vs_v2_baseline_summary$sd_pkg, 2), "$"
+)
+
+library(reshape2)
+initial_vs_v2_baseline_table <- reshape2::dcast(
+  initial_vs_v2_baseline_summary,
+  population_size + dimension ~ work,
+  value.var = "sd_and_mean_pkg"
+)
+
+kable(initial_vs_v2_baseline_table, "latex",
+      col.names = c("Population size","Chromosome dimension","Initial version","Micro-optimized version"),
+      caption = "Baseline energy consumption for different implementations of the genetic operators",
+      escape=FALSE) %>%
+  kable_styling( full_width = F)
+@
+
+What we see in Table \ref{tab:ola.micro}, computed for the baseline runs, can lead to relatively important improvements for some combinationn of dimensions and population sizes, but also to some regressions. But this is just the baseline, we need to compute the actual workload energy consumption.
+
+<<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators",fig.height=6, fig.pos="h!tb">>=
+workload_ola_v2_data <- read.csv("data/ola-1.11.7-v2-ola-v2-15-Dec-13-18-43.csv")
+
+baseline_ola_v2_data %>% group_by(population_size, dimension) %>% summarise(
+    mean_pkg = mean(PKG),
+    sd_pkg = sd(PKG),
+    mean_time = mean(seconds),
+    sd_time = sd(seconds),
+    median_energy = median(PKG),
+    median_time = median(seconds),
+    trimmed_mean_pkg = mean(PKG, trim=0.2)
+  ) -> summary_baseline_ola_v2
+
+workload_ola_v2_data <- compute_deltas( summary_baseline_ola_v2, workload_ola_v2_data )
+
+initial_vs_v2_workload <- rbind(
+  workload_data_ola %>% mutate( work = "ola-workload-v1"),
+  workload_ola_v2_data %>% mutate( work = "ola-workload-v2")
+)
+
+initial_vs_v2_workload$population_dimension <- paste0(
+  "Pop. size: ", initial_vs_v2_workload$population_size,
+  ", Dim.: ", initial_vs_v2_workload$dimension
+)
+
+ggplot(initial_vs_v2_workload, aes(x=work, y=delta_PKG, color=as.factor(work))) +
+  geom_violin() +
+  theme_minimal() +
+  xlab("Version") +
+  ylab("Delta Package energy (Joules)") +
+  labs(color="Implementation version") +
+  facet_wrap( ~ population_dimension )
+
+
+@
 
 
 \section{Conclusion and discussion}
