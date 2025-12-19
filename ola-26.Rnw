@@ -472,6 +472,7 @@ Wit this last change in the measurement device, however, we have achieved a meas
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
+This paper, whose development can be also checked at \url{https://github.com/CeciMerelo/BraveNewalgorithm.jl}, attempts to propose a new methodology in measuring energy looking to optimize the implementation of population-based evolutionary algorithms. We have found that decreasing the sampling rate reduces overhead and improves precision; repeating runs where errors occur so that a fixed number of runs is reached improves reproducibility.
 
 
 \section*{Acknowledgements}
