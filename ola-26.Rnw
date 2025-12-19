@@ -298,6 +298,7 @@ ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_ti
   xlab("Cumulative Time (seconds)") +
   ylab("Package energy (Joules)") +
   labs(color="Measurement type")
+
 @
 
 What we see in Figure \ref{ola.micro.hysteresis} is a a plot of the PKG energy measured for before and after the optimization, but plotted vs. accumulated time. The time-related effects can clearly be observed, as well as the fact that the optimized version optimizes time rather than energy. But you can also see that the energy spent by the initial experiment is divided in two areas; after 2000 seconds there seems to be a new regime, caused by something external to the experiment itself. This is inherent to this kind of measurements; since experiments are not made in a machine devoted exclusively for them, we cannot measure energy consumption in this kind of machine, either. However, this causes a real issue in the reproducibility of results, but over all when we compute the real energy consumption of the workload. This "second area" would correspond to experiments with chromosome dimension 5, which in part explains results in Table \ref{tab:ola.micro} and Figure \ref{fig:ola.micro.plot}.
@@ -308,14 +309,37 @@ There are many possible ways of mitigating the effect of external factors on the
 ola_mixed_v11_8 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
 ola_mixed_v11_8$accumulated_time <- cumsum(ola_mixed_v11_8$seconds)
 
+for (i in 2:nrow(ola_mixed_v11_8)) {
+  if (ola_mixed_v11_8$work[i] == "ola-mixed") {
+    ola_mixed_v11_8$delta_seconds[i] <- ola_mixed_v11_8$seconds[i] - ola_mixed_v11_8$seconds[i-1]
+    ola_mixed_v11_8$delta_PKG[i] <- ola_mixed_v11_8$PKG[i] - ola_mixed_v11_8$PKG[i-1]
+  }
+}
+
 ggplot( ola_mixed_v11_8, aes(x=accumulated_time, y=PKG, color=as.factor(work)), group=as.factor(work) ) +
   geom_point() + geom_smooth() +
+  geom_bar(ola_mixed_v11_8[ ola_mixed_v11_8$work == "ola-mixed", ], mapping=aes(x=accumulated_time, y=delta_PKG), stat="identity", alpha=0.2, color="blue" ) +
   theme_minimal() +
   xlab("Cumulative Time (seconds)") +
   ylab("Package energy (Joules)")
+
+
+ola_mixed_v11_8_summary_data <- ola_mixed_v11_8 %>%
+  group_by(work,population_size, dimension, max_gens) %>%
+  summarise(
+    mean_PKG = mean(PKG),
+    median_PKG = median(PKG),
+    sd_PKG = sd(PKG),
+    trimmed_PKG = mean(PKG, trim = 0.2),
+    mean_delta_PKG = mean(delta_PKG, trim=0.2),
+    sd_delta_PKG = sd(delta_PKG)
+  )
 @
 
-In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it.
+In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it; these are represented as blue bars in the figure. As it can be seen, even with some variability (and some negative values with which we will deal later) there seems to be a better fit, since, as the smoothed line shows, when the underlying system changes its energy profile it does so for both, mitigating to a certain extent the system overhead effect.
+
+
+
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
