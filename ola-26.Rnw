@@ -251,7 +251,7 @@ kable(initial_vs_v2_baseline_table, "latex",
 
 What we see in Table \ref{tab:ola.micro}, computed for the baseline runs, can lead to relatively important improvements for some combinationn of dimensions and population sizes, but also to some regressions. But this is just the baseline, we need to compute the actual workload energy consumption.
 
-<<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators",fig.height=6, fig.pos="h!tb">>=
+<<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators",fig.height=4, fig.pos="h!tb">>=
 workload_ola_v2_data <- read.csv("data/ola-1.11.7-v2-ola-v2-15-Dec-13-18-43.csv")
 
 baseline_ola_v2_data %>% group_by(population_size, dimension) %>% summarise(
