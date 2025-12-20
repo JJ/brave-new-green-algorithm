@@ -1,4 +1,4 @@
-# brave-new-green-algorithm
+# Brave new green algorithm
 
 Papers that use Brave New Algorithm for different purposes, mainly
 measuring energy expenses.
