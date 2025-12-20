@@ -332,8 +332,6 @@ ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_ti
 
 What we see in Figure \ref{fig:ola.micro.hysteresis} is a a plot of the PKG energy measured for before and after the optimization, but plotted vs. accumulated time. The time-related effects can clearly be observed, as well as the fact that the optimized version optimizes time rather than energy. But you can also see that the energy spent by the initial experiment is divided in two areas; after 2000 seconds there seems to be a new regime, caused by something external to the experiment itself. This is inherent to this kind of measurements; since experiments are not made in a machine devoted exclusively for them, we cannot measure energy consumption in this kind of machine, either. However, this causes a real issue in the reproducibility of results, but over all when we compute the real energy consumption of the workload. This "second area" would correspond to experiments with chromosome dimension 5, which in part explains results in Table \ref{tab:ola.micro} and Figure \ref{fig:ola.micro.plot}.
 
-There are many possible ways of mitigating the effect of external factors on the measurements.
-
 <<ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=3, fig.pos="h!tb">>=
 ola_mixed_v11_7 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
 ola_mixed_v11_7$cumulative_time <- cumsum(ola_mixed_v11_7$seconds)
@@ -353,6 +351,7 @@ ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
   ylab("Package energy (Joules)")
 @
 
+There are many possible ways of mitigating the effect of external factors on the measurements.
 In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it; these are represented as blue bars in the figure. As it can be seen, even with some variability (and some negative values with which we will deal later) there seems to be a better fit, since, as the smoothed line shows, when the underlying system changes its energy profile it does so for both, mitigating to a certain extent the system overhead effect.
 
 <<ola.mixed.comparison, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent compared with different ways of measuring the workload effect; we also compare for two values of the maximum number of generations run without improving fitness.",fig.height=3, fig.pos="h!tb", fig.height=4>>=
@@ -422,7 +421,7 @@ ggplot(mixed_vs_separated_workload, aes(x=population_dimension, y=delta_PKG, col
 
 In Figure \ref{fig:ola.mixed.comparison} we start to compare the effects of changes in measurement methodology together with the effects of different parametrization of the algorithm. Again, since these parametrizations might have a small effect, increasing the precision in the measures will help us assess and understand them.
 
-<<ola.v11_8, echo=F, warning=F, message=F, fig.cap="Comparing Julia versions", fig.height=4, fig.pos="h!tb">>=
+<<ola.v11_8, echo=F, warning=F, message=F, fig.cap="Comparing Julia versions. We have clipped the y axis to 0,250", fig.height=4, fig.pos="h!tb">>=
 ola_mixed_v11_8 <- read.csv("data/ola-1.11.8-mixed-inverted-ola-mixed-inverted-16-Dec-09-02-52.csv")
 ola_mixed_v11_8$cumulative_time <- cumsum(ola_mixed_v11_8$seconds)
 for (i in 2:nrow(ola_mixed_v11_8)) {
@@ -495,7 +494,7 @@ Wit this last change in the measurement device, however, we have achieved a meas
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-This paper, whose development can be also checked at \url{https://github.com/CeciMerelo/BraveNewalgorithm.jl}, attempts to propose a new methodology in measuring energy looking to optimize the implementation of population-based evolutionary algorithms. We have found that decreasing the sampling rate (to 1 every 100 ms) reduces overhead and improves precision; repeating runs where errors occur so that a fixed number of runs is reached improves reproducibility. But one of the measures that contributes the most to robustness in measurements and definitely eliminate {\em negative} workload energy measures is sequencing baseline and workload measurements the one after the other, so that the system conditions in which they are taking place are more similar, instead of separating baseline and workload runs and using averages of the former subtracted from the latter to compute actual workload energy consumption.
+This paper, whose development can be also checked at the GitHub repository \url{https://github.com/CeciMerelo/BraveNewalgorithm.jl}, attempts to propose a new methodology in measuring energy looking to optimize the implementation of population-based evolutionary algorithms. We have found that decreasing the sampling rate (to 1 every 100 ms) reduces overhead and improves precision; repeating runs where errors occur so that a fixed number of runs is reached improves reproducibility. But one of the measures that contributes the most to robustness in measurements and definitely eliminate {\em negative} workload energy measures is sequencing baseline and workload measurements the one after the other, so that the system conditions in which they are taking place are more similar, instead of separating baseline and workload runs and using averages of the former subtracted from the latter to compute actual workload energy consumption.
 
 All these population-based optimization algorithms need also to include one-shot computations such as the generation of the initial population in the baseline runs; that way, the actual energy consumed from running the different population operators such as mutation and crossover will be pinpointed with higher precision; besides, energy consumption and how it varies with the {\em chromosome} and population size almost never has a straightforward relationship; this is especially true in languages, such as Julia, which have a garbage-collection mechanism that might be triggered at specific memory occupation levels, and thus might not change linearly with them.
 
