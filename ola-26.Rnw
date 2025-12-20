@@ -83,11 +83,9 @@ The implementation of the algorithm, as well as all the parameters used, are ava
 
 \section{Experimental methodology and results}\label{sec:results}
 
-In order to carry out these experiments, we have used a methodology that is like that used in our previous papers: \cite{low-level}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-37-generic. Julia version has been $1.11.7$.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
+In order to carry out these experiments, we have used a methodology that is like that used in our previous papers: \cite{low-level}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-37-generic. We have initially used Julia version $v1.11.7$. The fitness function used has been the Sphere function \cite{hansen2010comparing} from {\sf BlackBoxOptimizationBenchmarking.jl}.
 
-We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. This function is also lightweight enough to allow us to compare the energy profiles of different combinations of genetic operators, which will then have a bigger impact on overall consumption.
-
-We have first tried to follow the best practices in sampling. We were previously using the default value of 50ms. In general, it is advised to increase the sampling period to avoid errors in the estimation, so we have doubled it to 100ms.
+We will first deal with RAPL sampling; previously, we have used the default {\sf pinpoint} value of 50ms. In general, it is advised to increase the sampling period to avoid errors in the estimation, so we have doubled it to 100ms.
 
 <<ola.base.frequency, echo=FALSE, warning=F, message=F>>=
 null_baseline_columns <- c("alpha", "max_gens", "different_seeds", "diff_fitness", "generations", "evaluations")
@@ -157,7 +155,7 @@ kable(initial_baseline_table, "latex",
 
 @
 
-Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}.
+Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}. Differences are significant for all rows; despite measuring the same system and parameters, using a lower sampling rate is able to appreciate differences in energy consumption that go in different directions. But baseline measurements are mainly used to differentiate the actual workload energy consumption.
 
 <<ola.deltas, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for the initial configuration vs. measurements with sampling period = 100 ms", fig.height=3>>=
 compute_deltas <- function( baseline_summary, workload ) {
@@ -212,7 +210,7 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   labs(color="Measurement frequency")
 @
 
-In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
+In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms, in redº1). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
 
 With this higher precision, we can approach micro-optimizations of the implementation.
 
