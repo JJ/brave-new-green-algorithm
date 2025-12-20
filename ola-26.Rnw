@@ -114,25 +114,30 @@ initial_baseline_data %>% group_by(population_size, dimension, work) %>% summari
   ) -> initial_baseline_data_summary
 
 # compute wilcoxon tests between work values for every population_size and dimension
-wilcoxon_results <- data.frame()
-for (pop_size in unique(initial_baseline_data$population_size)) {
-  for (dim in unique(initial_baseline_data$dimension)) {
-    data_subset <- initial_baseline_data %>% filter(population_size == pop_size, dimension == dim)
-    work_values <- unique(data_subset$work)
-    if (length(work_values) == 2) {
-      work1_data <- data_subset %>% filter(work == work_values[1]) %>% pull(power)
-      work2_data <- data_subset %>% filter(work == work_values[2]) %>% pull(power)
-      wilcox_test <- wilcox.test(work1_data, work2_data)
-      wilcoxon_results <- rbind(wilcoxon_results, data.frame(
-        population_size = pop_size,
-        dimension = dim,
-        work1 = work_values[1],
-        work2 = work_values[2],
-        p_value = wilcox_test$p.value
-      ))
+wilcoxon_tests <- function( data ) {
+  wilcoxon_results <- data.frame()
+  for (pop_size in unique(data$population_size)) {
+    for (dim in unique(data$dimension)) {
+      data_subset <- data %>% filter(population_size == pop_size, dimension == dim)
+      work_values <- unique(data_subset$work)
+      if (length(work_values) == 2) {
+        work1_data <- data_subset %>% filter(work == work_values[1]) %>% pull(power)
+        work2_data <- data_subset %>% filter(work == work_values[2]) %>% pull(power)
+        wilcox_test <- wilcox.test(work1_data, work2_data)
+        wilcoxon_results <- rbind(wilcoxon_results, data.frame(
+          population_size = pop_size,
+          dimension = dim,
+          work1 = work_values[1],
+          work2 = work_values[2],
+          p_value = wilcox_test$p.value
+        ))
+      }
     }
   }
+return(wilcoxon_results)
 }
+
+wilcoxon_initial_baseline <- wilcoxon_tests( initial_baseline_data )
 
 initial_baseline_data_summary$sd_and_mean_pkg <- paste0("$",
   round(initial_baseline_data_summary$mean_pkg, 2), " \\pm", round(initial_baseline_data_summary$sd_pkg, 2), "$"
@@ -145,17 +150,28 @@ initial_baseline_table <- reshape2::dcast(
   value.var = "sd_and_mean_pkg"
 )
 
+# add a column with the p-values from the wilcoxon tests in wilcoxon_initial_baseline for every population_size and dimension
+
+initial_baseline_table <- merge(
+  initial_baseline_table,
+  wilcoxon_initial_baseline %>%
+    select(population_size, dimension, p_value),
+  by = c("population_size", "dimension")
+)
+
+initial_baseline_table %>% mutate( p_value = ifelse( as.numeric(p_value) < 0.05, "+", "-" ) ) -> initial_baseline_table
+
 library(kableExtra)
 
 kable(initial_baseline_table, "latex",
-      col.names = c("Population size","Chromosome dimension","Baseline PKG (J)","Sampling = 100s"),
+      col.names = c("Population size","Dimension","Baseline PKG (J)","Sampling = 100s", "Significant"),
       caption = "Baseline energy consumption for different sampling frequencies",
       escape=FALSE) %>%
   kable_styling( full_width = F)
 
 @
 
-Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}. Differences are significant for all rows; despite measuring the same system and parameters, using a lower sampling rate is able to appreciate differences in energy consumption that go in different directions. But baseline measurements are mainly used to differentiate the actual workload energy consumption.
+Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}. Differences are significant for most rows; despite measuring the same system and parameters, using a lower sampling rate is able to appreciate differences in energy consumption that go in different directions. But baseline measurements are mainly used to differentiate the actual workload energy consumption.
 
 <<ola.deltas, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for the initial configuration vs. measurements with sampling period = 100 ms", fig.height=3>>=
 compute_deltas <- function( baseline_summary, workload ) {
@@ -210,9 +226,9 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   labs(color="Measurement frequency")
 @
 
-In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms, in redº1). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
+In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms, in red). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
 
-With this higher precision, we can approach micro-optimizations of the implementation.
+With this higher precision, we can approach micro-optimizations of the implementation, mainly rewriting the population and individual generation functions so that they use less memory allocations.
 
 <<ola.micro, echo=FALSE, warning=F, message=F>>=
 baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
