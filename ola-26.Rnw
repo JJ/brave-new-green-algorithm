@@ -114,15 +114,15 @@ initial_baseline_data %>% group_by(population_size, dimension, work) %>% summari
   ) -> initial_baseline_data_summary
 
 # compute wilcoxon tests between work values for every population_size and dimension
-wilcoxon_tests <- function( data ) {
+wilcoxon_tests <- function( data, column_name = "PKG" ) {
   wilcoxon_results <- data.frame()
   for (pop_size in unique(data$population_size)) {
     for (dim in unique(data$dimension)) {
       data_subset <- data %>% filter(population_size == pop_size, dimension == dim)
       work_values <- unique(data_subset$work)
       if (length(work_values) == 2) {
-        work1_data <- data_subset %>% filter(work == work_values[1]) %>% pull(power)
-        work2_data <- data_subset %>% filter(work == work_values[2]) %>% pull(power)
+        work1_data <- data_subset %>% filter(work == work_values[1]) %>% pull(.data[[column_name]])
+        work2_data <- data_subset %>% filter(work == work_values[2]) %>% pull(.data[[column_name]])
         wilcox_test <- wilcox.test(work1_data, work2_data)
         wilcoxon_results <- rbind(wilcoxon_results, data.frame(
           population_size = pop_size,
@@ -238,6 +238,7 @@ initial_vs_v2_baseline <- rbind(
   baseline_ola_v2_data %>% mutate( work = "ola-baseline-v2")
 )
 
+wilcoxon_micro_optimization <- wilcoxon_tests( initial_vs_v2_baseline )
 initial_vs_v2_baseline %>% group_by(population_size, dimension, work) %>% summarise(
     mean_pkg = mean(PKG),
     sd_pkg = sd(PKG),
@@ -256,8 +257,16 @@ initial_vs_v2_baseline_table <- reshape2::dcast(
   value.var = "sd_and_mean_pkg"
 )
 
+initial_vs_v2_baseline_table <- merge(
+  initial_vs_v2_baseline_table,
+  wilcoxon_micro_optimization %>%
+    select(population_size, dimension, p_value),
+  by = c("population_size", "dimension")
+)
+initial_vs_v2_baseline_table %>% mutate( p_value = ifelse( as.numeric(p_value) < 0.05, "+", "-" ) ) -> initial_vs_v2_baseline_table
+
 kable(initial_vs_v2_baseline_table, "latex",
-      col.names = c("Population size","Chromosome dimension","Initial version","Micro-optimized version"),
+      col.names = c("Population size","Dimension","Initial version","Micro-optimized version","Significant"),
       caption = "Baseline energy consumption for different implementations of the genetic operators",
       escape=FALSE) %>%
   kable_styling( full_width = F)
