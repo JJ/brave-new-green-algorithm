@@ -71,8 +71,7 @@ The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary al
 The operators used will be mutation, that will change 40\% of the elements of the vector generating a new, random element, crossover will be two-point, and selection will be binary tournament \cite{blickle1996comparison}. After every generation, the population is re-ranked again, with the first $\alpha$ percentage assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
 There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
-The implementation of the algorithm used is available under a free license at \url{hidden.url}.
-%\url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
@@ -102,8 +101,7 @@ $\alpha$ percentage & Exploration proportion & Exploitation proportion \\
 \end{table}
 
 This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
-Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed and are available from this paper's repository at \url{hidden.url}.
-%\url{https://github.com/JJ/brave-new-green-algorithm}.
+Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
 
 
 Until version 1.11, Julia does not produce executables. Julia loads the script every time it is run, uses just-in-time compilation to generate low-level code, and this code is then run within its own virtual machine. This compilation, which might include recompilation of modules, take a certain amount of time and consumes a certain amount of energy, adding to the system overhead. This is why in this case it is especially important to make baseline measurements to discount these two quantities when we make measurements on the actual workload.
