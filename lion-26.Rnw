@@ -33,7 +33,7 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 
 There are many levels at which the implementation of an algorithm can be made {\em greener}, that is, more energy efficient; improving efficiency piecewise will is one of them, but at the highest level energy efficiency will impact the algorithm results, with different choices having an independent impact on energy and algorithmic efficiency. In this paper we will explore this trade-off in the Brave New Algorithm, a population-based metaheuristic implemented in the language Julia, analyzing how different operator optimizations impact the performance and energy consumption and finally, once a certain level of algorithmic performance is reached, how different parametrizations will impact both outcomes. We will specially look at the possibility of improving energy and algorithmic efficiency at the same time, if that is possible, and how it relates to the exploration/exploitation balance in this algorithm that is specifically designed for an easy tuning of this balance.
 
-\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\keywords{Green computing  \and Energy profiling \and Metaheuristics}
 \end{abstract}
 
 \section{Introduction}
@@ -56,9 +56,7 @@ Other researchers have explored the inherent challenges of accurately measuring 
 
 As a secondary objective in this paper, we have wanted to deal with implementation issues in a non-mainstream language; as a matter of fact, there are several implementations of evolutionary algorithms in Julia, such as \cite{sanchez2023evolp}. Before that, Julia had been used \cite{merelo2016comparison} as a baseline for comparing performance in basic evolutionary algorithms, with its performance being close to the median of all languages tested. Some other languages like Java or C++ might be several orders of magnitude faster. However, performance does not translate directly to energy consumption, and besides, back then Julia was still in its early versions vs. the more mature implementation that is now in production.
 
-Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level, clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper. One of these was \cite{diaz2022population}, where they work mainly on the population, and conclude that an increasing population, which implies increased diversity and possibly better overall performance, has a complex relationship with energy consumption that might not be a direct one. If we just equate energy consumption with time needed to reach a solution, finding a parametrization that finds a solution faster will always be a way of reducing it.
-
-In this paper we will be focusing on such a parametrization mainly, applied to the Brave New Algorithm, which is essentially an evolutionary algorithm with population reproduction restrictions. We will describe this algorithm next.
+Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level, clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper.
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
@@ -112,7 +110,7 @@ Until version 1.11, Julia does not produce executables. Julia loads the script e
 The main issue is {\em what} to consider baseline. One well-established principle is that you need to use the same code for it and the workload, so a common option is to use a command line flag to indicate, in runtime, what kind of workload is being run. The second issue is what to run as such a baseline workload. Since we are dealing with population-based algorithms, a straightforward option is to use the generation of the population as such.
 This is what we have done in this case: a flag indicates whether the program should stop after the initial generation or continue to perform the algorithm. This in turn means that there will be different baselines depending on the chromosome dimension and population size, four in total. For every parametrization, we will run 240 experiments; after an initial run with 120, we performed another one to increase the statistical accuracy.
 
-<<evoapps.baseline.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="PKG energy (in Joules) as a function of time for baseline experiments; shapes are related to population size and color to problem dimension">>=
+<<evoapps.baseline.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="PKG energy (in Joules) as a function of time for baseline experiments; shapes are related to population size and color to problem dimension">>=
 library(dplyr)
 # read RDS file data/energy-full-data.rds
 readRDS("data/energy-full-data.rds") -> baseline_results
@@ -133,7 +131,7 @@ ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_resu
 
 Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. time taken for every experiment, with triangles representing a population of size 400 and circles for size 200; blue is for dimension = 5 and red for dimension = 3. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundred Joules, although most results are below 350 Joules and 6.8 seconds. This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide events might affect one of the parameter combinations more than others.
 
-<<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy spent for every parameter value, initial configuration.">>=
+<<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy spent for every parameter value, initial configuration.">>=
 ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension", y="Energy (J)") + scale_y_log10()
 @
 
@@ -145,7 +143,7 @@ We should take into account that, as stated elsewhere \cite{cpp.vs.zig}, profili
 
 The results obtained after performing measurements with the actual workload will be examined next. We will be running the full algorithm with the indicated termination condition for 30 runs. We will subtract the baseline trimmed average for PKG energy as well as time from every result. The PKG energy vs. time chart is shown in Figure \ref{fig:evoapps.results}.
 
-<<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy spent by the workload as a function of time for all experiments in the initial configuration; point size is related to the max number of generations without change; fill color is blue for dimension =5, red for dimension = 3; shapes are related to population size and finally point size to the number of generations without improvement.">>=
+<<evoapps.results, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Energy spent by the workload as a function of time for all experiments in the initial configuration; point size is related to the max number of generations without change; fill color is blue for dimension =5, red for dimension = 3; shapes are related to population size and finally point size to the number of generations without improvement.">>=
 library(dplyr)
 evoapps_results <- read.csv("data/sphere-evoapps-1.11.7-full-bna-16-Oct-17-32-01.csv")
 
@@ -181,7 +179,7 @@ We see again that energy is roughly related to the time taken, but we can also d
 
 We would like to know if there is some correspondence between the amount of extra energy spent and the fitness achieved. We show this in Figure \ref{fig:evoapps.fitness.vs.energy}.
 
-<<evoapps.fitness.vs.energy, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for the initial configuration; legend as above.">>=
+<<evoapps.fitness.vs.energy, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for the initial configuration; legend as above.">>=
 evoapps_results$alpha <- as.factor(evoapps_results$alpha)
 evoapps_results$dim_pop <- paste0("D:",evoapps_results$dimension," Pop:",evoapps_results$population_size)
 evoapps_results$log_diff <- log10(evoapps_results$diff_fitness)
@@ -195,7 +193,7 @@ We will have to consider the characteristics of the language to do so. Julia is 
 
 We need to find such a target for optimization, however, and we found it in the mutation operator. Mutation is applied every time a new individual (after the initial population) is generated; that is, several thousand times in this kind of experiment; reducing the number of allocations it uses will obviously have an impact. This is what we will do next.
 
-<<evoapps.perf.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs. evaluation for the initial (black-filled) and optimized configuration (white-filled). Rest of the legend as above.">>=
+<<evoapps.perf.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Energy vs. evaluation for the initial (black-filled) and optimized configuration (white-filled). Rest of the legend as above.">>=
 evoapps_perf_results <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
 evoapps_perf_results$work <- "BNA-mutation-perf-boost"
 evoapps_perf_results$delta_PKG <- 0
@@ -233,20 +231,20 @@ results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + 
 
 Figure \ref{fig:evoapps.perf.boost} shows how the (theoretically) optimized mutation changes the energy profile of the implemented algorithm. Although it consumes less energy for the same time, it consumes more for the same number of evaluations, with black points representing it taking the upper half of the chart; that is, consuming more energy. This means that essentially the performance boost in time is being done at the cost of more energy being spent  doing the same amount of work, unfortunately. We will examine this in more detail next.
 
-<<evoapps.compare, echo=FALSE, warnings=FALSE, message=F, fig.height=3, fig.pos="h!tb", fig.cap="Comparing energy consumption for initial configuration vs. optimized one.">>=
+<<evoapps.compare, echo=FALSE, warnings=FALSE, message=F, fig.height=2.5, fig.pos="h!tb", fig.cap="Comparing energy consumption for initial configuration vs. optimized one.">>=
 all_results$joules_per_evaluation <- all_results$delta_PKG / all_results$evaluations
 ggplot(all_results, aes(x=dim_pop,y=joules_per_evaluation, color=work)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)")
 @
 
 If we compare the new results against the basic implementation, which is what we do in Figure \ref{fig:evoapps.compare}, where we are doing a boxplot of Joules per evaluation for every combination of dimension and population. Even in this kind of measure, that does not take into account the changes in the number of evaluations that might have taken place. What we see is an obvious superiority of the old vs. the new implementation. We can argue that the number of allocations is not so important for the chromosome sizes we are using, 3 and 5; however, what we see is that while, as seen above in Figure \ref{fig:evoapps.perf.boost}, the new mutation implementation would consume less energy for the same amount of time, the original one is still faster, and that adds up to a lower overall energy consumption. As is usual in this line of research, even if intuitively we assume that some kind of programming improvement might lead to better energy consumption, we still need to make measurements to check what is the actual improvement observed. We do not even observe an improvement in the dispersion of the results: although the distribution of the original implementation has several "ridges", the new one is longer, indicating a bigger dispersion. The difference seems to diminish with size, however, indicating that it is relatively likely that for bigger sizes, which are also used in BBOB benchmarks, the difference will diminish or even revert. When we are evaluating, however, a whole algorithm, the interesting result is how much energy is spent for a certain fitness level. We show this in Figure \ref{fig:evoapps.fitness.vs.energy.boost}.
 %
-<<evoapps.fitness.vs.energy.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for initial and optimized algorithm. Lower is better for fitness values.">>=
+<<evoapps.fitness.vs.energy.boost, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for initial and optimized algorithm. Lower is better for fitness values.">>=
 ggplot(all_results, aes(x=delta_PKG,y=log_diff)) + geom_point(fill=all_results$fill,alpha=0.5,size=all_results$point_size,shape=all_results$shape) + theme(legend.position="none") + labs(x="Energy (J)", y="log(diff. target)")
 @
 %
 Looking at the charts from left to right, we see that, in general, and as seen in Figure \ref{fig:evoapps.compare}, for a certain fitness level the original implementation spends less energy. However, we can also see that, since the exploration is improved, we can reach better (lower) fitness levels, below (logarithmic difference ) -2, which was the lowest the original implementation was able to go. At the end of the day, in a {\em green} evolutionary algorithm we are trying to optimize two independent targets: energy consumption and fitness; we must find a trade-off between them, but clearly obtaining better fitness values is the highest priority. So, we will try to examine the current implementation from that point of view, and as a matter of fact, the mutation can be improved, since it is not guaranteed to generate individuals in the whole BBOB range, which is [-5,5]. We will make a new optimization by using a random number generator that is guaranteed to generate values with a uniform distribution in that range. The results are shown next.
 
-<<evoapps.uniform.mutation, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments for all parameter combinations; we compare here the optimized configuration vs. uniform random mutation.">>=
+<<evoapps.uniform.mutation, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments for all parameter combinations; we compare here the optimized configuration vs. uniform random mutation.">>=
 evoapps_uniform_results <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
 evoapps_uniform_results$delta_PKG <- 0
 evoapps_uniform_results$delta_seconds <- 0
@@ -288,7 +286,7 @@ ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=
 %
 We can see in Figure \ref{fig:evoapps.energy.compare} (right) how fitness levels reached are much better in this case, when a new random generator has been employed ({\tt BNA-fix-rand}). Since we have reached a level that is good enough to be considered in production, we can now turn our sight to how the other parameters, the ones that govern the exploration/exploitation balance, affect the outcomes we are interested in.
 
-<<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE , fig.show='hold', fig.pos="h!tb", fig.height=3, out.width="50%", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
+<<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE , fig.show='hold', fig.pos="h!tb", fig.height=2.5, out.width="50%", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
 ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Alpha value") + theme(legend.position="none")
 ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=log_diff, x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")
 ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
@@ -306,7 +304,7 @@ The maximum number of generations without improvement is significant at both lev
 
 We can repeat these experiments again for new version of Julia, 1.11.8, and a new version of the kernel, {\tt 6.14.0-37-generic}, to check if the algorithmic improvement is consistent across different hardware/software conditions.
 %
-<<lion.julia.1.11.8, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments for all parameter combinations; we compare here the optimized configuration vs. uniform random mutation in Julia 1.11.8.", fig.show='hold', out.width="50%">>=
+<<lion.julia.1.11.8, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Boxplot of energy consumption (left) and fitness (right) using Julia 1.11.8 varying maximum number of generations to stop.", fig.show='hold', out.width="50%">>=
 lion_baseline <- read.csv("data/lion-1.11.8-baseline.csv")
 lion_baseline %>% group_by(dimension,population_size) %>%
   summarise(median_energy=median(PKG), sd_energy=sd(PKG),
