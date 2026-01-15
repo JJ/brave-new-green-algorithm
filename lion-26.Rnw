@@ -16,7 +16,7 @@
 \author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and Cecilia Merelo-Molina\inst{3} \and Pablo García-Sánchez\inst{1,2}\orcidID{0000-0003-4644-2894} \and Mario García-Valdez \inst{4}}
 
 %
-%\authorrunning{Merelo and Merelo}
+\authorrunning{Merelo et al.}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
@@ -303,6 +303,44 @@ What we can see in Figure \ref{fig:evoapps.parameters.comparison} is how paramet
 An ANOVA analysis, in fact, shows that the p-value for that parameter is slightly above 5\%. It does, however, have an impact on fitness, so in general we will want bigger populations. Next, let us look at the $\alpha$ value that decides what percentage of the population is going to be on the $\alpha$, $\beta$ and $\gamma$ castes, being the main lever for the exploration/exploitation balance. In this case, ANOVA (and the charts, upper row) show no significant influence in energy spent, except for a significant interaction with the population; this what we see on the top row, rightmost chart: the lower the percentage, that is, the lower the amount of exploitation, the better in terms of energy spent. We can then go to the bottom row and observe than, in general, lower percentage will get the algorithm to reach better fitness levels; ANOVA analysis shows that it is a significant parameter in this case too, so we need to conclude that devoting a small part of the population to exploitation will be beneficial in both fronts, energy and fitness.
 
 The maximum number of generations without improvement is significant at both levels; we need to look at the charts to reach a conclusion about which direction is best. The third row, which charts energy spent, shows that, again, lower values will get either the same energy or, in one case, less energy spent, significantly so. However, the bottom row, charting fitness levels, shows that higher values will reach lower fitness levels, again significantly so. Since energy expenses and fitness levels go in different directions, this is a case where more fine tuning will be needed. The ANOVA analysis shows that the interaction between these two parameters is not significant in any case (energy or fitness), so we can treat them independently.
+
+We can repeat these experiments again for new version of Julia, 1.11.8, and a new version of the kernel, {\tt 6.14.0-37-generic}, to check if the algorithmic improvement is consistent across different hardware/software conditions.
+%
+<<lion.julia.1.11.8, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=3, fig.pos="h!tb", fig.cap="Energy vs fitness difference to the optimum for all experiments for all parameter combinations; we compare here the optimized configuration vs. uniform random mutation in Julia 1.11.8.", fig.show='hold', out.width="50%">>=
+lion_baseline <- read.csv("data/lion-1.11.8-baseline.csv")
+lion_baseline %>% group_by(dimension,population_size) %>%
+  summarise(median_energy=median(PKG), sd_energy=sd(PKG),
+            trimmed_mean_energy=mean(PKG,trim=0.2),
+            median_time=median(seconds), sd_time=sd(seconds),
+            trimmed_mean_time=mean(seconds, trim=0.2)) -> summary_lion_baseline
+
+lion_results <- read.csv("data/lion-1.11.8-bna-fix-rand.csv")
+lion_results$delta_PKG <- 0
+lion_results$delta_seconds <- 0
+for (dim in c(3,5)) {
+  for ( pop_size in c(200,400)) {
+    number_of_rows <- nrow(lion_results[ lion_results$dimension==dim & lion_results$population_size==pop_size,])
+    lion_results[ lion_results$dimension==dim & lion_results$population_size==pop_size,]$delta_PKG <-
+      lion_results[ lion_results$dimension==dim & lion_results$population_size==pop_size,]$PKG  -
+      rep(summary_lion_baseline[ summary_lion_baseline$population_size == pop_size & summary_lion_baseline$dimension==dim, ]$median_energy,number_of_rows)
+
+    lion_results[ lion_results$dimension==dim & lion_results$population_size==pop_size,]$delta_seconds <-
+      lion_results[ lion_results$dimension==dim & lion_results$population_size==pop_size,]$seconds  -
+      rep(summary_lion_baseline[ summary_lion_baseline$population_size == pop_size & summary_lion_baseline$dimension==dim, ]$median_time,number_of_rows)
+  }
+}
+lion_results$population_size <- as.factor(lion_results$population_size)
+lion_results$point_size <- ifelse(lion_results$max_gens==10,2,4)
+lion_results$log_diff <- log10(lion_results$diff_fitness)
+lion_results$dim_pop <- paste0("D:",lion_results$dimension," Pop:",lion_results$population_size)
+lion_results$alpha <- as.factor(lion_results$alpha)
+
+lion_results$max_gens <- as.factor(lion_results$max_gens)
+ggplot(lion_results, aes(color=max_gens,y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
+ggplot(lion_results, aes(color=max_gens,y=log_diff,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
+@
+
+In Figure \ref{fig:lion.julia.1.11.8} we have kept fixed the $\alpha$ percentage and varied the maximum number of generations between 10 and 25. As should be expected, the fitness results are very similar, showing a consistent behavior of the algorithm, although in this case it confirms that there is no need to wait for 50 generations to stop the algorithm, 25 are enough. And this saving in generations is rewarded with an improvement in the energy profile (shown at left). While in \ref{fig:evoapps.parameters.comparison} PKG energy consumption for the higher value of {\sf max\_gens} was similar or higher, in this case we consistently find that, except for the dimension = 5 and population = 400, energy consumption is higher the lower are the iterations. However, what we see with this new version of Julia is that our workload, once the baseline has been eliminated, consumes consistently more than the previous version. So, although these results are valid to confirm the differences in energy consumption for different parametrizations under a different platform, the platform itself will need to be rejected on the grounds of energy consumption, staying in the previous version of Julia without upgrading.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
