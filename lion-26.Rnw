@@ -100,19 +100,20 @@ Our initial experimental design includes two problem sizes: vectors with 3 or 5 
 $\delta$ and $\epsilon$ castes will always have the same proportion, each equal to 5\%.
 \end{itemize}
 
-\begin{table}[h!tb]
-\centering
-\caption{Caste percentages depending on the $\alpha$ proportion used.}\label{tab:params}
-\begin{tabular}{lcc}
-\toprule
-$\alpha$ percentage & Exploration proportion & Exploitation proportion \\
-\midrule
-10\% & 30\% & 70\% \\
-25\% & 75\% & 25\% \\
-\end{tabular}
-\end{table}
+% \begin{table}[h!tb]
+% \centering
+% \caption{Caste percentages depending on the $\alpha$ proportion used.}\label{tab:params}
+% \begin{tabular}{lcc}
+% \toprule
+% $\alpha$ percentage & Exploration proportion & Exploitation proportion \\
+% \midrule
+% 10\% & 30\% & 70\% \\
+% 25\% & 75\% & 25\% \\
+% \end{tabular}
+% \end{table}
 
-This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
+This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance.
+% Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
 Every parametrization runs 30 times sequentially in a single core. Results written in standard output are processed and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
 
 Julia loads the script every time it is run, uses just-in-time compilation to generate low-level code, and this code is then run within its own virtual machine; this takes a certain amount of time and consumes a certain amount of energy, adding to the system overhead. This is why in this case it is especially important to make baseline measurements to discount these two quantities when we make measurements on the actual workload.
