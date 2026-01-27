@@ -35,6 +35,10 @@ Green computing, Energy profiling, Metaheuristics
 
 \section{Introduction}
 
+For the last few years, metaheuristics and machine learning algorithms have been achieving new levels of performance thanks to the use of more powerful processors, more powerful architectures and a greater amount of on-board memory. We already know that there is no free lunch, and this has been done at the expenses of increasing energy consumption. One of the languages that is more widely used in machine learning and scientific computing in particular, Python, is known to be one of the most energy-consuming ones \cite{a18090593,Pythoncpp,nahrstedt2024empirical}, but there are decisions that need to be taken at many different levels, from algorithm parametrization down to the language and architecture used in it, whose energy consumption needs to be assessed.
+
+Whether you want to present the reduction of energy consumption in algorithms implementation as an engineering requirement or as an ethical objective, the need of a methodology for comparing different configurations so that a decision can be reached is quite clear.
+
 
 The rest of the paper is organized as follows: the next Section describes the state of the art in the exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the trade-offs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
 
