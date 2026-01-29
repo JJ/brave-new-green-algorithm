@@ -82,7 +82,7 @@ We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linu
 
 We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. This function is also lightweight enough to allow us to compare the energy profiles of different combinations of genetic operators, which will then have a bigger impact on overall consumption.
 
-Our initial experimental design includes two problem sizes: vectors with 3 or 5 dimensions, to check the impact of the parameters for different problem difficulties. This corresponds to the low end of the BBOB benchmark suites; remember that we are using this suit just for the purpose of profiling the energy for this language and algorithm, so for the time being we did not find it necessary to go into higher dimensions.
+Our initial experimental design includes two problem sizes: vectors with 3, 5 and 10 dimensions, to check the impact of the parameters for different problem difficulties. This corresponds to the low end of the BBOB benchmark suites; remember that we are using this suit just for the purpose of profiling the energy for this language and algorithm, so for the time being we did not find it necessary to go into higher dimensions. The function itself is not as important as the fact that it will require several seconds to run, and thus will have enough resolution for the energy sampling to work properly.
 
 \begin{itemize}
 \item Population size: 200 or 400 individuals, which has an impact on the diversity of the population and thus the exploitation capabilities of the algorithm.
@@ -106,6 +106,86 @@ $\alpha$ percentage & Exploration proportion & Exploitation proportion \\
 This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
 Every parametrization runs 30 times sequentially in a single core. Results written to standard output are processed and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
 
+One of the approaches we have used to separate $E_{workload}$ from the total energy consumption $E$ is to repeat baseline measurements for a number of times, ideally many times so that the result is well characterized statistically. The baseline runs for all experiments were run together, and before the workload measurements.
+
+<<cec.baseline, echo=FALSE, fig.cap="PKG energy measured vs. time for a baseline measurement.", fig.height=2.5>>=
+
+# Utility functions
+process_and_plot <- function(file_path, group_name) {
+  data <- read.csv(file_path)
+  data$group <- group_name
+  data$cum_seconds <- cumsum(data$seconds)
+  print( ggplot(data, aes(x = cum_seconds, y = PKG, group=work, color=work)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time -", group_name),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal())
+  return(data)
+}
+
+process_deltas <- function(data) {
+  n <- nrow(data)
+  data$delta_PKG <- rep(NA_real_, n)
+  data$delta_seconds <- rep(NA_real_, n)
+  for (k in seq(from=0,to=n-1,by=61)) {
+    for (i in seq(from=2,to=60,by=2)) {
+      index <- k+i
+      data$delta_seconds[index] <- data$seconds[index] - (data$seconds[index-1]+ data$seconds[index+1])/2
+      data$delta_PKG[index] <- data$PKG[index] - (data$PKG[index-1] + data$PKG[index+1])/2
+
+    }
+  }
+  return(data %>% filter( delta_PKG != 0))
+}
+
+create_summary <- function(data) {
+  data$energy_per_evaluation <- data$delta_PKG / data$evaluations
+  return(
+    data %>%
+      group_by(dimension, population_size, max_gens ) %>%
+      summarise(
+        mean_delta_PKG = mean(delta_PKG),
+        median_delta_PKG = median(delta_PKG),
+        trimmed_mean_delta_PKG = mean(delta_PKG, trim=0.2),
+        trimmed_mean_energy_per_evaluation = mean(energy_per_evaluation, trim=0.2),
+        sd_delta_PKG = sd(delta_PKG),
+        iqr_delta_PKG = IQR(delta_PKG),
+        iqr_PKG = IQR(PKG),
+        conf_interval_delta_PKG = sprintf("[%s, %s]", round(t.test(delta_PKG)$conf.int[1], 2), round(t.test(delta_PKG)$conf.int[2], 2))
+      )
+  )
+}
+
+
+baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
+library(ggplot2)
+ggplot(baseline_ola_100s, aes(x = cum_seconds, y = PKG)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Baseline Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()
+
+library(dplyr)
+baseline_ola_100s %>%
+      group_by(dimension, population_size, max_gens ) %>%
+      summarise(
+        mean_PKG = mean(PKG),
+        median_PKG = median(PKG),
+        trimmed_mean_PKG = mean(PKG, trim=0.2),
+        sd_PKG = sd(PKG),
+        iqr_PKG = IQR(PKG),
+        conf_interval_PKG = sprintf("[%s, %s]", round(t.test(PKG)$conf.int[1], 2), round(t.test(PKG)$conf.int[2], 2))
+   ) -> initial_baseline_ola_100s_summary
+@
+
+What is observed in \ref{fig:cec.baseline} is that there are different levels of background energy consumption; up to 2000 seconds it is substantially the same, but then it changes to a higher level (totally unrelated to an actual change in parametrization) and then eventually to a slightly higher one, around 400 Joules.
 
 
 \section{Conclusion and discussion}
