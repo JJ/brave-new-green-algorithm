@@ -243,6 +243,50 @@ for (i in 1:nrow(ola_segments)) {
 print(plot_with_segments)
 @
 
+We can observe the effect of using this baseline in \ref{fig:cec.workload}, where the dashed lines represent the trimmed mean of the baseline for that specific configuration; these averages that will be subtracted from the workload have values that are more related to the state of the system when the baseline experiment was run, thus rendering $E_{workload}$ usable, but with a certain degree of uncertainty; in extreme cases this average will be higher than some workload energy measurement, resulting in "negative" energy averages for certain configurations \cite{cpp.vs.zig}. Even if we use the trimmed mean for the baseline to mitigate the effect of outliers, there is still the issue that the system state is changing all the time, which means that effectively subtracting the baseline will not effectively eliminate it. But there are additional issues with this statistical treatment: it maintains the variability of the original measures, with $E_{workload}$ having the same variability as $E$ itself and the same interquartile range. As you can see here, different measurements for the same configuration can have a difference of 200 Joules; subtracting a constant value from it will keep the same variability, thus having more or less the same reproducibility as the $E$ measurements.
+
+We can mitigate this effect of baseline and workload experiments finding the system in different states by using a {\em sequential mixed} strategy: one baseline measurement, one workload measurement with the same parameters. We are still keeping the same configuration of dimensions and population size
+
+<<cec.sequential, echo=FALSE, fig.cap="PKG energy measured vs. time for sequential baseline and workload measurements. Dashed lines correspond to baseline averages for that specific segment.", fig.height=2.5>>=
+ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
+ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
+for (i in 2:nrow(ola_mixed_no0)) {
+  if (ola_mixed_no0$work[i] == "ola-no0") {
+    ola_mixed_no0$delta_seconds[i] <- ola_mixed_no0$seconds[i] - ola_mixed_no0$seconds[i-1]
+    ola_mixed_no0$delta_PKG[i] <- ola_mixed_no0$PKG[i] - ola_mixed_no0$PKG[i-1]
+  }
+}
+ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Sequential Baseline and Workload Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()
+@
+
+The graph shown in Figure \ref{fig:cec.sequential} shows how baseline and workload measurements follow more or less the same pattern, thus mitigating the issue of the experiments finding the underlying system in different states. In this specific case, which was run for Julia version 1.11.8, the workload measurements are shown in Table \ref{tab:cec.sequential}.
+
+<<cec.sequential.table, echo=FALSE, message=FALSE>>=
+ola_mixed_no0 %>%
+  filter(work == "ola-no0") %>%
+  group_by(dimension, population_size, max_gens) %>%
+  summarise(
+    mean_delta_PKG = mean(delta_PKG, na.rm=TRUE),
+    trimmed_mean_delta_PKG = mean(delta_PKG, trim=0.2, na.rm=TRUE),
+    sd_delta_PKG = sd(delta_PKG, na.rm=TRUE),
+    iqr_delta_PKG = IQR(delta_PKG, na.rm=TRUE),
+    iqr_PKG = IQR(PKG, na.rm=TRUE),
+    conf_interval_delta_PKG = sprintf("[%s, %s]", round(t.test(delta_PKG)$conf.int[1], 2), round(t.test(delta_PKG)$conf.int[2], 2))
+  ) -> sequential_summary
+
+library(kableExtra)
+kable(sequential_summary,
+      col.names=c("D","P","max gens", "Delta PKG (J): Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
+@
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
