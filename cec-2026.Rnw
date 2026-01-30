@@ -266,7 +266,7 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
     theme_minimal()
 @
 
-The graph shown in Figure \ref{fig:cec.sequential} shows how baseline and workload measurements follow more or less the same pattern, thus mitigating the issue of the experiments finding the underlying system in different states. In this specific case, which was run for Julia version 1.11.8, the workload measurements are shown in Table \ref{tab:cec.sequential}.
+The graph shown in Figure \ref{fig:cec.sequential} shows how baseline and workload measurements follow more or less the same pattern, thus mitigating the issue of the experiments finding the underlying system in different states. In this specific case, which was run for Julia version 1.11.8, the workload measurements are shown in Table \ref{tab:cec.sequential.table}.
 
 <<cec.sequential.table, echo=FALSE, message=FALSE>>=
 ola_mixed_no0 %>%
@@ -287,7 +287,9 @@ kable(sequential_summary,
       caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
 @
 
+Besides showing the $E_{workload}$ (represented as Delta PKG in the table), the most interesting columns are labeled IQR (for interquartile range). Two such columns are shown: for computed $E_{workload}$ and for $E$. Since we are subtracting variable values to compute $E_{workload}$, the IQRs are different. However, it is not always contracted: in some cases it becomes bigger (although not by much), while in some cases it is actually reduced (for instance, D=3, P=200, max gens = 25). We are increasing reproducibility by reducing this variability, but it will depend on the underlying conditions of the system.
 
+Since the variability we observe has that sawtooth effect, we can try and reduce additionally that variability by using a {\em sandwich strategy}: for every parameter, we will use two baseline measurements, subtracting the average of both from the workload. For every parameter, we will run 1 baseline experiment more than workload experiments. While we were doing 30 x 2 experiments for every parameter value, we will do now 30 x 2 +1, with every parameter combination run starting and ending with a baseline measurement.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
