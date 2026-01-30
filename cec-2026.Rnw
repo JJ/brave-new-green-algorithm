@@ -291,6 +291,18 @@ Besides showing the $E_{workload}$ (represented as Delta PKG in the table), the 
 
 Since the variability we observe has that sawtooth effect, we can try and reduce additionally that variability by using a {\em sandwich strategy}: for every parameter, we will use two baseline measurements, subtracting the average of both from the workload. For every parameter, we will run 1 baseline experiment more than workload experiments. While we were doing 30 x 2 experiments for every parameter value, we will do now 30 x 2 +1, with every parameter combination run starting and ending with a baseline measurement.
 
+<<cec.sandwich, echo=FALSE, fig.cap="PKG energy measured vs. time for sandwich baseline and workload measurements. Dashed lines correspond to baseline averages for that specific segment.", fig.height=2.5>>=
+cec_sandwich_1 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv" )
+sandwich_processed_1 <- process_deltas(cec_sandwich_1)
+summary_sandwich_1 <- create_summary(sandwich_processed_1)
+summary_sandwich_1$trimmed_mean_energy_per_evaluation <- NULL
+summary_sandwich_1$median_delta_PKG <- NULL
+kable(summary_sandwich_1,
+      col.names=c("D","P","max gens", "Delta PKG (J): Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
+@
+
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
