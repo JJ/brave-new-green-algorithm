@@ -287,6 +287,8 @@ kable(sequential_summary,
       caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
 @
 
+
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
