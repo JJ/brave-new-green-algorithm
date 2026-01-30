@@ -59,6 +59,7 @@ This is especially true for one of the most important factors in population-base
 We will be working here with a version of an evolutionary algorithm called the Brave New Algorithm \cite{merelo2022brave}, which was designed with this balance in mind.
 % En este caso especificar el tipo de balance (de estrategia de búsqueda o de 'costo beneficio'?) - Mario
 
+% ¿Le agrego una mini justificación para el uso de Julia? - Mario 
 The current version of the algorithm is implemented in the programming language Julia, opening different possibilities of optimization at multiple levels.
 
 But for any kind of change, including the balance of operators used, it is extremely complicated or impossible to know in advance how the energy profile for an implementation might change: %PABLO: Estos dos puntos me parecen raros aquí, no enlazan bien JJ: he tratado de enlazarlos.
@@ -68,6 +69,14 @@ Additionally, we are interested in exploring Julia as a language for EA implemen
 
 %PABLO: En general, por ahora no me queda claro el objetivo. ¿Hacer una metodología? ¿Qué métricas se usan para medir la calidad?
 % JJ: las dos cosas, primero la metodología y luego las medidas. Si no tienes una buena metodología no puedes comparar.
+
+% Podría mencionarse la complejidad adicional que agregan aspectos de bajo nivel como la recolección de basura, 
+% sobre todo si se realizan asignaciones frecuentes de memoria:
+% https://docs.julialang.org/en/v1/devdocs/gc/
+
+% Sería conveniente aclarar si estos efectos se consideran explícitamente en este
+% trabajo o si se asumen como parte del costo de ejecución interno.
+% - Mario
 
 The rest of the paper is organized as follows: the next Section describes the state of the art in the exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the trade-offs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
 
