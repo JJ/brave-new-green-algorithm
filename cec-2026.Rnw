@@ -108,7 +108,7 @@ Every parametrization runs 30 times sequentially in a single core. Results writt
 
 One of the approaches we have used to separate $E_{workload}$ from the total energy consumption $E$ is to repeat baseline measurements for a number of times, ideally many times so that the result is well characterized statistically. The baseline runs for all experiments were run together, and before the workload measurements.
 
-<<cec.baseline, echo=FALSE, fig.cap="PKG energy measured vs. time for a baseline measurement.", fig.height=2.5>>=
+<<cec.baseline, echo=FALSE, message=FALSE, warnings=FALSE,fig.cap="PKG energy measured vs. time for a baseline measurement.", fig.height=2.5>>=
 
 # Utility functions
 process_and_plot <- function(file_path, group_name) {
@@ -162,8 +162,15 @@ create_summary <- function(data) {
 
 baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
 baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
+baseline_ola_100s$group <- "1"
+baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
+baseline_ola_v2_data$cum_seconds <- cumsum(baseline_ola_v2_data$seconds)
+baseline_ola_v2_data$group <- "2"
+
+baseline_both <- rbind(baseline_ola_100s, baseline_ola_v2_data)
+
 library(ggplot2)
-ggplot(baseline_ola_100s, aes(x = cum_seconds, y = PKG)) +
+ggplot(baseline_both, aes(x = cum_seconds, y = PKG,group=group, color=group)) +
     geom_line() +
     labs(
       title = paste("Energy Consumption Over Time - Baseline Measurement"),
@@ -174,7 +181,7 @@ ggplot(baseline_ola_100s, aes(x = cum_seconds, y = PKG)) +
 
 library(dplyr)
 baseline_ola_100s %>%
-      group_by(dimension, population_size, max_gens ) %>%
+      group_by(dimension, population_size ) %>%
       summarise(
         mean_PKG = mean(PKG),
         median_PKG = median(PKG),
@@ -183,10 +190,58 @@ baseline_ola_100s %>%
         iqr_PKG = IQR(PKG),
         conf_interval_PKG = sprintf("[%s, %s]", round(t.test(PKG)$conf.int[1], 2), round(t.test(PKG)$conf.int[2], 2))
    ) -> initial_baseline_ola_100s_summary
+
+
 @
 
-What is observed in \ref{fig:cec.baseline} is that there are different levels of background energy consumption; up to 2000 seconds it is substantially the same, but then it changes to a higher level (totally unrelated to an actual change in parametrization) and then eventually to a slightly higher one, around 400 Joules.
+What is observed in \ref{fig:cec.baseline}, which represents two different baseline runs, is that there are different levels of background energy consumption; for group 1, up to 2000 seconds it is substantially the same, but then it changes to a higher level (totally unrelated to an actual change in parametrization) and then eventually to a slightly higher one, around 400 Joules, but there are peaks of more than 400 Joules. For group 2 consumption grows at the beginning, and then settles down with variations of up to 50 joules from one run to the next, with peaks of up to 150 joules; being substantially the same code, the average for group 2 is different from the one for group 1.
 
+<<cec.workload, echo=FALSE, fig.cap="PKG energy measured vs. time for workload measurements. Dashed lines correspond to baseline averages for that specific segment.", fig.height=2.5>>=
+workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+workload_data_ola$delta_PKG <-0
+workload_data_ola$delta_seconds <- 0
+workload_data_ola$cum_seconds <- cumsum(workload_data_ola$seconds)
+ola_segments <- data.frame( parameters=character(), start_second = numeric(), end_second=numeric(), trimmed_mean_PKG=numeric(), color=character())
+color_index <- 1
+for (dim in c(3,5)) {
+  for ( pop_size in c(200,400)) {
+      number_of_rows <- nrow(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,])
+      workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$delta_PKG <-
+      workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$PKG  -
+      rep(initial_baseline_ola_100s_summary[ initial_baseline_ola_100s_summary$population_size == pop_size & initial_baseline_ola_100s_summary$dimension==dim, ]$trimmed_mean_PKG,number_of_rows)
+
+      ola_segments <- rbind(ola_segments,
+        data.frame(
+          parameters = sprintf("dim=%d, pop=%d", dim, pop_size),
+          start_second = min(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$cum_seconds),
+          end_second = max(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$cum_seconds),
+          trimmed_mean_PKG = initial_baseline_ola_100s_summary[ initial_baseline_ola_100s_summary$population_size == pop_size & initial_baseline_ola_100s_summary$dimension==dim, ]$trimmed_mean_PKG,
+          color=ifelse(color_index %% 2 == 0, "red", "blue")
+        )
+      )
+      color_index <- color_index + 1
+
+    }
+  }
+
+plot_with_segments <- ggplot(workload_data_ola, aes(x = cum_seconds, y = PKG)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Workload Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()+
+    ylim(300, 750)
+
+for (i in 1:nrow(ola_segments)) {
+  plot_with_segments <- plot_with_segments +
+    geom_segment( x=ola_segments$start_second[i], y=ola_segments$trimmed_mean_PKG[i],
+                     xend=ola_segments$end_second[i], yend=ola_segments$trimmed_mean_PKG[i], linetype="dashed", color=ola_segments$color[i] )
+}
+
+print(plot_with_segments)
+@
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
