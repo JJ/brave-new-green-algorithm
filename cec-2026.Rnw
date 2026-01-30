@@ -294,7 +294,7 @@ Since the variability we observe has that sawtooth effect, we can try and reduce
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{cec-1.11.9-25.10-cec-mixed-v5-29-Jan-08-50-11.csv}
+Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
