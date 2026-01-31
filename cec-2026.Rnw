@@ -90,20 +90,7 @@ Our initial experimental design includes two problem sizes: vectors with 3, 5 an
 \item Percentage of population in the $\alpha$ caste: 10\%, since we have proved in \cite{lion26} that is obtains the best results. The rest of the parameters will be set accordingly: $\beta$ percentage will double that value. $\gamma$ caste will hold a proportion equal to the $\alpha$ and $\beta$ percentages subtracted from 90. $\delta$ and $\epsilon$ castes will always have the same proportion, each equal to 5\%.
 \end{itemize}
 
-\begin{table}[h!tb]
-\centering
-\caption{Caste percentages depending on the $\alpha$ proportion used.}\label{tab:params}
-\begin{tabular}{lcc}
-\toprule
-$\alpha$ percentage & Exploration proportion & Exploitation proportion \\
-\midrule
-10\% & 30\% & 70\% \\
-25\% & 75\% & 25\% \\
-\end{tabular}
-\end{table}
-
-This means that the $\alpha$ percentage is the main one governing this exploration/exploitation balance. Please check table \ref{tab:params} for how the explorative/exploitative castes are organized depending on the values used.
-Every parametrization runs 30 times sequentially in a single core. Results written to standard output are processed and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
+By default, every parametrization runs 30 times sequentially in a single core. Results written to standard output are processed and are available from this paper's repository at \url{https://github.com/JJ/brave-new-green-algorithm}.
 
 One of the approaches we have used to separate $E_{workload}$ from the total energy consumption $E$ is to repeat baseline measurements for a number of times, ideally many times so that the result is well characterized statistically. The baseline runs for all experiments were run together, and before the workload measurements.
 
@@ -332,9 +319,7 @@ The experimental data summarized in Table \ref{tab:cec.reboots}, which includes 
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}. Even if methods such as R3-validation \cite{rigorous} were promising first steps by trying to mitigate system variability via repetition and permutation of the configurations that are going to be compared, underlying states in the system are persistent and different enough to need further experimentation. In this paper we have proposed such a methodology for comparing energy consumption of different population-based algorithms parametrization which consists in using a {\em sandwich} method that puts workload experiments between two baseline measurements, and then repeating the whole set of experiments several times, five in our case. With these combined measures we have proved that the variability is mitigated, reducing the confidence intervals, and thus yielding actionable information that can be used to take decisions on parametrizations, framework versions, or even genetic operator micro-optimizations.
-
-The issue here is that, due to the circumstances needed to run a single experiment, which even if it is not long needs machine reboots to ensure the machine being in different states, its use for online meta-optimization needs to follow a different approach, for instance considering energy a {\em noisy} fitness and dealing with it statistically, as proposed, for instance, in \cite{merelo2016statistical}.
+Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}. Even if methods such as R3-validation \cite{rigorous} were promising first steps by trying to mitigate system variability via repetition and permutation of the configurations that are going to be compared, underlying states in the system are persistent and different enough to need further experimentation. In this paper we have proposed such a methodology for comparing energy consumption of different population-based algorithms parametrization which consists in using a {\em sandwich} method that puts workload experiments between two baseline measurements, and then repeating the whole set of experiments several times, five in our case. With these combined measures we have proved that the variability is mitigated, reducing the confidence intervals, and thus yielding actionable information that can be used to take decisions on parametrizations, framework versions, or even genetic operator micro-optimizations. The issue here is that, due to the circumstances needed to run a single experiment, which even if it is not long needs machine reboots to ensure the machine being in different states, its use for online meta-optimization needs to follow a different approach, for instance considering energy a {\em noisy} fitness and dealing with it statistically, as proposed, for instance, in \cite{merelo2016statistical}.
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
