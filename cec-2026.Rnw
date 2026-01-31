@@ -332,7 +332,9 @@ The experimental data summarized in Table \ref{tab:cec.reboots}, which includes 
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}
+Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}. Even if methods such as R3-validation \cite{rigorous} were promising first steps by trying to mitigate system variability via repetition and permutation of the configurations that are going to be compared, underlying states in the system are persistent and different enough to need further experimentation. In this paper we have proposed such a methodology for comparing energy consumption of different population-based algorithms parametrization which consists in using a {\em sandwich} method that puts workload experiments between two baseline measurements, and then repeating the whole set of experiments several times, five in our case. With these combined measures we have proved that the variability is mitigated, reducing the confidence intervals, and thus yielding actionable information that can be used to take decisions on parametrizations, framework versions, or even genetic operator micro-optimizations.
+
+The issue here is that, due to the circumstances needed to run a single experiment, which even if it is not long needs machine reboots to ensure the machine being in different states, its use for online meta-optimization needs to follow a different approach, for instance considering energy a {\em noisy} fitness and dealing with it statistically, as proposed, for instance, in \cite{merelo2016statistical}.
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
