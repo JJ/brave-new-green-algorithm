@@ -301,7 +301,33 @@ kable(summary_sandwich_1,
       caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
 @
 
-In this case, we have also expanded the parameters we are testing to include 10 dimensions, showing the result in Table \ref{tab:cec.sandwich}.
+In this case, we have also expanded the parameters we are testing to include 10 dimensions, showing the result in Table \ref{tab:cec.sandwich}. What we were looking for, a reduction in variability, is observed in the IQR columns, where in most cases it is cut almost in half. There are some exceptions, however. For D=3, P=400, max gens = 25 the standard deviation is very high and the initial IQR too, but it is slightly increased when the delta PKG, that is, $E_{workload}$ is computed. In general, for any run, it can happen that the variability in a segment of the experiment is too high, which will make impossible to reduce it via subtraction of two baselines.
+
+In order to avoid this, we propose the repetition of experiments in different moments, including after rebooting the machine. We have performed 5 experimental runs of the whole set of experiments, with some reboots.
+
+<<cec.reboots, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="PKG energy measured vs. time for sandwich baseline and workload measurements including reboots. Dashed lines correspond to baseline averages for that specific segment.">>=
+cec_sandwich_2 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv" )
+sandwich_processed_2 <- process_deltas(cec_sandwich_2)
+cec_sandwich_3  <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv" )
+sandwich_processed_3 <- process_deltas(cec_sandwich_3)
+cec_sandwich_4 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv")
+sandwich_processed_4 <- process_deltas(cec_sandwich_4)
+cec_sandwich_5 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv" )
+sandwich_processed_5 <- process_deltas(cec_sandwich_5)
+
+cec_sandwich_all <- rbind(sandwich_processed_1, sandwich_processed_2, sandwich_processed_3, sandwich_processed_4, sandwich_processed_5)
+summary_cec_sandwich_all <- create_summary(cec_sandwich_all)
+
+summary_cec_sandwich_all$trimmed_mean_energy_per_evaluation <- NULL
+summary_cec_sandwich_all$median_delta_PKG <- NULL
+kable(summary_cec_sandwich_all,
+      col.names=c("D","P","max gens", "Delta PKG (J):
+ Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for sandwich baseline and workload measurements including reboots.",
+      table.env='table*')
+@
+
+The experimental data summarized in Table \ref{tab:cec.reboots}, which includes the run included in Table \ref{tab:cec.sandwich}, shows that, in all cases, the variability (which is obviously much higher in this case) is reduced almost 1/3rd of the original. As indicated in the introduction, due to the combination of different factors affecting $E_{system}$, it cannot be avoided; however, by trying to make different runs in different moments, and using robust indicators, such as the trimmed mean and 95\% confidence intervals, we can finally approach a degree of reproducibility that allows us to compare different parameter configurations and take decisions based on them. In this case we can conclude that for every problem dimension using the smaller population and a maximum number of generations without change equal to 10 will consume the least energy for all problem dimensions examined. Since these measure were taken for the latest stable Julia version (1.12.4) and Linux kernel ({\tt 6.17.0-8}), we can use them as baseline for examining different versions, or to check the effect of other optimizations and genetic operator change.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
