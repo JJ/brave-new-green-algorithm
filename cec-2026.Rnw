@@ -11,15 +11,20 @@
 \title{Can we measure energy consumption in population-based metaheuristics?}
 
 \author{
-\IEEEauthorblockN{JJ Merelo}
-\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
-University of Granada\\
-Email: jmerelo@ugr.es\\
-CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
-\and
-\IEEEauthorblockN{Cecilia Merelo-Molina}
-\IEEEauthorblockA{Zenzorrito, Granada, Spain\\
-ORCID: 0000-0002-5902-0159}
+\IEEEauthorblockN{A. N. Onymous-Authors}
+\IEEEauthorblockA{Affiliation\\
+Email:
+Hidden place and ORCID}
+
+% \IEEEauthorblockN{JJ Merelo}
+% \IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
+% University of Granada\\
+% Email: jmerelo@ugr.es\\
+% CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+% \and
+% \IEEEauthorblockN{Cecilia Merelo-Molina}
+% \IEEEauthorblockA{Zenzorrito, Granada, Spain\\
+% ORCID: 0000-0002-5902-0159}
 }
 %
 \maketitle
@@ -74,11 +79,12 @@ The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary al
 The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, 2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
 There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
-The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+The implementation of the algorithm used is available under a free license at \url{https://hiddenu.rl}
+% \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
-In order to carry out these experiments, we have used a methodology that is like that used in our previous papers: \cite{low-level}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. This tool was validated in \cite{icsoft} by comparing its output to other energy-measuring tools and finding that it was less error-prone than the rest, and gave measures that were consistent with the tools such as {\tt perf} and {\tt likwid} when they did not fail. In general, software-based power meters offer a free alternative to more precise hardware-based meters, can be used on any system, and have been experimentally validated repeatedly \cite{jay2023experimental}.
+In order to carry out these initial experiments, we have used a methodology proposed in \cite{low-level}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. This tool was validated in \cite{icsoft} by comparing its output to other energy-measuring tools and finding that it was less error-prone than the rest, and gave measures that were consistent with the tools such as {\tt perf} and {\tt likwid} when they did not fail. In general, software-based power meters offer a free alternative to more precise hardware-based meters, can be used on any system, and have been experimentally validated repeatedly \cite{jay2023experimental}.
 The combination of the RAPL API, which places estimates in a register, and the overhead by the tool cannot be avoided, however, which is why we have to apply a careful experimental design to mitigate adverse effects. The sampling frequency we use for the RAPL counters is 10 Hz, that is, 1 sample every 100 milliseconds.
 
 We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Please note that AMD implements a version of the RAPL API which only allows the measurement of a single value for the processor, PKG or package, excluding memory and different components within the package. Although useful, diving into memory consumption or the consumption of other parts of the processor would be more interesting for micro-optimization, or explaining the results achieved, than for overall assessment or reduction of energy consumption, which is what we are doing in this paper. Julia version has been $1.11.7$ except when noted.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
@@ -327,7 +333,9 @@ Creating a methodology that allows a more precise comparison of the energy consu
 At any rate, we have answered here the main research question by proposing a statistically sound methodology, based on the reduction of variability and thus the improvement of reproducibility, for measuring energy consumption of different parametrization of population based algorithms, that focuses on the energy spent by the workload itself, eliminating to the the extent that is possible the effects of the rest of the system and the language or framework overhead. This methodology, in turn, will be used to craft the Brave New Algorithm at different levels (language, implementation, algorithm parametrization) so that it reduces its carbon footprint, at the same time it keeps or improves the fitness levels reached.
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+Supported by a project\\
+taking this much space
 
 \bibliographystyle{IEEEtran}
 \bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
