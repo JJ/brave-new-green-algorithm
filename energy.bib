@@ -1,3 +1,12 @@
+@article{lewis2008run,
+  title={Run-time Energy Consumption Estimation Based on Workload in Server Systems.},
+  author={Lewis, Adam Wade and Ghosh, Soumik and Tzeng, Nian-Feng},
+  journal={HotPower},
+  volume={8},
+  pages={17--21},
+  year={2008}
+}
+
 @article{freina2024survey,
   title={A Survey of Energy Measurement Methodologies for Computer Systems},
   author={Freina, David and Jansen, Matthijs and Trivedi, Animesh},
@@ -1010,6 +1019,31 @@ pages="169--184",
 abstract="As we move towards exa-scale computing, energy is becoming increasingly important, even in the high performance computing arena. However, the simple equation, Energy = Power {\$}{\$}{\backslash}times {\$}{\$}Time, suggests that optimizing for speed already optimizes for energy, under the assumption that Power is constant. When power is not constant, a strategy that achieves energy savings at the cost of slower execution is Dynamic Voltage and Frequency Scaling (DVFS). However, DVFS is currently applicable only to the processor, and the entire system has many other sources of power dissipation. We show that there is little to gain in compilers by trying to trade off speed for energy using DVFS. It is best to produce code that runs full-throttle, completing as quickly as possible, an approach called ``race to sleep.'' Our result is based on analyses of a high-level energy model that characterizes energy consumption, related to survey of power consumption trends of recent processors for both desktop and server, as well as Cray supercomputers.",
 isbn="978-3-319-09967-5"
 }
+
+@misc{devogeleer2014modelingtemperaturebiaspower,
+      title={Modeling the Temperature Bias of Power Consumption for Nanometer-Scale CPUs in Application Processors}, 
+      author={Karel De Vogeleer and Gerard Memmi and Pierre Jouvelot and Fabien Coelho},
+      year={2014},
+      eprint={1404.3381},
+      archivePrefix={arXiv},
+      primaryClass={cs.AR},
+      url={https://arxiv.org/abs/1404.3381}, 
+}
+
+@article{PENG2025104837,
+title = {Modeling and optimization of power consumption for multi-core processors: A thermodynamic perspective},
+journal = {Results in Engineering},
+volume = {26},
+pages = {104837},
+year = {2025},
+issn = {2590-1230},
+doi = {https://doi.org/10.1016/j.rineng.2025.104837},
+url = {https://www.sciencedirect.com/science/article/pii/S2590123025009120},
+author = {Xiaoxuan Peng and Litao Yan and Qiang Li and Xiaohu Ge and Yonghui Li},
+keywords = {Stochastic thermodynamics, Multi-core processors, Spatio-temporal optimization, Power consumption optimization},
+abstract = {As artificial intelligence advances intensify demands for efficient computing, this article addresses the fundamental limitations of traditional processor power models rooted in empirical frequency/voltage parameters. A stochastic thermodynamics-based power consumption model for multi-core processors is proposed in this article, revealing an exponential temperature-dependent power consumption escalation through thermodynamic analysis. Based on the relationship between processor power consumption and temperature, a spatio-temporal optimization algorithm is designed to reduce the power consumption of multi-core processors, which achieved maximum 22.2% power consumption reduction compared with unoptimized processors. Furthermore, temperature-induced voltage offsets in optimized processors exhibit an overall reduction of up to 52.45% compared with processors without optimization. Algorithmic cost analysis demonstrates superiority over traditional load balancing and layout optimization when algorithm cost factors fall below 0.016 and 0.17, respectively.}
+}
+
 @inproceedings{jay2023experimental,
   title={An experimental comparison of software-based power meters: focus on {CPU and GPU}},
   author={Jay, Mathilde and Ostapenco, Vladimir and Lef{\`e}vre, Laurent and Trystram, Denis and Orgerie, Anne-C{\'e}cile and Fichel, Benjamin},
