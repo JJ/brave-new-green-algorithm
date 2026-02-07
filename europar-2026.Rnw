@@ -44,6 +44,8 @@ ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
 %
 \section{Introduction}
 
+Concerns about the energy costs of computing infrastructure are not new \cite{sinha2001jouletrack,kurp2008green,lewis2008run}, but its importance and urgency has certainly increased in the last years with the introduction of metaheuristic and hyperheuristic algorithms \cite{irace,novoa2021measuring} as well as deep learning and large language models \cite{10549890}.
+
 \begin{credits}
 \subsubsection{\ackname}
 %A bold run-in heading in small font size at the end of the paper is
@@ -55,7 +57,7 @@ ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
 \end{credits}
 
 \bibliographystyle{splncs04}
-\bibliography{mybibliography}
+\bibliography{energy,ga-energy}
 %
 
 \end{document}
