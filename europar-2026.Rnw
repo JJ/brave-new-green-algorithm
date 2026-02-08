@@ -61,15 +61,14 @@ This is precisely what we will carry out in this paper. We will run a set of exp
 
 The rest of the paper is organized as follows: next we will describe the experimental design, followed by a Section devoted to the results of the experiments (Section \ref{sec:exp}). Finally, we will discuss these results and draw our conclusions.
 
-\section{Experimental design}\label{sec:exp}
+\section{Experiments and results}\label{sec:exp}
 
+\section{Discussion and conclusions}\label{sec:conclusions}
 
 \begin{credits}
 \subsubsection{\ackname}
-%A bold run-in heading in small font size at the end of the paper is
-%used for general acknowledgments, for example: This study was funded
-%by X (grant number Y).
 
+his work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
 
 \end{credits}
