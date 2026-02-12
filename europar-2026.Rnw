@@ -89,8 +89,24 @@ These whole set of experiments is then repeated several times at several points 
 
 All measures have been taken on the same system, a desktop system with an AMD Ryzen 9 9950X 16-Core Processor. This is a two-die processor, that has the cores distributed in two different dices, each one with its own temperature sensor. We will take into account this fact in the analysis, as well as the experimental design. This machine is running Ubuntu with kernel {\tt 6.17.0-14-generic}. We are using Julia version 1.11.9, initially with the test version and then the stable one, although in this paper we will not be comparing hardware versions. We are using {\sf pinpoint}, a command line tool that reads energy measurements from the RAPL API \cite{rapl,khan2018rapl}. Since this is an AMD system, only PKG (package) energy can be measured, without distinguishing between different processor planes or memory spent by DRAM. This is enough, however, to understand the interdependence between temperature and energy spent by our implementation of the algorithm. Finally, the {\sf sensors} command is used to read the temperature from the sensors; a specific sensor, {\sf k10temp-pci-00c3}, yields three measurements, one for maximum allowed temperature and one for each die: {\sf Tccd1} and {\sf Tccd2}. Every single run, in superuser mode, is executed from a Perl script, that also processes the energy and temperature readings and outputs a CSV file. All data files are available in a public GitHub repository \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
-We will run the initial experiment, using the same conditions, intended as a baseline.
+We will run the initial experiment, using the same conditions; this is intended as a baseline.
+%
+<<europar.initial, echo=FALSE, fig.cap="Energy spent vs. temperature for the baseline experiment. Different colors indicate the problem dimension.", fig.height=4>>=
+load("data/europar_test.rds")
+library(ggplot2)
+europar_test$dimension <- as.factor(europar_test$dimension)
+europar_test$base <- ifelse( startsWith(europar_test$work, "base"), TRUE, FALSE)
+ggplot(europar_test, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
+@
 
+In Figure \ref{fig:europar.initial} we plot the PKG energy consumed against the initial temperature. Different dimensions translate to different shapes, and color indicate whether it is a baseline run (without workload, just generation of the initial population) or workload run. We can observe a certain dependence between temperature and energy consumed, which grow in a different way for runs with or without workload. We will then need to consider different models for them.
+
+<<europar.initial.base.model, echo=FALSE, fig.cap="Model of energy consumption for the baseline experiment.", fig.height=4>>=
+library(dplyr)
+europar_test_base <- europar_test %>% filter(base == TRUE)
+europar_test_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_base)
+
+@
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
