@@ -101,7 +101,7 @@ ggplot(europar_test, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + 
 
 In Figure \ref{fig:europar.initial} we plot the PKG energy consumed against the initial temperature. Different dimensions translate to different shapes, and color indicate whether it is a baseline run (without workload, just generation of the initial population) or workload run. We can observe a certain dependence between temperature and energy consumed, which grow in a different way for runs with or without workload. We will then need to consider different models for them.
 
-<<europar.initial.base.model, echo=FALSE, fig.cap="Model of energy consumption for the baseline experiment.", fig.height=4>>=
+<<europar.initial.base.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the baseline experiment.", fig.height=4>>=
 library(dplyr)
 europar_test_base <- europar_test %>% filter(base == TRUE)
 europar_test_base_model_linear <- glm( PKG ~ + initial_temp*dimension,data = europar_test_base)
