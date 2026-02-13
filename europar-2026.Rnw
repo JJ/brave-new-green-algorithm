@@ -109,7 +109,39 @@ europar_test_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension
 difference_base_models <- anova(europar_test_base_model,europar_test_base_model_linear)
 @
 
-We will try to adjust two different models to this data, one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system.
+We will try to adjust two different generalized linear models to this data (using R's {\sf glm}), one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system.
+
+In principle, this variability was expected which is why every workload run is between two baseline runs, expected to eliminate at least part of the variability from the measurement.
+
+<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment.", fig.height=4>>=
+source("R/process_deltas.R")
+europar_test_processed <- process_deltas( europar_test )
+europar_test_processed$dimension <- as.factor(europar_test_processed$dimension)
+europar_test_processed$population_size <- as.factor(europar_test_processed$population_size)
+ggplot(europar_test_processed, aes(x = initial_temp, y = delta_PKG)) +
+  geom_point(color=europar_test_processed$dimension ) +
+  labs(
+    title = "Energy Consumption vs. Temperature",
+    x = "Temperature",
+    y = "Delta PKG"
+  ) + theme_minimal()
+europar_test_delta_model_linear <- glm( PKG ~ + initial_temp*dimension*population_size,data = europar_test_processed)
+europar_test_delta_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_processed)
+europar_test_delta_evals_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations,data = europar_test_processed)
+difference_delta_models <- anova(europar_test_delta_evals_model,europar_test_delta_model)
+@
+
+Figure \ref{fig:europar.initial.workload.model} shows the difference in energy consumption, Delta PKG, vs. temperature, with different colors for different problem sizes. In some cases this delta can be negative if the conditions from the baseline to the workload runs have changed dramatically. The variability is still quite high, with deltas reaching 400 Joules, and increment slightly with temperature. Again, we try to model this dependence using a generalized linear model, using a term quadratic on the temperature or not, and including population size, the dimension as factor and the number of evaluations, which should change every run as a result of the stochastic algorithm. Again, model quadratic in the temperature that includes the number of evaluations is better with \Sexpr{round(difference_delta_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_delta_models$`Resid. Dev`[2],2)}.
+The model includes significant dependence on the initial temperature, population size the problem dimension, with evaluations being also significant. Dimension 10 (which is run at the beginning of every experiment) does not have any significant influence either by itself or in combination with any other. Again, the value of the quadratic term \Sexpr{round(coef(europar_test_delta_model)["I(initial_temp^2)"],4)} is negative and of a much lower magnitude than the linear term \Sexpr{round(coef(europar_test_delta_model)["initial_temp"],4)}.
+
+<<europar.initial.model.slopes, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Slopes of the model for the workload experiment for the population sizes experimented.", fig.height=3>>=
+library(marginaleffects)
+plot_predictions(europar_test_delta_evals_model, condition = c("initial_temp", "dimension","population_size"))
+@
+
+This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the three problem dimensions. What is interesting here is that the the slope is different for 3 and 5 dimensions, implying that depending on the problem size, a specific parameter combination will affect them in a different way. But the main issue here is that we have a wide range of temperatures and a very wide range of effects on energy consumption; since our initial intent is to reduce energy consumption, by design we should strive in designing experiments that, from this phase, would already reduce energy consumption, at the same time we gather heuristic information on how to optimize the algorithm implementation for energy production. Reducing the slope of dependence on temperature would be a way of reducing energy consumption, since the system temperature is mostly out of our control.
+
+Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
