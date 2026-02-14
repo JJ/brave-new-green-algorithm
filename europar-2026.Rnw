@@ -136,10 +136,14 @@ The model includes significant dependence on the initial temperature, population
 
 <<europar.initial.model.slopes, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Slopes of the model for the workload experiment for the population sizes experimented.", fig.height=3>>=
 library(marginaleffects)
-plot_predictions(europar_test_delta_evals_model, condition = c("initial_temp", "dimension","population_size"))
+plot_predictions(europar_test_delta_evals_model, condition = c("initial_temp","population_size", "dimension"))
 @
 
-This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the three problem dimensions. What is interesting here is that the the slope is different for 3 and 5 dimensions, implying that depending on the problem size, a specific parameter combination will affect them in a different way. But the main issue here is that we have a wide range of temperatures and a very wide range of effects on energy consumption; since our initial intent is to reduce energy consumption, by design we should strive in designing experiments that, from this phase, would already reduce energy consumption, at the same time we gather heuristic information on how to optimize the algorithm implementation for energy production. Reducing the slope of dependence on temperature would be a way of reducing energy consumption, since the system temperature is mostly out of our control.
+This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the three problem dimensions and the algorithm parameter, population size, should allow us to draw some conclusions on which one should be chosen to minimize energy; however, given that the curves for the different populations are different depending on the dimension, cross each other at relatively plausible temperatures (35º in the case of dimensions 3 and 5) and do not clearly dominate each other for all dimensions, the only plausible conclusion is that the dependence of energy consumption on temperature should be modeled, and then a decision taken on the parameter values based on the most probable temperature of the system at the time of running the algorithm.
+
+<<europar.base.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Time spent by the baseline experiment vs. temperature.", fig.height=4>>=
+europar_test_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_test_base)
+@
 
 Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model.
 
