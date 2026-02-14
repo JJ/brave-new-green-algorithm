@@ -196,7 +196,7 @@ kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
 
 Howver, computing the Kullbak-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
 
-<<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=4>>=
+<<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=5, fig.show="hold", out.width="30%">>=
 europar_taskset_base$Experiment <- "Taskset"
 europar_test_base$Experiment <- "Base"
 
@@ -234,7 +234,22 @@ probability_joint <- predict_with_joint / sum(predict_with_joint)
 kl_divergence_die2 <- KL(rbind(probability_die2, probability_joint), unit = "log")
 @
 
-Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on the this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different.
+Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on the this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different. However, the model it follows is still the same, as certified by a very low Kullbak-Leibler divergence of \Sexpr{kl_divergence_die2[[1]]}. It is very likely that the model depends on the system and general features of the implementation, and by experimental design and parametrization are able to alter only the operational conditions. Let us see if that is the case with this experiment by looking at how energy, time and temperature behave.
+
+<<europar.die2.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.", fig.height=4, , fig.show="hold", out.width="30%">>=
+taskset_die2_base$Experiment <- "Taskset Die 2"
+joint_base_taskset$Experiment <- "Die 1"
+
+joint_base_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
+
+ggplot(joint_base_with_die2, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
+wilcox_test_energy <- wilcox.test(PKG ~ Experiment, data = joint_base_with_die2)
+ggplot(joint_base_with_die2, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
+wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_base_with_die2)
+ggplot(joint_base_with_die2, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
+wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_base_with_die2)
+
+@
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
