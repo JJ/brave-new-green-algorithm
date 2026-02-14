@@ -248,8 +248,70 @@ ggplot(joint_base_with_die2, aes(x=Experiment, y=seconds))+geom_violin()+labs( t
 wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_base_with_die2)
 ggplot(joint_base_with_die2, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_base_with_die2)
-
 @
+
+Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
+
+<<europar.die2.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.", fig.height=4>>=
+joint_base_with_die2_summary <- joint_base_with_die2 %>%
+  group_by(Experiment) %>%
+  summarise(
+    mean_energy = mean(PKG),
+    trimmed_mean_energy = mean(PKG, trim = 0.1),
+    iqr_energy = IQR(PKG),
+    mean_time = mean(seconds),
+    trimmed_mean_time = mean(seconds, trim = 0.1),
+    iqr_time = IQR(seconds),
+    mean_temperature = mean(initial_temp),
+    trimmed_mean_temperature = mean(initial_temp, trim = 0.1),
+    iqr_temperature = IQR(initial_temp)
+  )
+library(kableExtra)
+kable(joint_base_with_die2_summary,
+      digits = 2,
+      col.names=c("Experiment","Mean", "Trim mean", "IQR",
+                 "Mean", "Trim mean", "IQR",
+                 "Mean", "Trim mean", "IQR"),
+      caption = "Summary statistics for energy, time and temperature for the baseline experiment with and without taskset on die 2.") %>% add_header_above(c(" " = 1, "Energy (J)" = 3, "Time (s)" = 3, "Temperature (ºC)" = 3)) %>%
+  kable_styling(full_width = FALSE, position = "center")
+@
+
+However, as the Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature. However, we are mostly interested on what happens to the workload runs.
+
+<<europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
+europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
+europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
+europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
+ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
+  geom_point(color=europar_taskset_die2_processed$dimension ) +
+  labs(
+    title = "Energy Consumption vs. Temperature",
+    x = "Delta seconds",
+    y = "Delta PKG"
+  ) + theme_minimal()
+@
+
+We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with Figure \ref{fig:europar.initial.workload.model}: less negative values, for instance.
+
+<<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the workload experiment with and without taskset on die 2.", fig.height=4>>=
+europar_taskset_die2_processed$Experiment <- "Die 2"
+europar_test_processed$Experiment <- "No Die"
+joint_workload_with_die2 <- rbind(europar_taskset_die2_processed, europar_test_processed)
+
+summary_joint_workload_with_die2 <- joint_workload_with_die2 %>%
+  group_by(dimension,population_size,Experiment) %>%
+  summarise(
+    mean_delta_energy = mean(delta_PKG),
+    trimmed_mean_delta_energy = mean(delta_PKG, trim = 0.1),
+    iqr_delta_energy = IQR(delta_PKG),
+  )
+
+kable(summary_joint_workload_with_die2,
+      digits = 2,
+      col.names=c("Dimension", "Population Size", "Experiment", "Delta Energy (J): mean", "Trim mean", "IQR"),
+      caption = "Summary statistics for delta energy for the workload experiment with and without taskset on die 2.")
+@
+
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
