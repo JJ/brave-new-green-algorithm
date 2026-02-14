@@ -143,9 +143,14 @@ This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the t
 
 <<europar.base.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Time spent by the baseline experiment vs. temperature.", fig.height=4>>=
 europar_test_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_test_base)
+anova_time <- anova(europar_test_base_model_time,europar_test_base_model)
 @
 
-Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model.
+The operational context of the system will be reflected on other conditions besides the temperature. In general, what the operating system scheduler will do is to try and assign processes to cores inside the processor based on their predicted performance. This will depend on several factors, but two are the most important: the core load and the frequency at which the core is running. Many modern processors, and among them the Ryzen, will have cores running at different, dynamic, frequencies; in the case of the Ryzen these are also divided by die, so that cores in die 1 are considered "performance" cores, while cores in die 2 are "efficiency" cores, more energetically efficient.
+
+Assigning a process to a lower-frequency core will certainly reduce energy consumption; however, we can only measure the amount of energy spent by the whole package. We will notice the use of lower-frequency cores by the time spent by our process. Time will, then, need to be incorporated into our model in order to take into account this effect. The new model is able to explain  more of the variability of the energy consumption, with a residual deviance of \Sexpr{round(anova_time$`Resid. Dev`[1],2)} compared to \Sexpr{round(anova_time$`Resid. Dev`[2],2)} for the model without time. Together, the two temperature independent terms and the running time are able to explain most of the energy variability, their importance being similar.
+
+Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
