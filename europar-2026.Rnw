@@ -144,13 +144,39 @@ This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the t
 <<europar.base.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Time spent by the baseline experiment vs. temperature.", fig.height=4>>=
 europar_test_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_test_base)
 anova_time <- anova(europar_test_base_model_time,europar_test_base_model)
+anova_test_base_model_time <- anova(europar_test_base_model_time)
 @
 
 The operational context of the system will be reflected on other conditions besides the temperature. In general, what the operating system scheduler will do is to try and assign processes to cores inside the processor based on their predicted performance. This will depend on several factors, but two are the most important: the core load and the frequency at which the core is running. Many modern processors, and among them the Ryzen, will have cores running at different, dynamic, frequencies; in the case of the Ryzen these are also divided by die, so that cores in die 1 are considered "performance" cores, while cores in die 2 are "efficiency" cores, more energetically efficient.
 
 Assigning a process to a lower-frequency core will certainly reduce energy consumption; however, we can only measure the amount of energy spent by the whole package. We will notice the use of lower-frequency cores by the time spent by our process. Time will, then, need to be incorporated into our model in order to take into account this effect. The new model is able to explain  more of the variability of the energy consumption, with a residual deviance of \Sexpr{round(anova_time$`Resid. Dev`[1],2)} compared to \Sexpr{round(anova_time$`Resid. Dev`[2],2)} for the model without time. Together, the two temperature independent terms and the running time are able to explain most of the energy variability, their importance being similar.
 
-Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics.
+Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics. We will try to reduce the uncertainty of the model by executing both baseline and workload runs in a single die by using the {\sf taskset} command, that allocates processes to core sets. By keeping it in the {\em performance} core, we should be able to reduce running time, as well as leave the operating context work on the temperature optimization of this single die.
+
+<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset.", fig.height=4>>=
+load("data/europar_taskset.rds")
+europar_taskset$dimension <- as.factor(europar_taskset$dimension)
+europar_taskset$population_size <- as.factor(europar_taskset$population_size)
+ggplot(europar_taskset, aes(x=initial_temp_1, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature, Die 1", y = "Energy Consumption " ) + theme_minimal()
+
+europar_taskset_base <- europar_taskset %>% filter(base == TRUE)
+europar_taskset_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp_1*dimension*population_size,data = europar_taskset_base)
+europar_taskset_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_taskset_base)
+anova_taskset_time <- anova(europar_taskset_base_model_time,europar_taskset_base_model)
+anova_taskset_time_model <- anova(europar_taskset_base_model_time)
+library(scales)
+custom_pow <- trans_new(
+  name = "custom_pow",
+  transform = function(x) x^0.3,  # Lower power = more stretch at the bottom
+  inverse = function(x) x^(1/0.3)
+)
+
+ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp, shape=dimension)) +
+  scale_color_viridis_c(trans=custom_pow) +
+  geom_point()  + labs( title = "Energy Consumption Over Time", x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
+@
+
+We have modeled PKG for the baseline runs with the same model, once again including time as a variable. In this case, after applying ANOVA to the model, the variance explained by time in seconds \Sexpr{anova_taskset_time_model$Deviance[6]} is much higher than the one explained by initial temperature by a factor of \Sexpr{round(anova_taskset_time_model$Deviance[6]/anova_taskset_time_model$Deviance[3],2)}. However, the squared temperature term becomes more important in this case, explaining \Sexpr{round(anova_taskset_time_model$Deviance[2])} of the variance or \Sexpr{round(anova_taskset_time_model$Deviance[2]/anova_taskset_time_model$Deviance[6],2)} of the variance explained by time.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
