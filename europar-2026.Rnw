@@ -209,7 +209,32 @@ ggplot(joint_europar, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( tit
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_europar)
 @
 
-An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case.
+An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will for the experiments to be run in that specific die.
+
+<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
+load("data/europar_taskset_die2.rds")
+europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
+europar_taskset_die2$population_size <- as.factor(europar_taskset_die2$population_size)
+
+ggplot(europar_taskset_die2, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
+
+taskset_die2_base <- europar_taskset_die2 %>% filter(base == TRUE)
+
+taskset_die2_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = taskset_die2_base)
+taskset_joint_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data =  joint_base_taskset)
+
+joint_base_taskset_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
+
+predict_with_die2 <- predict(taskset_die2_time_model, newdata=joint_base_taskset_with_die2, type = "response")
+predict_with_joint <- predict(taskset_joint_time_model, newdata=joint_base_taskset_with_die2, type = "response")
+
+probability_die2 <- predict_with_die2 / sum(predict_with_die2)
+probability_joint <- predict_with_joint / sum(predict_with_joint)
+
+kl_divergence_die2 <- KL(rbind(probability_die2, probability_joint), unit = "log")
+@
+
+Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on the this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
