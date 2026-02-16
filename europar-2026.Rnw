@@ -10,26 +10,19 @@
 %
 \begin{document}
 %
-\title{TBD}
+\title{Towards a methodology for measuring energy consumption in population-based evolutionary algorithms}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{First Author\inst{1}\orcidID{0000-1111-2222-3333} \and
-Second Author\inst{2,3}\orcidID{1111-2222-3333-4444} \and
-Third Author\inst{3}\orcidID{2222--3333-4444-5555}}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+\and
+Instituto Tecnológico Nacional de México, Tijuana, México
+}
 %
-\authorrunning{F. Author et al.}
-% First names are abbreviated in the running head.
-% If there are more than two authors, 'et al.' is used.
-%
-\institute{Princeton University, Princeton NJ 08544, USA \and
-Springer Heidelberg, Tiergartenstr. 17, 69121 Heidelberg, Germany
-\email{lncs@springer.com}\\
-\url{http://www.springer.com/gp/computer-science/lncs} \and
-ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
-\email{\{abc,lncs\}@uni-heidelberg.de}}
+\authorrunning{Merelo et al.}
 %
 \maketitle              % typeset the header of the contribution
 %
