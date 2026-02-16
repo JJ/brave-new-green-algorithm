@@ -327,8 +327,11 @@ nodie_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Expe
 We have represented in Table \ref{tab:europar.die2.workload.table} the average values of energy  as well as the temperature and time needed for the workload runs for the different values of the parameters. In general, working with the second die will spend more energy for a specific combination of the parameters. However, we should remember that the experimental methodology is designed to obtain a measurement with the highest available precision of the quantity we are interested in; and in order to do this we need to look at another measurement, the inter-quartile range; a small range will represent a variable with less variation. However, there is no clear different for one or the other, and the general IQR is almost the same for the two experiment sets: \Sexpr{round(die2_iqr,2)} for the die 2 runs and \Sexpr{round(nodie_iqr,2)} for the runs without die assignment.
 
 <<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
-die2_workload_model <- glm( delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+delta_seconds,data = europar_taskset_die2_processed)
+die2_workload_model <- glm( delta_PKG ~ initial_temp*dimension*population_size+delta_seconds*evaluations+I(initial_temp^2),data = europar_taskset_die2_processed)
+anova_die2_workload_model <- anova(die2_workload_model)
 @
+
+We have created another generalized linear model with the same parameters as the one above, that is, $T*D*P+\Delta R * F + T^2$. The results are similar, with an ANOVA anlysis finding that the T and $\Delta R$ independent terms explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,5,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance.
 
 With the precision in measuring energy we have, we need to conclude then that the "natural" assignment of processes for this system is a good alternative for measuring the energy spent by this population-based optimization algorithm in different parametrizations or frameworks, with other alternatives offering no clear advantage, and having even slight disadvantages in some cases.
 
