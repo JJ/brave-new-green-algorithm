@@ -260,7 +260,7 @@ wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_b
 @
 
 Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
-
+%
 <<europar.die2.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.", fig.height=4>>=
 joint_base_with_die2_summary <- joint_base_with_die2 %>%
   group_by(Experiment) %>%
@@ -284,10 +284,10 @@ kable(joint_base_with_die2_summary,
       caption = "Summary statistics for energy, time and temperature for the baseline experiment with and without taskset on die 2.") %>% add_header_above(c(" " = 1, "Energy (J)" = 3, "Time (s)" = 3, "Temperature (ºC)" = 3)) %>%
   kable_styling(full_width = FALSE, position = "center")
 @
-
+%
 However, as the Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature. However, we are mostly interested on what happens to the workload runs.
-
-<<europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
+%
+<<europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload vs. running time for the experiment with taskset on die 2.", fig.height=3, fit.pos="h!tb">>=
 europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
 europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
 europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
@@ -299,10 +299,10 @@ ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
     y = "Delta PKG"
   ) + theme_minimal()
 @
-
+%
 We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with Figure \ref{fig:europar.initial.workload.model}: less negative values, for instance.
-
-<<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the workload experiment with and without taskset on die 2.", fig.height=4>>=
+%
+<<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE>>=
 europar_taskset_die2_processed$Experiment <- "Die 2"
 europar_test_processed$Experiment <- "No Die"
 joint_workload_with_die2 <- rbind(europar_taskset_die2_processed, europar_test_processed)
@@ -325,13 +325,13 @@ nodie_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Expe
 @
 
 We have represented in Table \ref{tab:europar.die2.workload.table} the average values of energy  as well as the temperature and time needed for the workload runs for the different values of the parameters. In general, working with the second die will spend more energy for a specific combination of the parameters. However, we should remember that the experimental methodology is designed to obtain a measurement with the highest available precision of the quantity we are interested in; and in order to do this we need to look at another measurement, the inter-quartile range; a small range will represent a variable with less variation. However, there is no clear different for one or the other, and the general IQR is almost the same for the two experiment sets: \Sexpr{round(die2_iqr,2)} for the die 2 runs and \Sexpr{round(nodie_iqr,2)} for the runs without die assignment.
-
-<<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
+%
+<<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.">>=
 die2_workload_model <- glm( delta_PKG ~ initial_temp*dimension*population_size+delta_seconds*evaluations+I(initial_temp^2),data = europar_taskset_die2_processed)
 anova_die2_workload_model <- anova(die2_workload_model)
 @
-
-We have created another generalized linear model with the same parameters as the one above, that is, $T*D*P+\Delta R * F + T^2$. The results are similar, with an ANOVA anlysis finding that the T and $\Delta R$ independent terms explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,5,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance.
+%
+We have created another generalized linear model with the same parameters as the one above, that is, $T*D*P+\Delta R * F + T^2$. The results are similar, with an ANOVA analysis finding that the T and $\Delta R$ independent terms explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,5,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance. Even if the average energy result would have been better, this percentage leaves very little room for measuring the effect of the rest of the parameters, even in combination with the main operating conditions, so it is certainly not a good alternative for measuring the effect of parameter or implementation changes in the algorithm implementation under study.
 
 With the precision in measuring energy we have, we need to conclude then that the "natural" assignment of processes for this system is a good alternative for measuring the energy spent by this population-based optimization algorithm in different parametrizations or frameworks, with other alternatives offering no clear advantage, and having even slight disadvantages in some cases.
 
