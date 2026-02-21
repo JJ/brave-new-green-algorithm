@@ -10,7 +10,7 @@
 %
 \begin{document}
 %
-\title{Towards a methodology for measuring energy consumption in population-based evolutionary algorithms}
+\title{Towards a methodology for measuring energy consumption in population-based optimization algorithms}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
