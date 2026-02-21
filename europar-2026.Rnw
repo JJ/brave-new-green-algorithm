@@ -29,6 +29,7 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 \begin{abstract}
 %The abstract should briefly summarize the contents of the paper in
 %150--250 words.
+Optimizing energy consumption of algorithm implementations is gathering momentum, but is hampered by the lack of a principled methodology for assessing the balance between the influence of the algorithm and its parametrization and the system operational context on energy consumption. System operational context, in this case, includes mainly the CPU package temperature as well as core voltage and frequency; taking these into account, we will test different measurement methodologies that try to differentiate between baseline and workload measurements, and model them separately. What we have found, in a modern two-die heterogeneous processor architecture is that operational context determines the bulk of the variance in energy consumption measurements, and that workload measurements need to be refined to maximize the amount of variance in energy consumption they capture.
 
 \keywords{First keyword  \and Second keyword \and Another keyword.}
 \end{abstract}
