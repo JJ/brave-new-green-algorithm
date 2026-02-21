@@ -140,7 +140,7 @@ Assigning a process to a lower-frequency core will certainly reduce energy consu
 
 Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics. We will try to reduce the uncertainty of the model by executing both baseline and workload runs in a single die by using the {\sf taskset} command, that allocates processes to core sets. By keeping it in the {\em performance} core, we should be able to reduce running time, as well as leave the operating context work on the temperature optimization of this single die.
 
-<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset.", fig.height=4>>=
+<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset.", fig.pos="h!tb", fig.height=3.5>>=
 load("data/europar_taskset.rds")
 europar_taskset$dimension <- as.factor(europar_taskset$dimension)
 europar_taskset$population_size <- as.factor(europar_taskset$population_size)
@@ -165,7 +165,7 @@ ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp, shape=dim
 
 We have modeled PKG for the baseline runs with the same model, once again including time as a variable. In this case, after applying ANOVA to the model, the variance explained by time in seconds \Sexpr{anova_taskset_time_model$Deviance[6]} is much higher than the one explained by initial temperature by a factor of \Sexpr{round(anova_taskset_time_model$Deviance[6]/anova_taskset_time_model$Deviance[3],2)}. However, the squared temperature term becomes more important in this case, explaining \Sexpr{round(anova_taskset_time_model$Deviance[2])} by value or \Sexpr{round(100*anova_taskset_time_model$Deviance[2]/anova_taskset_time_model$Deviance[6],2)}\% by percentage of the variance.
 
-<<europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset.", fig.height=4>>=
+<<europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset.", fig.height=4, fig.pos="h!tb">>=
 library(philentropy) # For KL function
 library(stats)
 
@@ -197,7 +197,7 @@ wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_e
 
 An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will for the experiments to be run in that specific die.
 
-<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=4>>=
+<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.", fig.height=3,fig.pos="h!tb">>=
 load("data/europar_taskset_die2.rds")
 europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
 europar_taskset_die2$population_size <- as.factor(europar_taskset_die2$population_size)
