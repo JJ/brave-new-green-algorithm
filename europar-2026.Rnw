@@ -31,7 +31,7 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 %150--250 words.
 Optimizing energy consumption of algorithm implementations is gathering momentum, but is hampered by the lack of a principled methodology for assessing the balance between the influence of the algorithm and its parametrization and the system operational context on energy consumption. System operational context, in this case, includes mainly the CPU package temperature as well as core voltage and frequency; taking these into account, we will test different measurement methodologies that try to differentiate between baseline and workload measurements, and model them separately. What we have found, in a modern two-die heterogeneous processor architecture is that operational context determines the bulk of the variance in energy consumption measurements, and that workload measurements need to be refined to maximize the amount of variance in energy consumption they capture.
 
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
 %
 %
@@ -54,7 +54,7 @@ This calls, anyway, for more extensive experimentation on the general relationsh
 This is precisely what we will carry out in this paper. We will run a set of experiments and analyze them, looking for a model of the influence of the CPU temperature,
 as captured by sensors, in the energy spent by a workload. We will test different experimental setups checking for changes in the underlying model, as well as looking for one that is able to offer a better capture of the variance in energy measurements caused by the independent or dependent variables in the algorithm.
 
-The rest of the paper is organized as follows: next we will describe the experimental design, followed by a Section devoted to the results of the experiments (Section \ref{sec:exp}). Finally, we will discuss these results and draw our conclusions.
+The rest of the paper is organized as follows: next we will describe the experimental design, followed by the results of the experiments. Finally, we will discuss these results and draw our conclusions in Section \ref{sec:conclusions}.
 
 \section{Experiments and results}\label{sec:exp}
 
