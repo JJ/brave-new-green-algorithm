@@ -120,14 +120,17 @@ library(equatiomatic)
 Figure \ref{fig:europar.initial.workload.model} shows the difference in energy consumption, Delta PKG, vs. temperature, with different colors for different problem sizes. In some cases this delta can be negative if the conditions from the baseline to the workload runs have changed dramatically. The variability is still quite high, with deltas reaching 400 Joules, and increment slightly with temperature. Again, we try to model this dependence using a generalized linear model, using a term quadratic on the temperature or not, and including population size, the dimension as factor and the number of evaluations, which should change every run as a result of the stochastic algorithm. Again, model quadratic in the temperature that includes the number of evaluations is better with \Sexpr{round(difference_delta_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_delta_models$`Resid. Dev`[2],2)}.
 The model includes significant dependence on the initial temperature, population size the problem dimension, with evaluations being also significant. Dimension 10 (which is run at the beginning of every experiment) does not have any significant influence either by itself or in combination with any other. Again, the value of the quadratic term \Sexpr{round(coef(europar_test_delta_model)["I(initial_temp^2)"],4)} is negative and of a much lower magnitude than the linear term \Sexpr{round(coef(europar_test_delta_model)["initial_temp"],4)}.
 
-We can, however, test in this case an additional model that includes $\Delta$ seconds, the difference in seconds between the workload running time and the average of the baselines, as well as the number of evaluations. The model will express $\Delta E$, the workload energy consumption, as a combination on $T^2$ (T is the temperature), the interaction of $T, D, P$ (problem dimension and population size) and the interaction of $\Delta R$ and $F$, the number of fitness evaluations. An ANOVA comparison of both models shows this one explains better the variance of the model, leaving a residual of \Sexpr{round(difference_delta_seconds$`Resid. Dev`[1],2)}. The full model is shown in Equation \ref{eq: eq1}; please note that the coefficient for F (number of evaluations) is actually \Sexpr{round(coef(europar_test_delta_evals_model)["evaluations"],5)}\footnote{In this case, the fitness function that we are using, the well known Sphere \cite{hansen2010comparing} is the most lightweight of the BBOB benchmark functions.}.
+We can, however, test in this case an additional model that includes $\Delta$ seconds, the difference in seconds between the workload running time and the average of the baselines, as well as the number of evaluations. The model will express $\Delta E$, the workload energy consumption, as a combination on $T^2$ (T is the temperature), the interaction of $T, D, P$ (problem dimension and population size) and the interaction of $\Delta R$ and $F$, the number of fitness evaluations. An ANOVA comparison of both models shows this one explains better the variance of the model, leaving a residual of \Sexpr{round(difference_delta_seconds$`Resid. Dev`[1],2)}. The full model is shown in Equation \ref{eq: eq1}; please note that the coefficient for F (number of evaluations) is actually \Sexpr{round(coef(europar_test_delta_seconds_model)["evaluations"],5)}; in this case, the fitness function that we are using, the well known Sphere \cite{hansen2010comparing} is the most lightweight of the BBOB benchmark functions, which explains the low impact on energy consumption.
 
-\Sexpr{extract_eq(europar_test_delta_evals_model, wrap = TRUE, use_coefs = TRUE, swap_var_names = c(
+\Sexpr{extract_eq(europar_test_delta_seconds_model, wrap = TRUE, use_coefs = TRUE,
+        raw_indices = TRUE,
+        swap_var_names = c(
     "initial_temp"  = "T",
-    "I(initial_temp^2)" = "T²",
+    "I(initial_temp^2)" = "T^2",
     "dimension"  = "D",
     "population_size" = "P",
-    "evaluations" = "F"
+    "evaluations" = "F",
+    "delta_seconds" = "DeltaR"
   ), label="eq1" )}
 
 
