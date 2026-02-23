@@ -1,0 +1,98 @@
+\documentclass[10pt,conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{url}
+
+\begin{document}
+
+\title{Can we measure energy consumption in population-based metaheuristics?}
+
+\author{
+\IEEEauthorblockN{A. N. Onymous-Authors}
+\IEEEauthorblockA{Affiliation\\
+Email:
+Hidden place and ORCID}
+
+% \IEEEauthorblockN{JJ Merelo}
+% \IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
+% University of Granada\\
+% Email: jmerelo@ugr.es\\
+% CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+% \and
+% \IEEEauthorblockN{Cecilia Merelo-Molina}
+% \IEEEauthorblockA{Zenzorrito, Granada, Spain\\
+% ORCID: 0000-0002-5902-0159}
+}
+%
+\maketitle
+%
+\begin{abstract}
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+Green computing, Energy profiling, Metaheuristics
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Concerns regarding the energy footprint of computing infrastructure are well-established \cite{sinha2001jouletrack,kurp2008green,lewis2008run}. However, the urgency of these concerns has intensified with the proliferation of resource-intensive metaheuristics \cite{irace,novoa2021measuring}, deep learning, and large language models \cite{10549890,rodriguez2024evaluatingenergyconsumptionmachine}. Consequently, the focus has shifted toward {\em greening} algorithm implementations. This involves an experimental framework where configurations are compared by measuring their energy consumption in specific environments and applying statistical techniques to identify the most efficient parameters for a given workload.
+
+These stages—measurement and statistical comparison—are critical but fraught with technical challenges. The primary obstacle is that, unlike traditional performance metrics, it is impossible to isolate the energy consumption of a single process running on a specific core under a modern operating system (OS). Since hardware sensors and counters operate system-wide, researchers must synchronize system-wide measurements with process execution and subsequently attempt to isolate the system overhead. Standard practice involves taking baseline measurements to account for OS and framework overhead, then subtracting these from workload measurements to estimate the "real" energy consumed.
+
+However, a second, more determinant challenge exists: the operational context. Processor states and operating conditions, particularly temperature, influence energy consumption in a non-linear fashion. This affects not only the absolute baseline but also the relative differences between the baseline and the active workload \cite{freina2024survey,cruz2025}. Modern chipsets and OSs actively manage thermal envelopes through Dynamic Voltage and Frequency Scaling (DVFS) and Dynamic Power Management (DPM) \cite{snowdon2005power}. For scientists working on non-dedicated personal computers, the system state is in constant flux. Power reduction measures and thermal throttling are triggered not just by the workload under study, but by background processes and OS core election policies, which may move tasks between "performance" and "efficiency" cores unpredictably.
+
+One could attempt to mitigate this by strictly controlling the system state, but projecting such results to "real-world" systems is problematic. The interaction between system state and workload is often unknown; a configuration that appears optimal in a cooled, idle state may perform poorly when interacting with a thermally saturated system or a different core allocation.
+
+This necessitates a new methodological approach: one that explicitly models the relationship between CPU package temperature, core election, and energy measurements. The goal of this paper is to propose and test methodologies that minimize the influence of these environmental variables. Through a series of extensive experiments, we analyze how temperature, as captured by internal sensors, interacts with workload implementation. We evaluate different experimental setups to identify a model capable of isolating the variance caused by algorithm parametrization from the variance caused by the underlying hardware state, ultimately providing a more robust framework for energy-aware algorithm design.
+
+\section{State of the art}
+
+Despite the growing imperative for green computing, achieving high accuracy in measuring the energy consumption of specific workloads remains a methodological hurdle often acknowledged but seldom resolved \cite{10549890}. The foundational "SPEC power" methodology \cite{von2018measuring} provides a framework for measuring whole-system power consumption relative to CPU load; however, because it relies on external, calibrated power meters, it is less suited for isolating granular software workloads in non-dedicated environments where background processes compete for resources.
+
+Addressing this gap, Freina et al. \cite{freina2024survey} categorized hardware and in-system software APIs, noting that tools leveraging model-specific registries (MSRs) offer a compelling balance of availability and precision. These software-based solutions exhibit error margins below 5\% \cite{6557170} with a negligible overhead of approximately 1\%. While a 10Hz to 20Hz sampling frequency is generally advised for temporal granularity, these tools alone do not constitute a methodology. The guiding principles of reproducibility, fairness, verifiability, and usability \cite{von2018measuring}—originally intended for data centers—must be adapted for the highly variable conditions of local execution environments.
+
+The most significant methodological advancements have emerged within the field of evolutionary algorithms and metaheuristics. A critical discovery is the **hysteretic effect** of system state: the system often remains in a high-energy-consumption state long after a workload has finished \cite{cotta25}. This phenomenon is largely driven by thermal dynamics; the temperature reached during one experimental run significantly biases the next \cite{cotta24}. While earlier models suggested a quadratic relationship between temperature and power consumption in the 20°C to 50°C range \cite{devogeleer2014modelingtemperaturebiaspower}, more recent analyses indicate an exponential relationship as temperatures approach 80°C \cite{PENG2025104837}.
+
+To mitigate these thermal and state-based biases, several experimental strategies have been proposed:
+
+* {\em Thermal Stabilization:} Implementing a "sleep" phase after every measurement to allow the system to cool \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
+* {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption () without requiring a system reboot between every run.
+* {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
+
+Ultimately, while experimental design can mitigate some "noise," a gap remains in modeling how the operational context—specifically temperature and OS-level core election—directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+
+\section{A Brave New Algorithm}\label{sec:bna}
+
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
+\item $\alpha$ generates new members by coupling the best individuals among them, to then undergo mutation and crossover.
+\item $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
+\item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
+\item $\gamma$ generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
+\end{itemize}
+
+The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, 2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
+There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
+
+The implementation of the algorithm used is available under a free license at \url{https://hiddenu.rl}
+% \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+
+\section{Experimental methodology and results}\label{sec:results}
+
+
+\section{Conclusion and discussion}
+\label{sec:discussion}
+
+
+\section*{Acknowledgements}
+% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+Supported by a project\\
+taking this much space
+
+\bibliographystyle{IEEEtran}
+\bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
+
+\end{document}
