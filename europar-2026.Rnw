@@ -92,7 +92,7 @@ We will try to adjust two different generalized linear models to this data (usin
 
 In principle, this variability was expected which is why every workload run is between two baseline runs, expected to eliminate at least part of the variability from the measurement.
 %
-<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload mesures, initial experiment.", fig.height=3.5, fig.pos="h!tb">>=
+<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload measures, initial experiment.", fig.height=3.5, fig.pos="h!tb">>=
 source("R/process_deltas.R")
 europar_test_processed <- process_deltas( europar_test )
 europar_test_processed$dimension <- as.factor(europar_test_processed$dimension)
@@ -195,7 +195,7 @@ probability_base <- predict_with_base / sum(predict_with_base)
 kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
 @
 
-Howver, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
+However, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
 
 <<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=5, fig.show="hold", out.width="30%">>=
 europar_taskset_base$Experiment <- "Taskset"
