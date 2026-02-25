@@ -114,7 +114,7 @@ taskset_die2_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension
 taskset_joint_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data =  joint_base_taskset)
 
 joint_base_taskset_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
-
+save(joint_base_taskset_with_die2, file="data/joint_base_taskset_with_die2.rds")
 predict_with_die2 <- predict(taskset_die2_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 predict_with_joint <- predict(taskset_joint_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 
