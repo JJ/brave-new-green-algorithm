@@ -57,11 +57,12 @@ Addressing this gap, Freina et al. \cite{freina2024survey} categorized hardware 
 
 The most significant methodological advancements have emerged within the field of evolutionary algorithms and metaheuristics. A critical discovery is the **hysteretic effect** of system state: the system often remains in a high-energy-consumption state long after a workload has finished \cite{cotta25}. This phenomenon is largely driven by thermal dynamics; the temperature reached during one experimental run significantly biases the next \cite{cotta24}. While earlier models suggested a quadratic relationship between temperature and power consumption in the 20°C to 50°C range \cite{devogeleer2014modelingtemperaturebiaspower}, more recent analyses indicate an exponential relationship as temperatures approach 80°C \cite{PENG2025104837}.
 
-To mitigate these thermal and state-based biases, several experimental strategies have been proposed:
+To mitigate these thermal and state-based biases, several experimental strategies have been proposed:\begin{itemize}
 
-* {\em Thermal Stabilization:} Implementing a "sleep" phase after every measurement to allow the system to cool \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
-* {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption () without requiring a system reboot between every run.
-* {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
+\item {\em Thermal Stabilization:} Implementing a "sleep" phase after every measurement to allow the system to cool \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
+\item {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption () without requiring a system reboot between every run.
+\item {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
+\end{itemize}
 
 Ultimately, while experimental design can mitigate some "noise," a gap remains in modeling how the operational context—specifically temperature and OS-level core election—directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
 
@@ -81,6 +82,32 @@ The implementation of the algorithm used is available under a free license at \u
 % \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
+
+
+This study investigates the heuristic measurement of temperature's influence on energy consumption, an inquiry stemming from research into energy optimization for metaheuristics. Our workload in this paper is an implementation of the so-called {\em Brave New Algorithm (BNA)} \cite{bna}, a population-based metaheuristic written in Julia (version 1.11.9), utilizing its JIT-compiled architecture. To isolate thermal variables, all experiments are executed as single-threaded processes.
+
+The algorithm is configured to minimize the Sphere function across several parameter configurations, with
+problem dimension ($D$) equal 3, 5, or 10, population size ($N$): 200 or 400, and a termination criteria ($G$) equal to 10 or 25 generations without improvement. This last parameter is irrelevant to the measurements, but has been used in the experiments, which is why we list it here.
+
+Each individual run lasts several seconds. A full experimental suite across all configurations takes approximately two hours, providing sufficient time for the system to reach various thermal states and generate detectable differences in energy consumption.
+
+To mitigate environmental noise and baseline energy fluctuations, we employ an interleaved **"sandwich" protocol**. For every combination of $D$ and $N$, we perform two complete sequences (one for each value of $G$).
+
+Each sequence consists of **30 workload repetitions** ($W$) interleaved with **31 baseline repetitions** ($B$), following the pattern: $B_1, W_1, B_2, W_2, \dots, W_{30}, B_{31}$.
+
+* **Workload ($W$):** A full execution of the BNA.
+* **Baseline ($B$):** Only the population generation phase, using the specified dimension and size.
+
+The energy consumption for any given workload $W_i$ is calculated by subtracting the average of the two surrounding baselines ($B_i$ and $B_{i+1}$) from the workload measurement. To ensure data robustness across different initial system states, this entire set of experiments is repeated four times at random intervals after system boot, without enforcing a specific "cool-down" period.
+
+Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X 16-Core, 2-die processor. This CPU features a two-die architecture, allowing us to monitor temperature via two distinct sensors ({\tt Tccd1} and {\tt Tccd2}) using the {\tt k10temp-pci-00c3} driver. The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}. We utilize {\sf pinpoint} to tap the RAPL API \cite{rapl,khan2018rapl}. On this AMD architecture, measurements are restricted to Package (PKG) energy. A Perl script (running in superuser mode) automates the execution, processes readings from the `sensors` command, and outputs a CSV file.
+
+All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
+
+<<icsme.base, echo=FALSE, results='hide'>>=
+load("data/joint_base_taskset_with_die2.rds")
+
+@
 
 
 \section{Conclusion and discussion}
