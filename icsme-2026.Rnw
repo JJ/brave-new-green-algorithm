@@ -102,9 +102,18 @@ Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X 16-Cor
 All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/hidd/en}
 %\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
-<<icsme.base, echo=FALSE, results='hide'>>=
+<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time", fig.env="figure*", fig.height=3>>=
 load("data/joint_base_taskset_with_die2.rds")
-
+library(ggplot2)
+library(scales)
+custom_pow <- trans_new(
+  name = "custom_pow",
+  transform = function(x) x^0.3,  # Lower power = more stretch at the bottom
+  inverse = function(x) x^(1/0.3)
+)
+ggplot(joint_base_taskset_with_die2, aes(x=seconds,y=PKG, color=initial_temp)) +
+  scale_color_viridis_c(trans=custom_pow) +
+  geom_point() + theme_minimal() + labs(x="Time (s)", y="Energy Consumption (PKG)", color="Initial Temperature")
 @
 
 
