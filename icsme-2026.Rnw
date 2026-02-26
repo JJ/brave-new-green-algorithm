@@ -184,6 +184,16 @@ The model is shown in Equation \ref{eq: eq2}. Most terms are significant in this
 
 What is interesting to analyze here is how much of the variance is explained by the different terms. We apply the ANOVA (analysis of variance) to the model, finding that the higher Fisher coefficient is for the $\Delta R$ term, which by itself explains \Sexpr{round(100*anova_workload_model$F[7]/sum(anova_workload_model$F[2:nrow(anova_workload_model)]),2)}\% of the variance. This is an issue that leaves relatively little room for the algorithm parameters to influence energy consumption.
 
+<<icsme.workload.die2, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for processes placed on the second die", fig.env="figure*", fig.height=3 >>=
+load("data/europar_taskset_die2_processed.rds")
+initial_die2_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=europar_taskset_die2_processed)
+anova_die2_workload_model <- anova(initial_die2_workload_model, test="F")
+@
+
+As indicated, we create a different model for the third series, which through {\sf taskset} places processes on the second core; in this case, $\Delta R$ is able to explain \Sexpr{round(100*anova_die2_workload_model$F[7]/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance. This is undoubtedly a better result; however, if we add the independent temperature terms, they will be able to explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,3,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance, not allowing enough space for comparing different configurations of the algorithm, at least for this admittedly small workload.
+
+We need thus to try and find a different methodology that is able to mitigate dependence of energy measured on temperature and running time. This is what we will do next.
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
