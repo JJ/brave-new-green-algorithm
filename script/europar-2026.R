@@ -101,6 +101,15 @@ ggplot(joint_europar, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( tit
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_europar)
 
 
+# Processed taskset
+europar_taskset_processed <- process_deltas( europar_taskset )
+europar_taskset_processed$dimension <- as.factor(europar_taskset_processed$dimension)
+europar_taskset_processed$population_size <- as.factor(europar_taskset_processed$population_size)
+
+europar_die1_workload <- rbind( europar_taskset_processed, europar_test_processed)
+save(europar_die1_workload, file="data/europar_die1_workload.rds")
+
+
 ## ----europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%"----
 load("data/europar_taskset_die2.rds")
 europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
