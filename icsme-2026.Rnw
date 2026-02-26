@@ -147,7 +147,42 @@ There are two conclusions, however, from this model: first, the fact that using 
 
 Second, the importance of the temperature and running time terms, but also the existence of a non-linear temperature term which is negative, indicating that when temperature rises, its importance in energy consumption decreases. This is probably due to the effect of active measures by the system to cool the CPU by lowering wattage and frequency; this will have the paradoxical effect of increasing energy consumption simply due to the increase in running time.
 
+Although this model of the baseline runs might give us an initial idea of how temperature and power/frequency shape energy consumption, our interest is really in examining how much the workload actually spends. In order to do that, we are going to separate the two first series from the last series; the main reason is that these two series will mostly run on the first die; although theoretically the first run lets the OS choose the die, in practice a normal system will not have enough load to move it down to the E cores in the second die, so the difference between the first two series is too small to differentiate it. We obtain this, as indicated, by subtracting energy consumption and running time for the average of the two surrounding $B$ runs from the central $W$ run.
 
+<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Baseline energy consumption for workload runs", fig.env="figure*", fig.height=3 >>=
+load("data/europar_die1_workload.rds")
+ggplot(europar_die1_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
+  scale_color_viridis_c(trans=custom_pow) +
+  geom_point() + theme_minimal() + labs(x="Workload Time (s)", y="Workload Energy Consumption (PKG)", color="Initial Temperature")
+@
+
+We plot in Figure \ref{fig:icsme.baseline.workload} the result of plotting $\Delta E$ vs. $\delta r$, with color again related to temperature. The dispersion is quite high, which should be expected. We can also observe that in a few cases $\Delta E$ is very low or negative, due to sudden change of operating conditions between the $B$ and $W$ runs. Although we understand this is a non-physical result, it is a consequence of the system behavior; we need to perform many measures to mitigate these issues, mainly in the statistical processing phase. At any rate, the dependence of energy measurements on running time, modified by the temperature is relatively clear. We will again use a generalized linear model for this, including in this case all the algorithm parameters.
+
+<<icsme.baseline.workload.model, echo=FALSE, message=FALSE, fig.cap="Model of workload energy consumption as a function of time and temperature", fig.env="figure*", fig.height=3 >>=
+initial_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=europar_die1_workload)
+extract_eq(initial_workload_model, wrap = TRUE,
+           use_coefs = TRUE,
+        raw_indices = TRUE,
+        terms_per_line = 2,
+        swap_var_names = c(
+          "delta_PKG" = "Delta E",
+    "initial_temp"  = "T",
+    "I(initial_temp^2)" = "T^2",
+    "dimension"  = "D",
+    "population_size" = "P",
+    "evaluations" = "F",
+    "delta_seconds" = "Delta R"
+  ), label="eq2" )
+
+anova_workload_model <- anova(initial_workload_model, test="F")
+@
+
+The model is shown in Equation \ref{eq: eq2}. Most terms are significant in this case; it is important to notice, however, which ones are not:\begin{itemize}
+\item P=400 is not significantly different from P=200, except at the 10\% level when it interacts with $D=5$ and with $D=10$ and T. No other interaction or individual is significant.
+\item $F$, the number of evaluations, is only significant at the 10\% level by itself. The coefficient for it is very low, however, implying that at the number of evaluations these algorithms are reaching it is difficult to actually influence the energy consumption above and beyond operating conditions.
+\end{itemize}
+
+What is interesting to analyze here is how much of the variance is explained by the different terms. We apply the ANOVA (analysis of variance) to the model, finding that the higher Fisher coefficient is for the $\Delta R$ term, which by itself explains \Sexpr{round(100*anova_workload_model$F[7]/sum(anova_workload_model$F[2:nrow(anova_workload_model)]),2)}\% of the variance. This is an issue that leaves relatively little room for the algorithm parameters to influence energy consumption.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
