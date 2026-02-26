@@ -173,6 +173,7 @@ kable(joint_base_with_die2_summary,
 
 ## ----europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Workload energy vs. time, die-2 experiment.", fig.height=2.5, fit.pos="h!", out.width="100%"----
 europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
+save(europar_taskset_die2_processed, file="data/europar_taskset_die2_processed.rds")
 europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
 europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
 ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
