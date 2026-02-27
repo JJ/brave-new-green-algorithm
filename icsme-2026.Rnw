@@ -192,7 +192,39 @@ anova_die2_workload_model <- anova(initial_die2_workload_model, test="F")
 
 As indicated, we create a different model for the third series, which through {\sf taskset} places processes on the second core; in this case, $\Delta R$ is able to explain \Sexpr{round(100*anova_die2_workload_model$F[7]/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance. This is undoubtedly a better result; however, if we add the independent temperature terms, they will be able to explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,3,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance, not allowing enough space for comparing different configurations of the algorithm, at least for this admittedly small workload. This does not prevent scientists from comparing two different configurations of the algorithm looking for energy savings; however, the influence of the operating environment will always need to be taken into account so that instead of working with averages of measurements, we will need to compare the different models obtained for the different configurations in most cases. That is to say that since energy-aware optimization of the algorithm is going to be performed at different levels, we will need to understand if they change the running time in which case there is a high probability that measured energy will change accordingly or they change the model of energy consumption, in which case we will need to assess if parameter values are significant and what percentage of the variance they explain.
 
-We need thus to try and find a different methodology that is able to mitigate dependence of energy measured on temperature and running time. This is what we will do next.
+This is why we need to understand also the temperature dynamics.
+%
+<<icsme.temperature, echo=FALSE, message=FALSE, fig.cap="Delta temperature vs. initial temperature", fig.env="figure*", fig.height=3 >>=
+load("data/icsme_delta_temperatures.rds")
+temperature_model <- glm(delta_temperature ~ initial_temperature*PKG*running_time+I(initial_temperature^2), data = delta_temperatures)
+
+anova_temperature_model <- anova(temperature_model)
+
+PKG_levels <- quantile( delta_temperatures$PKG, probs = c(0.1, 0.5, 0.9) )
+new_data <- expand.grid(
+  initial_temperature = seq(min(delta_temperatures$initial_temperature), max(delta_temperatures$initial_temperature), length.out = 100),
+  PKG = PKG_levels,
+  running_time = median(delta_temperatures$running_time)
+)
+
+new_data$predicted_delta_temperature <- predict(temperature_model, newdata = new_data)
+names(new_data)[names(new_data) == "PKG"] <- "PKG_levels"
+new_data$PKG_levels <- factor(new_data$PKG_levels, labels = c("Low PKG", "Medium PKG", "High PKG"))
+names(new_data)[names(new_data) == "predicted_delta_temperature"] <- "delta_temperature"
+ggplot(new_data, aes(x = initial_temperature, y = delta_temperature, color=PKG_levels)) +
+  geom_line() +
+  scale_fill_viridis_c(trans=custom_pow) +
+  geom_point(data = delta_temperatures, aes(x = initial_temperature, y = delta_temperature, fill=PKG ),
+             shape=21,inherit.aes=F, alpha=0.5, stroke=NA, size=2) +
+  labs( title = "Predicted Delta Temperature vs Initial Temperature",
+    x = "Initial Temperature",
+    y = "Predicted Delta Temperature",
+    color = "PKG Level"
+  ) + theme_minimal()
+
+@
+%
+We have extracted from the three sets of experiments above the temperature before and after every $W$ experiment, and computed the $\Delta$. Then we have modeled the dependence of the increment of temperature on the initial temperature, the PKG energy consumption and the running time and their interaction, as well as a quadratic term on temperature. The results of this model are shown in Figure \ref{fig:icsme.temperature}, where the increment in temperature is plotted against the initial temperature, with dots colored according to the PKG energy consumption the process has spent. All coefficients except for the interaction between PKG and $T$ are significant, but it is more interesting to analyze the variance, which yields that \Sexpr{round(100*anova_temperature_model$F[2]/sum(anova_temperature_model$F[2:nrow(anova_temperature_model)]),2)}\% of the variance is explained by the initial temperature, and  \Sexpr{round(100*sum(anova_temperature_model$F[c(2,3)])/sum(anova_temperature_model$F[2:nrow(anova_temperature_model)]),2)}\% by $T$ and PKG together. This is why the curves for low (10\%), median (50\%) and high (90\%) PKG are also plotted.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
