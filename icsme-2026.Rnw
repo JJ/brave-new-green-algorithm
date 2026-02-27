@@ -252,6 +252,11 @@ plot_predictions(icsme_balanced_base_model, condition = c("initial_temp","dimens
   theme_minimal() + labs(x="Initial Temperature", y="Energy Consumption (PKG)", title="Predicted Energy Consumption vs Initial Temperature") +
   ylim(250,800)
 
+icsme_balanced_base_seconds <- glm(seconds ~ dimension*population_size, data=icsme_balanced_base)
+icsme_balanced_base$residual_seconds <- residuals(icsme_balanced_base_seconds)
+icsme_balanced_base_model_residualized <- glm(PKG ~ I(initial_temp^2 ) + initial_temp*dimension*population_size+residual_seconds, data=icsme_balanced_base)
+anova_balanced_base_model_residualized <- anova(icsme_balanced_base_model_residualized, test="F")
+
 @
 
 We will first work with the $B$ runs to find the overall relationship with temperature and running time, as well as the effect of algorithm parameters on the result; as shown above, the initial model did not show any effect of either problem size ($D$) or algorithm parameters ($P$) or significant contribution to the model. However, in this case the effect of problem size $D = 10$ is significant at the 10\% level; we can then plot different fit curves by level in Figure \ref{fig:icsme.balanced}, which also represents energy consumption vs. temperature. The GLM shows a significant contribution of the quadratic $T$ term, which in facts contributes the \Sexpr{round(100*anova_balanced_base_model$F[2]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\% of the variance.
