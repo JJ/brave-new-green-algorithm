@@ -31,7 +31,7 @@ Hidden place and ORCID}
 \maketitle
 %
 \begin{abstract}
-
+As making software, and in particular algorithm implementations, more energy efficient is increasingly acknowledged as a requirement in modern software development, there is an accompanying need to understand better how energy is spent in a system and create, from that, methodologies that are able to effectively compare two different configurations, giving actionable insights to software developers. In this paper we will investigate how the system operating environment, specifically temperature and CPU core choice, along with system measures for keeping temperature in check, influence energy measurements in a population-based optimization algorithm. We will establish a model of this influence, and, from this understanding, create a system that is able to make the influence of algorithm parameters on energy spent more clear, at the same time that it manages to create a system that minimizes, if possible, energy spent in the experiment runs. We find that, in a two-die system, taking into account the temperature of dies to launch processes is able to achieve this kind of method.
 \end{abstract}
 
 \begin{IEEEkeywords}
