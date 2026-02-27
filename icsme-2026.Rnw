@@ -9,7 +9,7 @@
 
 \begin{document}
 
-\title{Can we measure energy consumption in population-based metaheuristics?}
+\title{Towards a methodology for efficent measurements of energy consumption in algorithm implementations}
 
 \author{
 \IEEEauthorblockN{A. N. Onymous-Authors}
