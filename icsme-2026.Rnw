@@ -263,7 +263,7 @@ We will first work with the $B$ runs to find the overall relationship with tempe
 
 Although this model is interesting for  undestanding the influence of the operating context, we are more interested in seeing how it affects the workload measures.
 
-<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for teh balanced temperature strategy", fig.env="figure*", fig.height=3 >>=
+<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the balanced temperature strategy", fig.env="figure*", fig.height=3 >>=
 library(dplyr)
 source("R/process_deltas.R")
 icsme_balanced_workload <- process_deltas(icsme_balanced)
@@ -285,7 +285,35 @@ icsme_balanced_workload_model_residualized <- glm(delta_PKG ~ I(initial_temp^2) 
 
 @
 
-A model of the workload yields similar results as those found for the baseline.
+A model of the workload yields similar results as those found for the baseline. There is again a significant dependence on $D=10$, by itself and combined with $P=400$; this is interesting, because this method allows these problem and algorithm parameters to be measured and compared, at least for some of them. As Figure \ref{fig:icsme.balanced.workload} shows, with this method we can already observe how population influences energy readings in a different way depending on the temperature, at least for $D=5,10$. The fit curves cross for a value of $T$ between 35º and 40º, indicating that depending on the initial temperature, one population or the other will be more energy efficient.
+
+An analysis of the variance explained by the model terms again shows that the quadratic T term is important, but the one that explains more variance is $\Delta R$: \Sexpr{round(100*anova_icsme_balanced_workload_model$F[7]/sum(anova_icsme_balanced_workload_model$F[2:nrow(anova_icsme_balanced_workload_model)]),2)}\% is due to the difference between the running time of the $W$ and surrounding $B$ runs. While, as indicated above, this is not bad {\em per se}, since it would indicate that optimizing performance would be a good strategy for decreasing energy consumption, it might indicate that the measurements are actually consuming more energy due to them running in low-power cores or low-power states in the cooler die, which is usually the $E$ die, for more time. Although a priori this would be a good strategy, the fact that we will be also measuring the energy spent by the $P$ die at the same time, which is impossible to separate, makes this a relatively risky strategy. We would need to actually compare energy energy measured by this strategy with the baseline, to find out if that is the case.
+
+<<icsme.comparison, echo=FALSE, message=FALSE, warning=F, fig.cap="Comparison of energy consumption between the balanced strategy and the baseline", fig.env="figure*", fig.height=3 >>=
+europar_die1_workload %>% group_by(dimension, population_size) %>%
+  summarise( mean_energy = mean(delta_PKG),
+             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
+            iqr_energy = IQR(PKG)) -> europar_die1_summary
+
+icsme_balanced_workload %>% group_by(dimension, population_size) %>%
+  summarise( mean_energy = mean(delta_PKG),
+             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
+            iqr_energy = IQR(PKG)) -> icsme_balanced_summary
+
+comparison_summary <- merge(europar_die1_summary, icsme_balanced_summary, by=c("dimension", "population_size"), suffixes = c("_baseline", "_balanced"))
+
+library(kableExtra)
+comparison_summary %>%
+  kable(
+    col.names = c("D", "P", "Baseline: Mean", "Trim Mean", "IQR", "Balanced: Mean", "Trim Mean", "IQR"),
+    table.env='table*',
+    caption = "Comparison of energy consumption between the baseline and balanced strategies"
+    )
+@
+
+Table \ref{tab:icsme.comparison}, which compares $\Delta F$ (in Joules) for the first two series of the baseline measurements (which run mostly on die 1) and the current one. It shows that although in general means and outlier-proof trimmed means are in the same area, in some cases, and notably in the significant factor $D=10$, they consume slightly more. Since our intention is to generalize from measurement strategy to experimental strategy, this would be an unwanted outcome. We should have to look for another strategy.
+
+The new experiment will revert the terms of the previous one: it will run the process on the hotter die of the two. We should rely on system mechanisms to prevent overheating to avoid high temperatures, but at the same time this would preferably run on the $P$ core, thus taking less time and thus consuming less energy. That is the justification for the experiment, but we will still need to run the experiment.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
