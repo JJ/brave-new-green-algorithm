@@ -315,6 +315,18 @@ Table \ref{tab:icsme.comparison}, which compares $\Delta F$ (in Joules) for the 
 
 The new experiment will revert the terms of the previous one: it will run the process on the hotter die of the two. We should rely on system mechanisms to prevent overheating to avoid high temperatures, but at the same time this would preferably run on the $P$ core, thus taking less time and thus consuming less energy. That is the justification for the experiment, but we will still need to run the experiment.
 
+<<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
+load("data/icsm_hot_first.rds")
+icsme_hot_base <- icsm_hot_first[ startsWith(icsm_hot_first$work,"base-"), ]
+icsme_hot_base$dimension <- as.factor(icsme_hot_base$dimension)
+icsme_hot_base$population_size <- as.factor(icsme_hot_base$population_size)
+
+icsme_hot_base_model <- glm(PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds, data=icsme_hot_base)
+anova_hot_base_model <- anova(icsme_hot_base_model, test="F")
+@
+
+Again, to have an initial idea of the behavior of this strategy, we create a model and analyze its variance. Unlike the previous {\em balanced} model, most terms are significant except for $D=5$ by itself or combined with the initial temperature; besides, the significance of $P=400$ and $D=10$ is lower than 5\%. The analysis of variance, on the other hand, balances the influence of temperature, which explains \Sexpr{round(100*anova_hot_base_model$F[2]/sum(anova_hot_base_model$F[2:nrow(anova_hot_base_model)]),2)}\% of the variance, with running time explaining \Sexpr{round(100*anova_hot_base_model$F[6]/sum(anova_hot_base_model$F[2:nrow(anova_hot_base_model)]),2)}\%.
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
