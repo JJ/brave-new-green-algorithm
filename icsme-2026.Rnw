@@ -237,7 +237,7 @@ What we see is that, in many cases, the system will manage to lower the temperat
 
 This begs for a experimental protocol that acts on temperatures, instead of doing it directly on running time via core assignment. Since it is impossible to assess {\em a priori} what will be the effect, we will have to test and model different configurations. Thus, we will try a new strategy: assigning the process to the cooler die. We will again perform a series of 4 runs, separated by random time and also after several reboots.
 
-<<icsme.balanced, echo=FALSE, message=FALSE, fig.cap="Base energy consumption for processes placed on the cooler die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
+<<icsme.balanced, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the cooler die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
 load("data/icsme_balanced.rds")
 icsme_balanced_base <- icsme_balanced[ startsWith(icsme_balanced$work,"base-"), ]
 
@@ -259,7 +259,33 @@ anova_balanced_base_model_residualized <- anova(icsme_balanced_base_model_residu
 
 @
 
-We will first work with the $B$ runs to find the overall relationship with temperature and running time, as well as the effect of algorithm parameters on the result; as shown above, the initial model did not show any effect of either problem size ($D$) or algorithm parameters ($P$) or significant contribution to the model. However, in this case the effect of problem size $D = 10$ is significant at the 10\% level; we can then plot different fit curves by level in Figure \ref{fig:icsme.balanced}, which also represents energy consumption vs. temperature. The GLM shows a significant contribution of the quadratic $T$ term, which in facts contributes the \Sexpr{round(100*anova_balanced_base_model$F[2]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\% of the variance.
+We will first work with the $B$ runs to find the overall relationship with temperature and running time, as well as the effect of algorithm parameters on the result; as shown above, the initial model did not show any effect of either problem size ($D$) or algorithm parameters ($P$) or significant contribution to the model. However, in this case the effect of problem size $D = 10$ is significant at the 10\% level; we can then plot different fit curves by level in Figure \ref{fig:icsme.balanced}, which also represents energy consumption vs. temperature. The GLM shows a significant contribution of the quadratic $T$ term, which in facts contributes the \Sexpr{round(100*anova_balanced_base_model$F[2]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\% of the variance. There is still a strong part of the variance in energy consumption that can be attributed to time, namely, \Sexpr{round(100*anova_balanced_base_model$F[6]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\%; however, as indicated above, running time is not outside the control of the scientist: it can be improved by optimizing the performance of the algorithm implementation. It is true that not all performance optimizations automatically imply a decrease of the average power used, which is why we will need to always measure and model how these performance changes will affect energy consumption at different temperature levels.
+
+Although this model is interesting for  undestanding the influence of the operating context, we are more interested in seeing how it affects the workload measures.
+
+<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for teh balanced temperature strategy", fig.env="figure*", fig.height=3 >>=
+library(dplyr)
+source("R/process_deltas.R")
+icsme_balanced_workload <- process_deltas(icsme_balanced)
+icsme_balanced_workload$dimension <- as.factor(icsme_balanced_workload$dimension)
+icsme_balanced_workload$population_size <- as.factor(icsme_balanced_workload$population_size)
+
+icsme_balanced_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=icsme_balanced_workload)
+
+anova_icsme_balanced_workload_model <- anova(icsme_balanced_workload_model, test="F")
+
+plot_predictions(icsme_balanced_workload_model, condition = c("initial_temp","population_size", "dimension"))+
+  geom_point(data=icsme_balanced_workload, aes(x=initial_temp,y=delta_PKG,fill=population_size), shape=21, alpha=0.5, inherit.aes=F, stroke=NA) +
+  theme_minimal() + labs(x="Initial Temperature", y="Workload Energy Consumption (Delta PKG)", title="Predicted Workload Energy Consumption vs Initial Temperature") +
+  ylim(-100,400)
+
+icsme_balanced_time_model <- glm(delta_seconds ~ dimension*population_size+evaluations, data=icsme_balanced_workload)
+icsme_balanced_workload$residual_seconds <- residuals(icsme_balanced_time_model)
+icsme_balanced_workload_model_residualized <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations+residual_seconds, data=icsme_balanced_workload)
+
+@
+
+A model of the workload yields similar results as those found for the baseline.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
