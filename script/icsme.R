@@ -22,7 +22,7 @@ for ( row in 1:nrow(initial_data)) {
     running_time = initial_data$seconds[row]
   ))
 }
-
+save(delta_temperatures, file = "data/icsme_delta_temperatures.rds")
 library(ggplot2)
 ggplot(delta_temperatures, aes(x = initial_temperature, y = delta_temperature, color=PKG)) +
   geom_point() +
