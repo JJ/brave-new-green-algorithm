@@ -263,7 +263,7 @@ We will first work with the $B$ runs to find the overall relationship with tempe
 
 Although this model is interesting for  understanding the influence of the operating context, we are more focused in seeing how it affects the workload measures.
 
-<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the balanced temperature strategy", fig.env="figure*", fig.height=3 >>=
+<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the balanced temperature strategy", fig.height=4 >>=
 library(dplyr)
 source("R/process_deltas.R")
 icsme_balanced_workload <- process_deltas(icsme_balanced)
@@ -356,6 +356,14 @@ kable( icsme_hot_summary,
        col.names = c("D", "P", "Hot-first: Mean", "Trim Mean", "IQR"),
        caption = "Comparison of energy consumption between the baseline and hot-first strategies"
        )
+@
+
+If we compare Table \ref{tab:icsme.hot.table} with  Table \ref{tab:icsme.comparison}, we can see that in most cases the trimmed mean is better. Since we have already established that most of the variance is explained by running time, this means that, effectively, hot-first strategy reduces running time by assigning it to the "hottest", that is, the $P$ cores, whenever possible. The importance of the quadratic term on temperature implies that, when the temperature is too high, the system will reduce frequency, again increasing the time needed to run the workload: however, apparently this strategy is more fine-grained than running in lower-frequency cores, making consumption slightly lower in most cases.
+
+<<icsme.hot.plot, echo=FALSE, message=FALSE, warning=F, fig.cap="Predicted workload energy consumption for the hot-first strategy", fig.height=4 >>=
+plot_predictions(icsme_hot_workload_model, condition = c("initial_temp","population_size", "dimension"))+
+  geom_point(data=icsme_hot_workload, aes(x=initial_temp,y=delta_PKG,fill=population_size), shape=21, alpha=0.5, inherit.aes=F, stroke=NA) +
+  theme_minimal() + labs(x="Initial Temperature", y="Workload Energy Consumption (Delta PKG)")
 @
 
 \section{Conclusion and discussion}
