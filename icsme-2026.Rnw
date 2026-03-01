@@ -327,6 +327,37 @@ anova_hot_base_model <- anova(icsme_hot_base_model, test="F")
 
 Again, to have an initial idea of the behavior of this strategy, we create a model and analyze its variance. Unlike the previous {\em balanced} model, most terms are significant except for $D=5$ by itself or combined with the initial temperature; besides, the significance of $P=400$ and $D=10$ is lower than 5\%. The analysis of variance, on the other hand, balances the influence of temperature, which explains \Sexpr{round(100*anova_hot_base_model$F[2]/sum(anova_hot_base_model$F[2:nrow(anova_hot_base_model)]),2)}\% of the variance, with running time explaining \Sexpr{round(100*anova_hot_base_model$F[6]/sum(anova_hot_base_model$F[2:nrow(anova_hot_base_model)]),2)}\%.
 
+But our main focus is to assess how actual workload consumption works.
+%
+<<icsme.hot.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the hot die strategy", fig.env="figure*", fig.height=3 >>=
+icsme_hot_workload <- process_deltas(icsm_hot_first)
+icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
+icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
+
+icsme_hot_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=icsme_hot_workload)
+anova_hot_workload_model <- anova(icsme_hot_workload_model, test="F")
+icsme_hot_workload_time_model <- glm(delta_seconds ~ dimension*population_size+evaluations, data=icsme_hot_workload)
+icsme_hot_workload$residual_seconds <- residuals(icsme_hot_workload_time_model)
+icsme_hot_workload_model_residualized <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations+residual_seconds, data=icsme_hot_workload)
+anova_hot_workload_model_residualized <- anova(icsme_hot_workload_model_residualized, test="F")
+@
+%
+In this case, $D$, $P$ and $F$ all have a significant contribution to the variance; still, the most significant term is again $\Delta T$ which explains \Sexpr{round(100*anova_hot_workload_model$F[7]/sum(anova_hot_workload_model$F[2:nrow(anova_hot_workload_model)]),2)}\% of the variance, while the quadratic term on temperature explains \Sexpr{round(100*anova_hot_workload_model$F[2]/sum(anova_hot_workload_model$F[2:nrow(anova_hot_workload_model)]),2)}\%. Since running time will depend on the algorithm variables and parameters, in this case we will try to differentiate what part of this running time is actually dependent on them by using residualization, that is, creating a model of running time as a function of the other parameters and using the residuals of that model to check what part of the variance is not explained by them. In this residualized model, the part of $\Delta T$ that does not depend on the other parameters explains \Sexpr{round(100*anova_hot_workload_model_residualized$F[7]/sum(anova_hot_workload_model_residualized$F[2:nrow(anova_hot_workload_model_residualized)]),2)}\% of the variance; not a big difference, but still we can assess the incidence of importance in energy consumption, making it the most important lever for reducing consumption also in this case.
+
+This is not so important, however, as what we were looking for in this {\em hot-first} approach to measuring: actually looking for a strategy that reduces consumption for the different problem sizes and parameter values.
+
+<<icsme.hot.table, echo=FALSE, message=FALSE, warning=F, fig.cap="Comparison of energy consumption between the hot-first strategy and the baseline", fig.env="table*", fig.height=3 >>=
+icsme_hot_workload %>% group_by(dimension, population_size) %>%
+  summarise( mean_energy = mean(delta_PKG),
+             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
+            iqr_energy = IQR(PKG)) -> icsme_hot_summary
+
+kable( icsme_hot_summary,
+       col.names = c("D", "P", "Hot-first: Mean", "Trim Mean", "IQR"),
+       caption = "Comparison of energy consumption between the baseline and hot-first strategies"
+       )
+@
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
