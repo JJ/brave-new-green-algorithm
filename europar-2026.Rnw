@@ -14,7 +14,7 @@
 %
 \title{Towards a methodology for measuring energy consumption in population-based optimization algorithms}
 %
-%\titlerunning{Abbreviated paper title}
+\titlerunning{Measuring energy consumption}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %

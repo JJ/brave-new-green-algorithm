@@ -366,6 +366,28 @@ plot_predictions(icsme_hot_workload_model, condition = c("initial_temp","populat
   theme_minimal() + labs(x="Initial Temperature", y="Workload Energy Consumption (Delta PKG)")
 @
 
+In this Figure \ref{fig:icsme.hot.plot} we show again how, for different problem sizes the size of the population in the population-based algorithm should be chosen based on the most probable temperature. Again, the scenario this draws is relatively complex for a decision: depending on the temperature, a big or small population will be more {\em green}. However, the model also allows what difference will it make: except for very high temperatures, the overall difference will be just a few joules. This leaves the scientist freedom to play with whatever figure makes the best of the algorithm.
+
+<<icsme.hot.equation, echo=FALSE, message=FALSE, warning=F, fig.cap="Model of workload energy consumption for the hot-first strategy", fig.env="figure*", fig.height=3 >>=
+extract_eq(icsme_hot_workload_model, wrap = TRUE,
+           use_coefs = TRUE,
+        raw_indices = TRUE,
+        terms_per_line = 2,
+        swap_var_names = c(
+          "delta_PKG" = "Delta E",
+    "initial_temp"  = "T",
+    "I(initial_temp^2)" = "T^2",
+    "dimension"  = "D",
+    "population_size" = "P",
+    "delta_seconds" = "Delta R",
+    "evaluations" = "F"
+  ), label="eq3" )
+@
+
+The model for $\Delta R$ is shown in Equation \ref{eq: eq3}. The quadratic term in the temperature is negative, but although the coefficient value is relatively small, it is going to be important when temperature increases. Unlike running time, it is a term that is not under our control, and in general, it will mean that the system will throttle the CPU lowering voltage and frequency; so even if it is significant, its importance lies more in understanding how the system works that in a real variable we can influence to lower energy consumption. On the other hand, making the system faster using energy-neutral micro-optimizations will have a bigger impact in  lowering energy requirement, due to the $\Delta R$ coefficient \Sexpr{round(icsme_hot_workload_model$coefficients["delta_seconds"],4)}. This complex relationship between population rebates simplistic approaches to energy optimization that simply say that energy consumption increases with population size \cite{population}. That would be true in some temperature ranges and for some values of the problem size; in most cases, however, the influence of the population in energy consumption will be obscured by many other factors, including, of course, the operating environment.
+
+In general, this protocol seems to offer more room for comparison of different parameters
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
