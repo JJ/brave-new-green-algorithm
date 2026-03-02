@@ -393,7 +393,9 @@ In general, this {\em hot-first} protocol seems to offer more room for compariso
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Evolving software towards more energy-thrifty version requires a sound methodology that is able to differentiate the effects of the software under study from the operating context.
+Evolving software towards more energy-thrifty version requires a sound methodology that is able to differentiate the effects of the software under study from the operating context. What we have introduced here is a energy-conscious experimental protocol for measuring energy consumption of different algorithm implementation configurations (in this case reduced to different problem dimension $D$ and population sizes $P$) that works in a mainstream desktop multi-die hardware configuration and is able to minimize the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption of these different configurations.
+
+% Relate to other works, specifically @ARTICLE{5677511,
 
 \section*{Acknowledgements}
 % This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
