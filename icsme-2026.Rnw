@@ -386,7 +386,7 @@ extract_eq(icsme_hot_workload_model, wrap = TRUE,
 
 The model for $\Delta R$ is shown in Equation \ref{eq: eq3}. The quadratic term in the temperature is negative, but although the coefficient value is relatively small, it is going to be important when temperature increases. Unlike running time, it is a term that is not under our control, and in general, it will mean that the system will throttle the CPU lowering voltage and frequency; so even if it is significant, its importance lies more in understanding how the system works that in a real variable we can influence to lower energy consumption. On the other hand, making the system faster using energy-neutral micro-optimizations will have a bigger impact in  lowering energy requirement, due to the $\Delta R$ coefficient \Sexpr{round(icsme_hot_workload_model$coefficients["delta_seconds"],4)}. This complex relationship between population rebates simplistic approaches to energy optimization that simply say that energy consumption increases with population size \cite{population}. That would be true in some temperature ranges and for some values of the problem size; in most cases, however, the influence of the population in energy consumption will be obscured by many other factors, including, of course, the operating environment.
 
-In general, this protocol seems to offer more room for comparison of different parameters
+In general, this {\em hot-first} protocol seems to offer more room for comparison of different parameters, which is why it is the best choice in measuring energy consumption of software, especially algorithm implementations, under different configurations at different levels (parametrization, framework, versions).
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
