@@ -420,7 +420,9 @@ From the fact that in most models running time is an important, or determinant, 
 
 We will not claim that this conclusion is generarizable to all possible processors of all possible brands and all possible operating systems. But we do claim that a protocol that tries to put workload and baseline in operating conditions that are as close as possible, as well as a sound, repeated measurement, followed by a modelization of the dependence of energy on operating conditions is a good way to approach the issue of greener algorithm implementations. A methodology should first look to mitigate the impact of operating conditions, and then understand, even so, what affects energy consumption in such a way that it can be optimized under probably operating conditions or under a range of them.
 
-% Relate to other works, specifically @ARTICLE{5677511,
+Future lines of works will try to use bigger workloads, using other fitness function, for instance, since Sphere is the most lightweight of the so-called BBOB benchmarks. Although the methodology will be the same, pushing the limits of how running code challenges the operating conditions will be interesting; how the model changes depending on the specific function it is running, even if they have a similar level of difficulty, will be also interesting, over all how these models can be leveraged to optimize the algorithm parameters.
+
+Changes in the algorithm itself, mainly to check how it influences the number of evaluations and how this impacts running time, temperature and energy measurements will follow next, pursuing our main line of work, that is looking for methodologies for making metaheuristic optimization algorithms {\em greener}.
 
 \section*{Acknowledgements}
 % This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
