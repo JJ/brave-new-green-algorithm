@@ -36,7 +36,8 @@ Hidden place and ORCID}
 Energy efficiency is increasingly regarded as a requirement in modern software development, particularly in algorithm implementations. There is an accompanying need to better understand how energy is spent in a system and, from this knowledge, develop methodologies that effectively compare different configurations, providing actionable insights to software developers. In this paper, we will investigate how the system operating environment, specifically temperature and CPU core choice, along with system measures for keeping temperature in check, influence energy measurements in a population-based optimization algorithm. We will establish a model of this influence and, from this understanding, create a system that makes the influence of algorithm parameters on energy spent clearer, while, if possible, minimizing energy spent in the experiment runs. We find that, in a two-die system, accounting for silicon die temperatures during launch processes enables us to achieve this goal.
 \end{abstract}
 
-% Maybe use 'silicon die' the first time? - Mario  
+% Maybe use 'silicon die' the first time? - Mario 
+% What do yo mean? -JJ
 
 \begin{IEEEkeywords}
 Green computing, Energy profiling, Metaheuristics
