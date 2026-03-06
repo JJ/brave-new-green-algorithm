@@ -38,7 +38,7 @@ Energy efficiency is increasingly regarded as a requirement in modern software d
 
 % Maybe use 'silicon die' the first time? - Mario
 % What do yo mean? -JJ
-% The first time I read it I thought of dies (dados) or dies (muere), then after reading some more I remembered dies as silicon dies. Just to remember readers like me. - Mario  
+% The first time I read it I thought of die (dado) or die (muere), then after reading some more I remembered dies as silicon dies. Just to remember readers like me. - Mario  
 
 \begin{IEEEkeywords}
 Green computing, Energy profiling, Metaheuristics
@@ -274,7 +274,7 @@ residualized_base_model <- glm(PKG ~ I(residual_temperature^2) + residual_temper
 anova_residualized_base_model <- anova(residualized_base_model, test="F")
 @
 
-It should be noted that although the {\em initial} temperature is taken obviously before the execution of every process, final temperature is going to be correlated with it; besides, we can anyway wee if there's a correlation  and residualize it. We effectively find a strong correlation for $D=10$, but we are more interested anyway in the residuals. We make another model of the dependence of running time on algorithm parameters, with the same kind of dependence. We make then a new model that used residualized temperatures and running time, and analyze the variance. This analysis of variance makes all terms significant at the 5\% level at least, but the temperature and running time terms, residualized, explain \Sexpr{sum(round(100*anova_residualized_base_model$F[c(2,3,6)]/sum(anova_residualized_base_model$F[2:nrow(anova_residualized_base_model)]),2))}\% of the variance. The operating environment is essentially explaining energy consumption. It is going to be extremely difficult for any optimization in the configuration to overcome this {\em noise}, since the noise-to-signal ration is in the two figures.
+It should be noted that although the {\em initial} temperature is taken obviously before the execution of every process, final temperature is going to be correlated with it; besides, we can anyway see if there's a correlation and residualize it. We effectively find a strong correlation for $D=10$, but we are more interested anyway in the residuals. We make another model of the dependence of running time on algorithm parameters, with the same kind of dependence. We make then a new model that used residualized temperatures and running time, and analyze the variance. This analysis of variance makes all terms significant at the 5\% level at least, but the temperature and running time terms, residualized, explain \Sexpr{sum(round(100*anova_residualized_base_model$F[c(2,3,6)]/sum(anova_residualized_base_model$F[2:nrow(anova_residualized_base_model)]),2))}\% of the variance. The operating environment is essentially explaining energy consumption. It is going to be extremely difficult for any optimization in the configuration to overcome this {\em noise}, since the noise-to-signal ration is in the two figures.
 
 This begs for a experimental protocol that acts on temperatures, instead of doing it directly on running time via core assignment. Since it is impossible to assess {\em a priori} what will be the effect, we will have to test and model different configurations. Thus, we will try a new strategy: assigning the process to the cooler die. We will again perform a series of 4 runs, separated by random time and also after several reboots.
 
