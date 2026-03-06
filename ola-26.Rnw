@@ -26,7 +26,7 @@ CITIC, UGR, Spain
 \and
 Zenzorrito, Granada, Spain}
 
-\maketitle              % typeset the header of the contribution
+\maketitle
 %
 \begin{abstract}
 Although developing energy-aware software has been a research topic for more than a decade, there are still no established methodologies for measuring and benchmarking energy consumption of specific algorithm implementations. This is especially true for population-based metaheuristics, where the interaction between the algorithm and the underlying system is complex and difficult to model. In this paper, we explore different measurement methodologies using a specific population-based metaheuristic, the Brave New Algorithm, implemented in the Julia programming language. We analyze the impact of different measurement frequencies, as well as diverse ways of separating baseline energy consumption from that of the actual workload. We also explore some micro-optimizations of the implementation that can lead to significant energy savings, and whose measurement is enabled by the increases in precision brought by the methodology. Our results show that configuring the measurement tool properly and planning the experiments in such a way that the effects of the underlying hardware are mitigated helps achieve that degree of precision; once these steps in the methodology have been made, we have proved how working with the latest software version as well as understanding it to perform micro-optimization can help achieve {\em greener} implementation of population-based metaheuristics.
@@ -223,7 +223,7 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   theme_minimal() +
   xlab("Delta Time (seconds)") +
   ylab("Delta Package energy (Joules)") +
-  labs(color="Measurement frequency")
+  labs(color="Measurement frequency") + guides(color=guide_legend(title="Experiment"))
 @
 
 In Figure \ref{fig:ola.deltas} we show the differential of energy spent vs. the time needed with the new sampling frequency (once ever 100ms) vs. the old one (50ms, in red). What is interesting to see here is that just a change in the measuring tool configuration leads to significant changes in the distribution as well as the absolute values of energy consumed and time spent. However, time spent should not, a priori, be affected by the measuring tool, so what we see here is that we have only reduced a source of uncertainty, error in measurement, not every one of them. We still have the issue of very small values, below 50 Joules, that are not realistic, over all for time measurements that are below 1.6 seconds. This will be addressed later.
@@ -348,7 +348,7 @@ ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
   geom_bar(ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed", ], mapping=aes(x=cumulative_time, y=delta_PKG), stat="identity", alpha=0.2, color="blue" ) +
   theme_minimal() +
   xlab("Cumulative Time (seconds)") +
-  ylab("Package energy (Joules)")
+  ylab("Package energy (Joules)") + labs(color="Experiment")
 @
 
 There are many possible ways of mitigating the effect of external factors on measurements.
