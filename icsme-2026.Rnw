@@ -38,6 +38,7 @@ Energy efficiency is increasingly regarded as a requirement in modern software d
 
 % Maybe use 'silicon die' the first time? - Mario
 % What do yo mean? -JJ
+% The first time I read it I thought of dies (dados) or dies (muere), then after reading some more I remembered dies as silicon dies. Just to remember readers like me. - Mario  
 
 \begin{IEEEkeywords}
 Green computing, Energy profiling, Metaheuristics
