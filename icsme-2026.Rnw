@@ -100,7 +100,6 @@ From the point of view of this paper, this algorithm will be a workload characte
 
 \section{Experimental methodology and results}\label{sec:results}
 
-
 This study investigates the heuristic measurement of temperature's influence on energy consumption, an inquiry stemming from research into energy optimization for metaheuristics. Our workload in this paper is an implementation of the BNA explained above. All experiments are executed as single-threaded processes, which are then run in a single core of the processor.
 
 The algorithm is configured to minimize the Sphere function across several parameter configurations, with
