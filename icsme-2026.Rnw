@@ -94,16 +94,21 @@ The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary al
 \item $\gamma$ generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
 \end{itemize}
 
-The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, 2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
+The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, % random chromosome? because it changes many elements - Mario
+2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
 There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
+% This algorithm is similar to the Grey Wolf Optimizer that also uses alphas, betas and deltas. - Mario
+% Maybe we could add a comment stating that this population-based algorithm is representative of 
+% current bio-inspired metaheuristics. - Mario
 
 The implementation of the algorithm used is available under a free license at \url{https://hiddenu.rl}
 % \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
 
 \section{Experimental methodology and results}\label{sec:results}
 
-
-This study investigates the heuristic measurement of temperature's influence on energy consumption, an inquiry stemming from research into energy optimization for metaheuristics. Our workload in this paper is an implementation of the BNA explained above. All experiments are executed as single-threaded processes, which are then run in a single core of the processor.
+This study investigates the heuristic measurement of temperature's influence on energy consumption, an inquiry stemming from research into energy optimization for metaheuristics. Our workload in this paper is an implementation of the BNA explained above. All experiments are executed as single-threaded processes, which are then run in a single core of the processor. 
+% A single thread cannot execute in two processors at the same time, this means that in this case the thread is pinned to a single processor so it cannot migrate between processors? - Mario
+% Maybe is better to put it this way: All experiments are executed as single-threaded processes pinned to a single CPU core to avoid thread migration. - Mario 
 
 The algorithm is configured to minimize the Sphere function across several parameter configurations, with
 problem dimension ($D$) equal 3, 5, or 10, population size ($N$): 200 or 400, and a termination criteria ($G$) equal to 10 or 25 generations without improvement. This last parameter is irrelevant to the measurements, but has been used in the experiments, which is why we list it here.
