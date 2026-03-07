@@ -77,13 +77,14 @@ The most significant methodological advancements have emerged within the field o
 To mitigate these thermal and state-based biases, several experimental strategies have been proposed:\begin{itemize}
 
 \item {\em Thermal Stabilization:} Implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
-\item {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption () without requiring a system reboot between every run. % Something goes on those parenthesis? - Mario
+\item {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption without requiring a system reboot between every run.
 \item {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
 \end{itemize}
 
-Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context—specifically temperature and OS-level core election—directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core election, directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
 % I think the text between dashes are double (em dashes) like --this-- - Mario
 % Also, these sound a lot like many LLMs because they love them - Mario
+% Fixed
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
