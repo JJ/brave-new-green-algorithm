@@ -13,21 +13,32 @@
 
 \author{JJ Merelo\inst{1,2}\orcidID{ 0000-0002-1385-9741 } \and Cecilia Merelo-Molina\inst{3}}
 
-%
 \authorrunning{Merelo and Merelo}
-% First names are abbreviated in the running head.
-% If there are more than two authors, 'et al.' is used.
-%
 
 \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and
 CITIC, UGR, Spain
 \and
 Zenzorrito, Granada, Spain}
 
-\maketitle
-%
-\begin{abstract}
-Although developing energy-aware software has been a research topic for more than a decade, there are still no established methodologies for measuring and benchmarking energy consumption of specific algorithm implementations. This is especially true for population-based metaheuristics, where the interaction between the algorithm and the underlying system is complex and difficult to model. In this paper, we explore different measurement methodologies using a specific population-based metaheuristic, the Brave New Algorithm, implemented in the Julia programming language. We analyze the impact of different measurement frequencies, as well as diverse ways of separating baseline energy consumption from that of the actual workload. We also explore some micro-optimizations of the implementation that can lead to significant energy savings, and whose measurement is enabled by the increases in precision brought by the methodology. Our results show that configuring the measurement tool properly and planning the experiments in such a way that the effects of the underlying hardware are mitigated helps achieve that degree of precision; once these steps in the methodology have been made, we have proved how working with the latest software version as well as understanding it to perform micro-optimization can help achieve {\em greener} implementation of population-based metaheuristics.
+\maketitle % \begin{abstract} Although developing energy-aware software has been
+a research topic for more than a decade, there are still no established
+methodologies for measuring and benchmarking energy consumption of specific
+algorithm implementations. This is especially true for population-based
+metaheuristics, where the interaction between the algorithm and the underlying
+system is complex and difficult to model. In this paper, we explore different
+measurement methodologies using a specific population-based metaheuristic, the
+Brave New Algorithm, implemented in the Julia programming language. We analyze
+the impact of different measurement frequencies, as well as diverse ways of
+separating baseline energy consumption from that of the actual workload. We also
+explore some micro-optimizations of the implementation that can lead to
+significant energy savings, and whose measurement is enabled by the increases in
+precision brought by the methodology. Our results show that configuring the
+measurement tool properly and planning the experiments in such a way that the
+effects of the underlying hardware are mitigated helps achieve that degree of
+precision; once these steps in the methodology have been made, we have proved
+how working with the latest software version as well as understanding it to
+perform micro-optimization can help achieve {\em greener} implementation of
+population-based metaheuristics.
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics \and Software Engineering.}
 \end{abstract}
