@@ -1,0 +1,355 @@
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{color}
+\usepackage{amsmath}
+
+
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+\urlstyle{rm}
+%
+\begin{document}
+%
+\title{Towards a methodology for measuring energy consumption in population-based optimization algorithms}
+%
+\titlerunning{Measuring energy consumption}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+\and
+Instituto Tecnológico Nacional de México, Tijuana, México
+}
+%
+\authorrunning{Merelo et al.}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+%The abstract should briefly summarize the contents of the paper in
+%150--250 words.
+Optimizing energy consumption of algorithm implementations is gathering momentum but is hampered by the lack of a principled methodology for assessing the balance between the influence of the algorithm and its parametrization and the system operational context on energy consumption. System operational context, in this case, includes the CPU package temperature as well as core voltage and frequency; taking these into account, we will test different measurement methodologies that try to differentiate between baseline and workload measurements, and model them separately. What we have found, in a modern two-die heterogeneous processor architecture, is that operational context determines the bulk of the variance in energy consumption measurements, and that workload measurements need to be refined to maximize the amount of variance in energy consumption they capture.
+
+\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\end{abstract}
+%
+%
+%
+\section{Introduction and state of the art}
+
+Concerns about the energy costs of computing infrastructure are not new \cite{sinha2001jouletrack,kurp2008green,lewis2008run}, but its importance and urgency has certainly increased in the last years with the introduction of metaheuristic and hyperheuristic algorithms \cite{irace,novoa2021measuring} as well as deep learning and large language models \cite{10549890,rodriguez2024evaluatingenergyconsumptionmachine}. With these, the concerns on {\em greening} algorithm implementations have also grown. This kind of energy optimization involves designing a experiment framework where different configurations of the algorithm are compared with each other, by measuring the energy consumed by every one of them in a certain environment and applying statistical techniques to determine, for the workload under study, which configuration consumes the least energy.
+
+These two stages of measuring and applying statistical techniques to compare are critical. However, they face several challenges, especially the former. The first one is that unlike other performance metrics, it is impossible to measure what one specific process running in a processor core under an operating system is consuming. Since energy sensors and counters operate system-wide, the best option you have is to take measurements of different subsystems or the whole system synchronized with the start and end of the process; this implies that, after the experiment, you need to separate what is the system overhead from the workload you are measuring. Baseline measurements will be taken to include the system overhead as well as the overhead of the framework the algorithm is implemented in; workload measurements will then usually subtract those baseline measurements to get to the {\em real} amount of energy consumed.
+
+The second challenge is even more determinant: the operational context of the software and hardware system, which include processor states as well as operating conditions such as the temperature will influence the energy consumed, and it will do so not only in a way that affects the baseline measurements, but also the relative differences between the baseline and workload+baseline \cite{freina2024survey,cruz2025}. There are several reasons for this, but they can be summarized as follows: the chipset and the operating system actively working to keep the system's temperature within a certain range and to avoid it exceeding a critical threshold. In addition to this task, over which the user has little or no control, modern systems actively manage power consumption, looking for a minimization using different techniques such as dynamic voltage and frequency scaling (DVFS) or dynamic power management (DPM) \cite{snowdon2005power}.
+
+Since in general scientists work on personal computers it follows that the measure of energy we are interested in is the one taken in a real, non-dedicated system, where other processes will be running at the same time. In general, this means that the state of the system will be changing all the time: measures for temperature as well as power reduction will be active the whole duration of any experiment, but the most important thing is that they will be triggered not only by the workload, even if it is a substantial one, one that implicates several cores, but also by others; that is, there is no control over the {\em base} state of the system, however you want to define it, and no control over how this context will affect the workload that is being measured.
+
+One feasible way to mitigate this is to try to control the state as much as possible, eliminating all possible interference. However, projecting these measurements to {\em real} systems might be tricky, since the fact that system state and workload interact in unknown ways might mean that a specific configuration or parametrization works better in a specific state, but might be the worst when it interacts with the same system in a different state.
+
+Despite this known influence of system state on energy measurements, empiric research of how this influence works and how it might affect comparison of configurations is relatively scarce. A remarkably interesting paper, \cite{cotta24}, however, drew researchers' attention to the fact that system temperature reached under one specific run of the experiment will influence the next one, and proposed measures to mitigate it. Later, \cite{cotta25} proved that these changes in temperature and other system state will affect the next measurements in a sequence, having a kind of {\em hysteretic} effect where the system does not fall back to the previous, pre-experiment state, but remains in a state with higher temperature that affects measurements. Outside the machine learning/metaheuristic field, the relationship between power (or energy) measurements had been established previously: \cite{devogeleer2014modelingtemperaturebiaspower} mentions a quadratic relationship in the range 20º to 50º, although it might be exponential for temperatures higher than that and up to 80º. This is beyond the critical threshold of most systems nowadays, so the quadratic model is probably closer to current reality. A more modern experimental analysis \cite{PENG2025104837} reports also the exponential relationship between power consumption and temperature, introducing a new core layout algorithm that reduces power consumption. On one hand, it is  proof that energy consumption concerns are being tackled at all levels, including processor design; on the other, it is quite clear that this cannot be leveraged by a scientist to lower energy consumption in the algorithms they work with and their implementations.
+
+This calls, anyway, for more extensive experimentation on the general relationship between temperature and energy measurements, and to what extent these are a result of the temperature of the CPU package, as opposed to the parametrization or implementation of the workload itself.
+This is precisely what we will carry out in this paper. We will run a set of experiments and analyze them, looking for a model of the influence of the CPU temperature,
+as captured by sensors, in the energy spent by a workload. We will test different experimental setups checking for changes in the underlying model, as well as looking for one that is able to offer a better capture of the variance in energy measurements caused by the independent or dependent variables in the algorithm.
+
+The rest of the paper is organized as follows: next we will describe the experimental design, followed by the results of the experiments. Finally, we will discuss these results and draw our conclusions in Section \ref{sec:conclusions}.
+
+\section{Experiments and results}\label{sec:exp}
+
+Our interest in heuristic measurement of the influence of temperature on energy consumption arose from our line of research that tries to optimize it in metaheuristics; this is why we will be making measurements on a population-based metaheuristic called Brave New algorithm \cite{bna}. The implementation has been written on the language Julia, a JIT-compiled language with an interesting concurrent model. However, we will be using a single-threaded process and testing different configurations to minimize the Sphere function, varying the parameters: problem dimension (3, 5 or 10) and population size (200 or 400). Our initial intention was to compare different parameters, software and hardware configurations; however, for the purpose of this paper, the main point is that we will be running experiments every one of which takes several seconds to complete, with the whole experiment for all configurations taking about two hours. The duration is enough to make the system enter different states, and so that it theoretically have enough energy consumption differences between configurations to be detectable.
+
+Besides these two parameters, we will also be changing the number of generations without change needed to finish the algorithm. Its effect is too small to be measured in this context, and for the purposes of this paper, it means that we will be making two {\em sandwich} runs for every combination of problem and population size, one for every value of this parameter. % An example? - Mario Tried to clarify here - JJ
+The experiments proceed in a sequence we have called {\em sandwich}: for every combination of three parameters, we start and end with a baseline  experiment (which simply generates the population with the dimension and population size set) and runs in the middle a workload experiment. For every 3-parameter configuration we will run 30 repetitions for the workload and 31 for the baseline. The objective of this protocol is to mitigate the variability of the difference in energy consumption of the baseline and workload experiments by subtracting the average of the two baseline measurements from the workload. % Referencia para el elsewhere? - Mario Eliminado - Es el paper enviado al CEC - JJ
+
+These whole set of experiments is then repeated several times at several points after booting the system, doing normal work in between. We repeat 4 times every experiment this way, the main idea being to {\em catch} the system in different states during the experiment, so that we can have a more precise model of their dependence.
+
+All measures have been taken on the same system, a desktop system with an AMD Ryzen 9 9950X 16-Core Processor. This is a two-die processor, that has the cores distributed in two distinct dice, each one with its own temperature sensor. We will take into account this fact in the analysis and the experimental design. This machine is running Ubuntu with kernel {\tt 6.17.0-14-generic}. We are using Julia version 1.11.9, initially with the test version and then the stable one, although in this paper we will not be comparing hardware versions. We are using {\sf pinpoint}, a command line tool that reads energy measurements from the RAPL API \cite{rapl,khan2018rapl}. Since this is an AMD system, only PKG (package) energy can be measured, without distinguishing between different processor planes or memory spent by DRAM. This is enough, however, to understand the interdependence between temperature and energy spent by our implementation of the algorithm. Finally, the {\sf sensors} command is used to read the temperature from the sensors; a specific sensor, {\sf k10temp-pci-00c3}, yields three measurements, one for maximum allowed temperature and one for each die: {\sf Tccd1} and {\sf Tccd2}. Every single run, in superuser mode, is executed from a Perl script, that also processes the energy and temperature readings and outputs a CSV file. All data files are available in a public GitHub repository \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}. Experiments are started at random moments from booting the system. In general, experiments will be separated by several hours, but no specific {\em cool down} period is enforced. The intention is, as stated, to perform the experiment in the usual conditions. Experiments are repeated at least four times in these conditions.
+
+%
+<<europar.initial, echo=FALSE, fig.cap="Energy spent vs. temperature for the baseline experiment. Different colors indicate the problem dimension.", fig.height=3, fig.pos="h!tb", out.width="100%">>=
+load("data/europar_test.rds")
+library(ggplot2)
+europar_test$dimension <- as.factor(europar_test$dimension)
+europar_test$base <- ifelse( startsWith(europar_test$work, "base"), TRUE, FALSE)
+ggplot(europar_test, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
+@
+
+This initial experiment is intended as a baseline for comparison. As stated, we run baseline and workload processes in {\em sandwich}, leaving to the OS and processor their allotment to specific cores. In Figure \ref{fig:europar.initial} we plot the PKG energy consumed against the initial temperature, which is computed as the average of the temperature of the two dies. Different dimensions translate to different shapes, and color indicate whether it is a baseline run (without workload, just generation of the initial population) or workload run. We can observe a certain dependence between temperature and energy consumed, which grows in a different way for runs with or without workload. We will then need to consider different models for them.
+
+<<europar.initial.base.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the baseline measures, initial", fig.height=4>>=
+library(dplyr)
+europar_test_base <- europar_test %>% filter(base == TRUE)
+europar_test_base_model_linear <- glm( PKG ~ + initial_temp*dimension,data = europar_test_base)
+europar_test_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_base)
+difference_base_models <- anova(europar_test_base_model,europar_test_base_model_linear)
+@
+
+We will try to adjust two different generalized linear models to this data (using R's {\sf glm}), one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system.
+
+In principle, this variability was expected which is why every workload run is between two baseline runs, expected to eliminate at least part of the variability from the measurement.
+%
+<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload measures, initial experiment.", fig.height=3.5, fig.pos="h!tb">>=
+source("R/process_deltas.R")
+europar_test_processed <- process_deltas( europar_test )
+europar_test_processed$dimension <- as.factor(europar_test_processed$dimension)
+europar_test_processed$population_size <- as.factor(europar_test_processed$population_size)
+ggplot(europar_test_processed, aes(x = initial_temp, y = delta_PKG)) +
+  geom_point(color=europar_test_processed$dimension ) +
+  labs(
+    title = "Energy Consumption vs. Temperature",
+    x = "Temperature",
+    y = "Delta PKG"
+  ) + theme_minimal()
+europar_test_delta_model_linear <- glm( PKG ~ + initial_temp*dimension*population_size,data = europar_test_processed)
+europar_test_delta_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_processed)
+europar_test_delta_evals_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations,data = europar_test_processed)
+europar_test_delta_evals_interaction_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension+population_size*evaluations,data = europar_test_processed)
+difference_delta_models <- anova(europar_test_delta_evals_model,europar_test_delta_model)
+difference_delta_interaction <- anova(europar_test_delta_evals_interaction_model,europar_test_delta_evals_model)
+europar_test_delta_seconds_model <- glm( PKG ~ initial_temp*dimension*population_size+evaluations*delta_seconds+I(initial_temp^2),data = europar_test_processed)
+difference_delta_seconds <- anova(europar_test_delta_seconds_model,europar_test_delta_evals_model)
+anova_delta_seconds <- anova(europar_test_delta_seconds_model)
+library(equatiomatic)
+@
+%
+Figure \ref{fig:europar.initial.workload.model} shows the difference in energy consumption, Delta PKG, vs. temperature, with colors representing different problem sizes. In some cases, this delta can be negative if the conditions from the baseline to the workload runs have changed dramatically. The variability is still quite high, with deltas reaching 400 Joules, and increment slightly with temperature. Again, we try to model this dependence using a generalized linear model, using a term quadratic on the temperature or not, and including population size, the dimension as factor and the number of evaluations, which should change every run as a result of the stochastic algorithm. Again, model quadratic in the temperature that includes the number of evaluations is better with \Sexpr{round(difference_delta_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_delta_models$`Resid. Dev`[2],2)}.
+The model includes significant dependence on the initial temperature, population size the problem dimension, with evaluations being also significant. Dimension 10 (which is run at the beginning of every experiment) does not have any significant influence either by itself or in combination with any other. Again, the value of the quadratic term \Sexpr{round(coef(europar_test_delta_model)["I(initial_temp^2)"],4)} is negative and of a much lower magnitude than the linear term \Sexpr{round(coef(europar_test_delta_model)["initial_temp"],4)}.
+
+We can, however, test in this case an additional model that includes $\Delta$ seconds, the difference in seconds between the workload running time and the average of the baselines, as well as the number of evaluations. The model will express $\Delta E$, the workload energy consumption, as a combination on $T^2$ (T is the temperature), the interaction of $T, D, P$ (problem dimension and population size) and the interaction of $\Delta R$ and $F$, the number of fitness evaluations. An ANOVA comparison of both models shows this one explains better the variance of the model, leaving a residual of \Sexpr{round(difference_delta_seconds$`Resid. Dev`[1],2)}. The full model is shown in Equation \ref{eq: eq1}; please note that the coefficient for F (number of evaluations) is actually \Sexpr{round(coef(europar_test_delta_seconds_model)["evaluations"],5)}; in this case, the fitness function that we are using, the well known Sphere \cite{hansen2010comparing} is the most lightweight of the BBOB benchmark functions, which explains the low impact on energy consumption.
+
+\Sexpr{extract_eq(europar_test_delta_seconds_model, wrap = TRUE, use_coefs = TRUE,
+        raw_indices = TRUE,
+        swap_var_names = c(
+    "initial_temp"  = "T",
+    "I(initial_temp^2)" = "T^2",
+    "dimension"  = "D",
+    "population_size" = "P",
+    "evaluations" = "F",
+    "delta_seconds" = "DeltaR"
+  ), label="eq1" )}
+
+
+An ANOVA analysis of the new model shows significant dependence on all individual and interaction terms, with the lowest one being the interaction between $\Delta R$ and $F$, which is still significant with a p-value of \Sexpr{round(anova_delta_seconds$`Pr(>F)`[11],4)}. The highest values of the Fisher coefficient, however, correspond to $T$ and $T^2$ as well as $\Delta R$, which together explain \Sexpr{round(100*sum(anova_delta_seconds$F[c(2,6,7)])/sum(anova_delta_seconds$F[2:nrow(anova_delta_seconds)]),2)}\% of the variance.
+
+<<europar.initial.model.slopes, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Slopes of the model for the workload experiment.", fig.height=3>>=
+library(marginaleffects)
+plot_predictions(europar_test_delta_evals_model, condition = c("initial_temp","population_size", "dimension"))
+@
+
+This model is plotted in Figure \ref{fig:europar.initial.model.slopes} for the three problem dimensions and the algorithm parameter, population size, should allow us to draw some conclusions on which one should be chosen to minimize energy; however, given that the curves for the different populations are different depending on the dimension, cross each other at relatively plausible temperatures (35º in the case of dimensions 3 and 5) and do not clearly dominate each other for all dimensions, the only plausible conclusion is that the dependence of energy consumption on temperature should be modeled, and then a decision taken on the parameter values based on the most probable temperature of the system at the time of running the algorithm.
+
+<<europar.base.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Time spent by the baseline experiment vs. temperature.", fig.height=4>>=
+europar_test_base$population_size <- as.factor(europar_test_base$population_size)
+europar_test_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_test_base)
+anova_time <- anova(europar_test_base_model_time,europar_test_base_model)
+anova_test_base_model_time <- anova(europar_test_base_model_time)
+@
+
+The operational context of the system will be reflected on other conditions besides the temperature. In general, what the operating system scheduler will do is to try and assign processes to cores inside the processor based on their predicted performance. This will depend on several factors, but two are the most important: the core load and the frequency at which the core is running. Many modern processors, and among them the Ryzen, will have cores running at different, dynamic, frequencies; in the case of the Ryzen these are also divided by die, so that cores in die 1 are considered "performance" cores, while cores in die 2 are "efficiency" cores, more energetically efficient.
+
+Assigning a process to a lower-frequency core will certainly reduce energy consumption; however, we can only measure the amount of energy spent by the whole package. We will notice the use of lower-frequency cores by the time spent by our process. Time will, then, need to be incorporated into our model to  account for this effect. The new model is able to explain  more of the variability of the energy consumption, with a residual deviance of \Sexpr{round(anova_time$`Resid. Dev`[1],2)} compared to \Sexpr{round(anova_time$`Resid. Dev`[2],2)} for the model without time. Together, the two temperature independent terms and the running time are able to explain most of the energy variability, their importance being similar.
+
+Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics. We will try to reduce the uncertainty of the model by executing both baseline and workload runs in a single die by using the {\sf taskset} command, that allocates processes to core sets. By keeping it in the {\em performance} core, we should be able to reduce running time, as well as leave the operating context work on the temperature optimization of this single die.
+
+<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload experiment with taskset; (left) vs. T, (right) vs. time", fig.pos="h!tb", fig.height=4, fig.show="hold", out.width="50%">>=
+load("data/europar_taskset.rds")
+europar_taskset$dimension <- as.factor(europar_taskset$dimension)
+europar_taskset$population_size <- as.factor(europar_taskset$population_size)
+ggplot(europar_taskset, aes(x=initial_temp_1, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
+
+europar_taskset_base <- europar_taskset %>% filter(base == TRUE)
+europar_taskset_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp_1*dimension*population_size,data = europar_taskset_base)
+europar_taskset_base_model_time <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = europar_taskset_base)
+anova_taskset_time <- anova(europar_taskset_base_model_time,europar_taskset_base_model)
+anova_taskset_time_model <- anova(europar_taskset_base_model_time)
+library(scales)
+custom_pow <- trans_new(
+  name = "custom_pow",
+  transform = function(x) x^0.3,  # Lower power = more stretch at the bottom
+  inverse = function(x) x^(1/0.3)
+)
+
+ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp, shape=dimension)) +
+  scale_color_viridis_c(trans=custom_pow) +
+  geom_point()  + labs( x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
+@
+
+We have modeled PKG for the baseline runs with the same model, once again including time as a variable. In this case, after applying ANOVA to the model, the variance explained by time in seconds \Sexpr{anova_taskset_time_model$Deviance[6]} is much higher than the one explained by initial temperature by a factor of \Sexpr{round(anova_taskset_time_model$Deviance[6]/anova_taskset_time_model$Deviance[3],2)}. However, the squared temperature term becomes more important in this case, explaining \Sexpr{round(anova_taskset_time_model$Deviance[2])} by value or \Sexpr{round(100*anova_taskset_time_model$Deviance[2]/anova_taskset_time_model$Deviance[6],2)}\% by percentage of the variance.
+
+<<europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline measurements with and without taskset.", fig.height=3, fig.pos="h!tb", out.width="100%">>=
+library(philentropy) # For KL function
+library(stats)
+
+joint_base_taskset <- rbind(europar_taskset_base, europar_test_base)
+
+predict_with_taskset <- predict(europar_taskset_base_model_time, newdata=joint_base_taskset, type = "response")
+predict_with_base <- predict(europar_test_base_model_time, newdata=joint_base_taskset, type = "response")
+
+probability_taskset <- predict_with_taskset / sum(predict_with_taskset)
+probability_base <- predict_with_base / sum(predict_with_base)
+
+kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
+@
+
+However, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
+
+<<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=5, fig.show="hold", out.width="30%">>=
+europar_taskset_base$Experiment <- "Taskset"
+europar_test_base$Experiment <- "Base"
+
+joint_europar <- rbind(europar_taskset_base, europar_test_base)
+ggplot(joint_europar, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
+wilcox_test_energy <- wilcox.test(PKG ~ Experiment, data = joint_europar)
+ggplot(joint_europar, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
+wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_europar)
+ggplot(joint_europar, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
+wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_europar)
+@
+
+An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will adapt the processes to be run in that specific die.
+
+<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%">>=
+load("data/europar_taskset_die2.rds")
+europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
+europar_taskset_die2$population_size <- as.factor(europar_taskset_die2$population_size)
+
+ggplot(europar_taskset_die2, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
+
+taskset_die2_base <- europar_taskset_die2 %>% filter(base == TRUE)
+
+taskset_die2_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data = taskset_die2_base)
+taskset_joint_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data =  joint_base_taskset)
+
+joint_base_taskset_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
+
+predict_with_die2 <- predict(taskset_die2_time_model, newdata=joint_base_taskset_with_die2, type = "response")
+predict_with_joint <- predict(taskset_joint_time_model, newdata=joint_base_taskset_with_die2, type = "response")
+
+probability_die2 <- predict_with_die2 / sum(predict_with_die2)
+probability_joint <- predict_with_joint / sum(predict_with_joint)
+
+kl_divergence_die2 <- KL(rbind(probability_die2, probability_joint), unit = "log")
+@
+
+Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different. However, the model it follows is still the same, as certified by a very low Kullback-Leibler divergence of \Sexpr{kl_divergence_die2[[1]]}. It is very likely that the model depends on the system and general features of the implementation, and experimental design and parametrization are able to alter only the operational conditions. Let us see if that is the case with this experiment by looking at how energy, time and temperature behave.
+
+<<europar.die2.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.", fig.height=4, fig.show="hold", out.width="30%">>=
+taskset_die2_base$Experiment <- "Taskset Die 2"
+joint_base_taskset$Experiment <- "Die 1"
+
+joint_base_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
+
+ggplot(joint_base_with_die2, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
+wilcox_test_energy <- wilcox.test(PKG ~ Experiment, data = joint_base_with_die2)
+ggplot(joint_base_with_die2, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
+wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_base_with_die2)
+ggplot(joint_base_with_die2, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
+wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_base_with_die2)
+@
+
+Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
+%
+<<europar.die2.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.">>=
+joint_base_with_die2_summary <- joint_base_with_die2 %>%
+  group_by(Experiment) %>%
+  summarise(
+    mean_energy = mean(PKG),
+    trimmed_mean_energy = mean(PKG, trim = 0.1),
+    iqr_energy = IQR(PKG),
+    mean_time = mean(seconds),
+    trimmed_mean_time = mean(seconds, trim = 0.1),
+    iqr_time = IQR(seconds),
+    mean_temperature = mean(initial_temp),
+    trimmed_mean_temperature = mean(initial_temp, trim = 0.1),
+    iqr_temperature = IQR(initial_temp)
+  )
+library(kableExtra)
+kable(joint_base_with_die2_summary,
+      digits = 2,
+      col.names=c("Experiment","Mean", "Trim mean", "IQR",
+                 "Mean", "Trim mean", "IQR",
+                 "Mean", "Trim mean", "IQR"),
+      caption = "Summary statistics for energy, time and temperature for the baseline experiment with and without taskset on die 2.") %>% add_header_above(c(" " = 1, "Energy (J)" = 3, "Time (s)" = 3, "Temperature (ºC)" = 3)) %>%
+  kable_styling(full_width = FALSE, position = "center")
+@
+%
+However, as the Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature. However, we are mostly interested on what happens to the workload runs.
+%
+<<europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Workload energy vs. time, die-2 experiment.", fig.height=2.5, fit.pos="h!", out.width="100%">>=
+europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
+europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
+europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
+ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
+  geom_point(color=europar_taskset_die2_processed$dimension ) +
+  labs(
+    title = "Energy Consumption vs. Temperature",
+    x = "Delta seconds",
+    y = "Delta PKG"
+  ) + theme_minimal()
+@
+%
+We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with Figure \ref{fig:europar.initial.workload.model}: less negative values, for instance.
+%
+<<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE>>=
+europar_taskset_die2_processed$Experiment <- "Die 2"
+europar_test_processed$Experiment <- "No Die"
+joint_workload_with_die2 <- rbind(europar_taskset_die2_processed, europar_test_processed)
+
+summary_joint_workload_with_die2 <- joint_workload_with_die2 %>%
+  group_by(dimension,population_size,Experiment) %>%
+  summarise(
+    mean_delta_energy = mean(delta_PKG),
+    trimmed_mean_delta_energy = mean(delta_PKG, trim = 0.1),
+    iqr_delta_energy = IQR(delta_PKG),
+  )
+
+kable(summary_joint_workload_with_die2,
+      digits = 2,
+      col.names=c("Dimension", "Population Size", "Experiment", "Delta Energy (J): mean", "Trim mean", "IQR"),
+      caption = "Summary statistics for delta energy for the workload experiment with and without taskset on die 2.") %>%
+  kable_styling(latex_options = "hold_position")
+
+die2_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Experiment == "Die 2", ]$delta_PKG)
+nodie_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Experiment == "No Die", ]$delta_PKG)
+@
+
+We have represented in Table \ref{tab:europar.die2.workload.table} the average values of energy  as well as the temperature and time needed for the workload runs for the different values of the parameters. In general, working with the second die will spend more energy for a specific combination of the parameters. However, we should remember that the experimental methodology is designed to obtain a measurement with the highest available precision of the quantity we are interested in; and in order to do this we need to look at another measurement, the inter-quartile range; a small range will represent a variable with less variation. However, there is no clear different for one or the other, and the general IQR is almost the same for the two experiment sets: \Sexpr{round(die2_iqr,2)} for the die 2 runs and \Sexpr{round(nodie_iqr,2)} for the runs without die assignment.
+%
+<<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.">>=
+die2_workload_model <- glm( delta_PKG ~ initial_temp*dimension*population_size+delta_seconds*evaluations+I(initial_temp^2),data = europar_taskset_die2_processed)
+anova_die2_workload_model <- anova(die2_workload_model)
+@
+%
+We have created another generalized linear model with the same parameters as the one above, that is, $T*D*P+\Delta R * F + T^2$. The results are similar, with an ANOVA analysis finding that the T and $\Delta R$ independent terms explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,5,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance. Even if the average energy result would have been better, this percentage leaves very little room for measuring the effect of the rest of the parameters, even in combination with the main operating conditions, so it is certainly not a good alternative for measuring the effect of parameter or implementation changes in the algorithm implementation under study.
+
+With the precision in measuring energy we have, we need to conclude then that the "natural" assignment of processes for this system is a good alternative for measuring the energy spent by this population-based optimization algorithm in different parametrizations or frameworks, with other alternatives offering no clear advantage, and having even slight disadvantages in some cases.
+
+\section{Discussion and conclusions}\label{sec:conclusions}
+
+In this paper we have set out to understand the interdependence between energy measurements and the state of the system represented mainly by the temperature and indirect factors such as the time it takes to run a deterministic workload. Working in a two-die AMD architecture with different types of cores, we have used a population-based optimization algorithm as a workload, differentiating between baseline measurements and measurements with a full run of the algorithm, in order to better understand the amount of energy that is spent by it.
+What we have found is that there is a strong dependence on the system state for this measurement, with temperature and core frequency/voltage (measured indirectly through the time needed by deterministic workloads, in our case the baseline runs) being the two main factors and explaining more than half the variance in energy measurements; algorithm parameters (problem dimension and population size) as well as algorithm outcomes (number of evaluations until stopping) also are factors to take into account, but its influence might be obscured by temperature oscillation, voltage changes by the CPU package, or assignment of process to lower-frequency cores, which will in general yield greater energy consumption due to the fact that they spend more time on the CPU and we need to measure the energy spent by the whole package.
+
+We have observed, however, that the model of dependence of energy with these two variables in the operating context as well as the algorithm parameters does not vary with the experimental design and is only dependent on the system and implementation of the algorithm, at least in the case of the baseline measurements. But this implies that when comparing two implementations, we need to compare the models, not central values of energy consumption, since these will depend on the range of temperatures and how core allotment is performed. At the same time, scientists will need to shift the focus, or at least share it, from algorithm implementation to experimental design, trying to guarantee that the temperature is kept within bounds and that the assignment of processes to cores is not done in such a way that it increases measured energy consumption. On the other hand, the model of workload energy consumption {\em does} depend on experimental design, leaving more or less room to the effect of our problem parameters and outcomes (such as the number of evaluations) depending on the design. In the different experimental designs that we have tested, it has never been better than 20\% of the variance of the energy measures. This leaves some room for actual comparison, but it also means that only very significant differences in energy consumption between two configurations can be measured; for instance, the influence the parameter that we left out in comparisons, the maximum number of generations without change, would be impossible to assess; to a certain point, even the population size, which does have an significant impact in the variance of the energy consumption, would need to be re-assessed in terms of the standard error of the magnitude of the effect.
+
+There is a certain dependence on the actual workload we are measuring, which in our case is less than half the time and energy needed by the baseline measurements (which only generate the initial population, and include Julia's JIT compilation and production of executable code). Different workloads, spending much more energy and time, will change the workload model and probably increase the influence of these variables on energy consumption. Dependence on operating conditions such as temperature and core frequency, however, cannot be totally eliminated, and from the point of view of measurement and and optimization, our only course of action is to understand this dependence, taking production decisions based on the most probable operating conditions as well as how model parameters, frameworks or other implementation details influence energy consumption as well as, indirectly, these operating conditions.
+
+One conclusion can be drawn from these models, however. Since running time is the most important factor influencing energy consumption, changes that optimize running time are the most likely to result in energy optimization: faster languages, faster versions of the language, any kind of optimization that makes the process under study spend the least time in the CPU will result in lower energy readings. Even if micro-optimizations, using of low-voltage cores or any other measure could make {\em the specific core} spend less energy, it is impossible to measure that amount of energy in a precise way and any way the whole CPU will be powered while the process is running. The baseline is that what this model is telling us is that, as a first approximation, energy optimization is performance optimization, in a strategy that has been often called {\em run-to-idle} \cite{venkatachalam2005power}.
+
+Future work will need to, then, focus on this experimental design first and foremost, but also try to understand his operating context more deeply by measuring baseline energy consumption for an "idle" system, stepping up to baseline measurements that include framework and runtime overhead (time needed for compilation or loading of the different data and executable files, for instance), and the workload itself, and how it changes. We have also assumed that the operating context is static, but in most cases by running our algorithm implementation we will be changing the temperature and other system conditions. The key to optimizing algorithm implementation will thus be not only the static understanding of energy consumption, but also the way it alters temperature for the next runs in the sequence. This will become the focus of our future lines of work.
+
+\begin{credits}
+\subsubsection{\ackname}
+
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+
+\end{credits}
+
+\bibliographystyle{splncs04}
+\bibliography{energy,ga-energy,GAs}
+
+\end{document}
+
