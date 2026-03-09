@@ -10,9 +10,7 @@
 \title{Is there a (carbon-) free lunch? Energy/performance tradeoffs in population-based metaheuristics}
 
 \titlerunning{Is there a carbon-free lunch?}
-% If the paper title is too long for the running head, you can set
-% an abbreviated paper title here
-%
+
 \author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo-Molina\inst{3} \and Pablo García-Sánchez\inst{1,2}\orcidID{0000-0003-4644-2894} \and Mario García-Valdez \inst{4}}
 
 %
@@ -31,8 +29,22 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 %
 \begin{abstract}
 
-There are many levels at which the implementation of an algorithm can be made {\em greener}, that is, more energy efficient; improving efficiency piecewise will be one of them, but at the highest level, energy efficiency will impact the algorithm results, with different choices having an independent impact on energy and algorithmic efficiency. In this paper, we will explore this trade-off in the Brave New Algorithm, a population-based metaheuristic implemented in the language Julia, which uses a JIT compiler whose overhead needs to be taken into account, %PABLO: Es relevante lo de Julia en el abstract? Si se usa algo específico de optimización del lenguaje, decirlo aquí. JJ: Lo del overhead es importante
-analyzing how different operator optimizations impact the performance and energy consumption and finally, once a certain level of algorithmic performance is reached, how different parametrizations will impact both outcomes. We will especially look at the possibility of improving energy and algorithmic efficiency at the same time, if that is possible, and how this relates to the exploration/exploitation balance in this algorithm which is specifically designed for easy tuning of this balance.
+There are many levels at which the implementation of an algorithm can be made
+{\em greener}, that is, more energy efficient; improving efficiency piecewise
+will be one of them, but at the highest level, energy efficiency will impact the
+algorithm results, with different choices having an independent impact on energy
+and algorithmic efficiency. In this paper, we will explore this trade-off in the
+Brave New Algorithm, a population-based metaheuristic implemented in the
+language Julia, which uses a JIT compiler whose overhead needs to be taken into
+account, %PABLO: Es relevante lo de Julia en el abstract? Si se usa algo
+específico de optimización del lenguaje, decirlo aquí. JJ: Lo del overhead es
+importante analyzing how different operator optimizations impact the performance
+and energy consumption and finally, once a certain level of algorithmic
+performance is reached, how different parametrizations will impact both
+outcomes. We will especially look at the possibility of improving energy and
+algorithmic efficiency at the same time, if that is possible, and how this
+relates to the exploration/exploitation balance in this algorithm which is
+specifically designed for easy tuning of this balance.
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics}
 \end{abstract}
