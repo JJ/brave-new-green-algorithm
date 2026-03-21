@@ -18,8 +18,10 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3} \and Mario García-Valdez \inst{4}}
 \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+\and
+Zenzorrito, Granada, Spain
 \and
 Instituto Tecnológico Nacional de México, Tijuana, México
 }
@@ -42,6 +44,30 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 
 The rest of the paper is organized as follows: next we will describe the experimental design, followed by the results of the experiments. Finally, we will discuss these results and draw our conclusions in Section \ref{sec:conclusions}.
 
+\section{A brave new algorithm} \label{sec:bna}
+
+Far from trying to obscure the meaning of a metaheuristic by using a metaphor, our description of a Brave New Algorithm, based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm, by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.
+
+What the Brave New Algorithm introduces with respect to other evolutionary algorithms is the division of the evaluated population into {\em castes}, every one of which receives a differentiated treatment when it comes to reproduction; this treatment is inspired by how the different castes in the book reproduced. So reproduction goes as follows by caste\begin{itemize}
+\item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
+\item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
+\item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation.
+\item The $\gamma$ caste will use hillclimbing for a number of steps to improve its fitness.
+\end{itemize}
+
+All individuals will be ranked and then assigned to the castes in order according to their fitness; in particular, the $\alpha$ caste will receive the best while the $\gamma$ caste will get only the last ones; percentages assigned to every caste will be an algorithm parameter, although in order to simplify we will only change the $\alpha$ percentage, with $\delta$ and $\epsilon$ getting always 5\%, $\beta$ double $\alpha$ and finally $\gamma$ the rest; this gives us a single parameter to regulate this aspect of the algorithm, which is strongly related to the exploration/exploitation balance.
+
+The algorithm implementation will use elitism to keep the best member of the previous population that will substitute the worst one, but other than that all individuals reproduce one way or the other. This is the main difference with respect to other evolutionary algorithms: the worst elements are not dropped from the reproduction pool, but mutated in a random or directed way (in the case of $\gamma$).This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes; this adds another parameter for experimental design, but still it allows customization for specific problems or problem sizes.
+
+The parameters that can be varied in the algorithm are then\begin{itemize}
+\item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. \item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
+\item Mutation rates for the different castes except $\gamma$, which can be set to the same value or customized for every caste.
+\item Number of hillclimbing steps while there is still improvement in the fitness.
+\item The maximum number of generations without improvement, which is the stopping criterium.
+\end{itemize}
+
+
+
 \section{Experiments and results}\label{sec:exp}
 
 
@@ -56,7 +82,7 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 \end{credits}
 
 \bibliographystyle{splncs04}
-\bibliography{energy,ga-energy,GAs}
+\bibliography{energy,ga-energy,GAs,metaheuristics}
 
 \end{document}
 
