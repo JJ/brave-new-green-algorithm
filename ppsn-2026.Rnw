@@ -18,7 +18,7 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3} \and Mario García-Valdez \inst{4}}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3}\orcidID{0000-0002-5902-0159} \and Mario García-Valdez \inst{4}}
 \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
 \and
 Zenzorrito, Granada, Spain
@@ -48,7 +48,7 @@ The rest of the paper is organized as follows: next we will describe the experim
 
 Far from trying to obscure the meaning of a metaheuristic by using a metaphor, our description of a Brave New Algorithm, based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm, by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.
 
-What the Brave New Algorithm introduces with respect to other evolutionary algorithms is the division of the evaluated population into {\em castes}, every one of which receives a differentiated treatment when it comes to reproduction; this treatment is inspired by how the different castes in the book reproduced. So reproduction goes as follows by caste\begin{itemize}
+What the Brave New Algorithm introduces \cite{bna25,merelo2022brave} with respect to other evolutionary algorithms is the division of the evaluated population into {\em castes}, every one of which receives a differentiated treatment when it comes to reproduction; this treatment is inspired by how the different castes in the book reproduced. So reproduction goes as follows by caste:\begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
 \item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
 \item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation.
@@ -62,10 +62,11 @@ The algorithm implementation will use elitism to keep the best member of the pre
 The parameters that can be varied in the algorithm are then\begin{itemize}
 \item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. \item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
 \item Mutation rates for the different castes except $\gamma$, which can be set to the same value or customized for every caste.
-\item Number of hillclimbing steps while there is still improvement in the fitness.
+\item Maxumum number of hill-climbing steps while there is still improvement in the fitness.
 \item The maximum number of generations without improvement, which is the stopping criterium.
 \end{itemize}
 
+The algorithm is written in Julia \cite{perkel2019julia} and released as open source at \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}. It is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of the Brave New Algorithm, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
 
 \section{Experiments and results}\label{sec:exp}
@@ -82,7 +83,7 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 \end{credits}
 
 \bibliographystyle{splncs04}
-\bibliography{energy,ga-energy,GAs,metaheuristics}
+\bibliography{energy,ga-energy,GAs,metaheuristics,ours,julia}
 
 \end{document}
 
