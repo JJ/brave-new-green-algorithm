@@ -62,7 +62,7 @@ The algorithm implementation will use elitism to keep the best member of the pre
 The parameters that can be varied in the algorithm are then\begin{itemize}
 \item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. \item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
 \item Mutation rates for the different castes except $\gamma$, which can be set to the same value or customized for every caste.
-\item Maxumum number of hill-climbing steps while there is still improvement in the fitness.
+\item Maximum number of hill-climbing steps while there is still improvement in the fitness.
 \item The maximum number of generations without improvement, which is the stopping criterium.
 \end{itemize}
 
