@@ -94,6 +94,15 @@ For workload runs we capture the following data, additionally to the operating d
 
 For this paper we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason why we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures) and the algorithm parameters as well as results (fitness, evaluations). Introducing more degree of freedoms would not give us more insights into this model, and it might confuse the interpretation of results. In the discussion section we will include, however, how these results can be generalized to other problems and dimensions. Statistical analysis, however, will give us the certainty we need to draw conclusions from this set of experiments.
 
+Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions, and the dependence of fitness reached on the latter, in order to check if it is possible at all to reach lower levels of fitness spending less or the same energy. The four parameters that we will be changing are:\begin{itemize}
+\item $\alpha$ percentage with two values: 10 and 25. Since it is the main lever for the exploitation/exploration balance, we are basically looking for better fitness values with less space exploration (less evaluations).
+\item The number or {\sf steps} for hillclimbing in the $\gamma$ caste is related to exploration. We will test 16 and 64 steps.
+\item The number of generations without improvement to stop or {\sf max\_gens} will be set to 10 and 25; more generations allow more exploration and the possibility to go up a notch in fitness.
+\item Population size is going to be set to 400 and 800; bigger population means more diversity giving it a better chance to exploit existing values, but also more exploration.
+\end{itemize}
+
+This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs, giving us a batch. To ensure we cover different operating conditions, we repeat batches 4 times after at least one reboot; the distance between one batch and the next is random. The result of all the experiments are also hosted in the repository above.
+
 We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
