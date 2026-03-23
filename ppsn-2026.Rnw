@@ -79,10 +79,20 @@ We have used the following hardware-software stack for the experiments\begin{ite
 \item The experiments will be run from a Perl script, capturing output from pinpoint and saving it to a CSV file.
 \end{itemize}
 
-For every run of the experiment, we save the following data\begin{itemize}
+For every experiment, we save the following data\begin{itemize}
 \item Initial and final temperature for every die.
-We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
+\item Die where the process is running.
+\item PKG (CPU) energy spent, taken from the RAPL counters.
+\item Time used.
 \end{itemize}
+
+Since every run is affected by workload, we have two types of runs (changed by a command line switch): {\em baseline} runs, which just generate the initial population, and {\em workload} runs which run the algorithm until the end conditions are met. Baseline runs are essentially (implementation-dependent) overhead, so we use a {\em sandwich} strategy where every workload run is {\em sandwiched} between two baseline runs. We will repeat workload run 30 times sandwiched between 31 baseline ($B$) runs, with every $B$ (except first and last) affecting 2 $W$ runs.
+
+We have established another experimental condition, specific for multi-die CPUs, which tries to minimize the effect of temperature on energy consumption: at the beginning of every run, die temperature is checked and (using {\tt taskset}) the process is always sent to the {\em hottest} die\footnote{This strategy, generically called {\em run-to-idle} has been analyzed and justified elsewhere.}.
+
+For workload runs we capture the following data, additionally to the operating data mentioned above: Fitness of the best individual at the end of the run ad the total number of evaluations and generations.
+
+We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
