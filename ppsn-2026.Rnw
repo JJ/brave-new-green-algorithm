@@ -101,9 +101,50 @@ Our intention is to try, with experiments, to see the dependence of energy consu
 \item Population size is going to be set to 400 and 800; bigger population means more diversity giving it a better chance to exploit existing values, but also more exploration.
 \end{itemize}
 
-This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs, giving us a batch. To ensure we cover different operating conditions, we repeat batches 4 times after at least one reboot; the distance between one batch and the next is random. The result of all the experiments are also hosted in the repository above.
+This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random. The result of this batch of  experiments are also hosted in the repository above.
 
 We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
+
+The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; from it we will perform different experiments changing algorithm or parameters.
+
+<<ppsn.baseline, echo=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp">>=
+source("R/process_deltas.R")
+load("data/ppsn_speedup_fixed_gradient_descent.rds")
+load("data/gamma_upgrade.rds")
+
+gamma_upgrade$die <- NULL # elimnate this extra column, we're not using it
+ppsn_speedup_fixed_gradient_descent$group <- "baseline"
+gamma_upgrade$group <- "gamma_upgrade"
+comparison_gamma <- rbind(ppsn_speedup_fixed_gradient_descent, gamma_upgrade)
+
+library(dplyr)
+comparison_gamma_w <- process_deltas(comparison_gamma)
+
+comparison_gamma_w$initial_temp <- (comparison_gamma_w$initial_temp_1 + comparison_gamma_w$initial_temp_2)/2
+comparison_gamma_w$final_temp <- (comparison_gamma_w$final_temp_1 + comparison_gamma_w$final_temp_2)/2
+
+library(ggplot2)
+library(ggExtra)
+comparison_gg <- ggplot(comparison_gamma_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) +
+  geom_point(alpha=0.5) +
+  labs(x = "Diff Fitness",
+    y = "Delta PKG"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+
+ggMarginal(comparison_gg, type="density", groupFill=T, alpha=0.5)
+
+baseline_fitness_model <- glm( diff_fitness ~ initial_temp + final_temp + delta_seconds + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
+
+comparison_gamma_w %>%
+  group_by( steps, population_size, max_gens, alpha, group ) %>%
+  summarise( mean_diff_fitness = mean(diff_fitness),
+             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
+             mean_delta_PKG = mean(delta_PKG),
+             trim_mean_delta_PKG = mean(delta_PKG, trim=0.2),
+              mean_delta_seconds = mean(delta_seconds),
+             trim_mean_delta_seconds = mean(delta_seconds, trim=0.2),
+            mean_evaluations = mean(evaluations) ) -> summary_comparison_gamma_upgrade
+@
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
