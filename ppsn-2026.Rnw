@@ -71,6 +71,18 @@ The algorithm is written in Julia \cite{perkel2019julia} and released as open so
 
 \section{Experiments and results}\label{sec:exp}
 
+We have used the following hardware-software stack for the experiments\begin{itemize}
+\item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 32 threads in an heterogenous configuration, with cores power-capped depending on their performance.
+\item We are running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}.
+\item We are running Julia 1.11.9. This is not the latest stable release (that would be 1.12.5), but initial performance tests made us discard it.
+\item We will be using RAPL counters to measure energy via the {\sf pinpoint} command-line tool \cite{pinpoint} with a sampling period of 0.1 s. For system temperature we will be using {\em sensors} that tap an AMD driver.
+\item The experiments will be run from a Perl script, capturing output from pinpoint and saving it to a CSV file.
+\end{itemize}
+
+For every run of the experiment, we save the following data\begin{itemize}
+\item Initial and final temperature for every die.
+We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
+\end{itemize}
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
