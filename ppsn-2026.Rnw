@@ -92,6 +92,8 @@ We have established another experimental condition, specific for multi-die CPUs,
 
 For workload runs we capture the following data, additionally to the operating data mentioned above: Fitness of the best individual at the end of the run ad the total number of evaluations and generations.
 
+For this paper we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason why we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures) and the algorithm parameters as well as results (fitness, evaluations). Introducing more degree of freedoms would not give us more insights into this model, and it might confuse the interpretation of results. In the discussion section we will include, however, how these results can be generalized to other problems and dimensions. Statistical analysis, however, will give us the certainty we need to draw conclusions from this set of experiments.
+
 We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
