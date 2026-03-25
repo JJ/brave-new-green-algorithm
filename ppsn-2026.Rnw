@@ -119,7 +119,7 @@ We have an open science policy and all code and tests are available under a free
 
 The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; from it we will perform different experiments changing algorithm or parameters.
 
-<<ppsn.baseline, echo=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp">>=
 source("R/process_deltas.R")
 load("data/ppsn_speedup_fixed_gradient_descent.rds")
 load("data/gamma_upgrade.rds")
