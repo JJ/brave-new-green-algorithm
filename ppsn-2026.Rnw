@@ -119,12 +119,12 @@ We have an open science policy and all code and tests are available under a free
 
 The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; from it we will perform different experiments changing algorithm or parameters.
 
-<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp" >>=
 source("R/process_deltas.R")
 load("data/ppsn_speedup_fixed_gradient_descent.rds")
 load("data/gamma_upgrade.rds")
 
-gamma_upgrade$die <- NULL # elimnate this extra column, we're not using it
+gamma_upgrade$die <- NULL # eliminate this extra column, we're not using it
 ppsn_speedup_fixed_gradient_descent$group <- "baseline"
 gamma_upgrade$group <- "gamma_upgrade"
 comparison_gamma <- rbind(ppsn_speedup_fixed_gradient_descent, gamma_upgrade)
@@ -156,20 +156,34 @@ comparison_gamma_w %>%
               mean_delta_seconds = mean(delta_seconds),
              trim_mean_delta_seconds = mean(delta_seconds, trim=0.2),
              mean_evaluations = mean(evaluations) ) -> summary_comparison_gamma_upgrade
+
+# Comparison of operatin context
+baseline_gamma_time_model <- glm( delta_seconds ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
+comparison_gamma_w$residual_seconds <- residuals(baseline_gamma_time_model)
+baseline_gamma_final_temp_model <- glm( final_temp ~ initial_temp + delta_seconds + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
+comparison_gamma_w$residual_final_temp <- residuals(baseline_gamma_final_temp_model)
+comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21", "22" )
+
+# temp_t_comparison <- ggplot(comparison_gamma_w,
+#        aes(y = residual_seconds, x = initial_temp, color=group)) +
+#   geom_point(alpha = 0.7) +
+#   geom_smooth(aes(group = group, linetype = group),
+#               method = "lm", se = FALSE) +
+#   labs(x = "Initial temperature",
+#        y = "Residual seconds",
+#        shape = "Alpha") +
+#   theme(legend.position = "bottom") +
+#   theme_minimal()
+#
+# ggMarginal(temp_t_comparison, type="density", groupFill=T, alpha=0.5)
 @
 
 In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hillclimbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG energy and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for a higher energy consumption for the supposed upgrade of the $\gamma$ caste.
 
 <<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
-baseline_gamma_time_model <- glm( delta_seconds ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
-comparison_gamma_w$residual_seconds <- residuals(baseline_gamma_time_model)
-baseline_gamma_final_temp_model <- glm( final_temp ~ initial_temp + delta_seconds + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
-comparison_gamma_w$residual_final_temp <- residuals(baseline_gamma_final_temp_model)
 
 base_gamma_model <- glm( delta_PKG ~ initial_temp + residual_final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_gamma_w)
 anova_base_gamma_model <- anova(base_gamma_model)
-
-# create a data frame with the 10 top coefficients in term of F for anova and the percentage of the variance they explain
 
 anova_base_gamma_model_table <- data.frame( term = rownames(anova_base_gamma_model),
            F_value = anova_base_gamma_model$F,
@@ -189,9 +203,13 @@ kable(anova_base_gamma_value_top10, caption = "Top 10 coefficients in the ANOVA 
   kable_styling( full_width = F, position = "center" )
 @
 
-We need to find out the reason this occurs, and we will model the behavior of $\Delta$PKG in phases, so that we can separate the effect of the operating environment through temperature and time needed for running a single experiment, and the algorithm parameters, as well as the change introduced. We will group parameters of the models in several different groups: separated initial and final temp, resulting from the average of the temperatures of the two dies; the interaction of the group (baseline or gamma upgrade) with the number of evaluations, since we are assuming that the upgrade is resulting in many more evaluations and the consequent expense of energy; the four algorithm parameters will be modeled as interacting, too. So we will first model $\Delta R$ (where R is the running time) as a product of the rest of the parameters, and create a residual $\Delta R$. Next, we model the final temperature as a function of the other parameters, with the creation of another residual; this way, the residualized $\Delta R$ and final temperature will have no dependence on the rest of the parameters, and the final model will be able to express the dependence on algorithm parameters or operating environment. An ANOVA analysis of the variance explained by the top 10 terms of the joint model is shown in Table \ref{tab:ppsn.gamma.model}. The dependence on the operating conditions, over all time, is expected. It is interesting to check how the experimental protocol has been able to separate the $\alpha$ caste percentage from another operatin condition, the final temperature; however, from the point of view of our comparison between the baseline and the $\gamma$ upgrade, we see that the number of evaluations as well as the group itself explain a small, but significant, part of the variance; the upgrade provokes more evaluations as well as an overall energy expense that cannot be explained simply by that number of evaluations.
+We need to find out the reason this occurs, and we will model the behavior of $\Delta$PKG in phases, so that we can separate the effect of the operating environment through temperature and time needed for running a single experiment, and the algorithm parameters, as well as the change introduced. We will group parameters of the models in several different groups: separated initial and final temp, resulting from the average of the temperatures of the two dies; the interaction of the group (baseline or gamma upgrade) with the number of evaluations, since we are assuming that the upgrade is resulting in many more evaluations and the consequent expense of energy; the four algorithm parameters will be modeled as interacting, too. So we will first model $\Delta R$ (where R is the running time) as a product of the rest of the parameters, and create a residual $\Delta R$. Next, we model the final temperature as a function of the other parameters, with the creation of another residual; this way, the residualized $\Delta R$ and final temperature will have no dependence on the rest of the parameters, and the final model will be able to express the dependence on algorithm parameters or operating environment. This model yields a significant effect of the gamma upgrade group with a coefficient \Sexpr{round(coef(base_gamma_model)["groupgamma_upgrade"], 2)}; that is, all other parameters being equal, the "upgrade" makes the algorithm implementation consume that amount of Joules.
+
+An ANOVA analysis of the variance explained by the top 10 terms of the joint model is shown in Table \ref{tab:ppsn.gamma.model}. The dependence on the operating conditions, over all time, is expected. It is interesting to check how the experimental protocol has been able to separate the $\alpha$ caste percentage from another operating condition, the final temperature; however, from the point of view of our comparison between the baseline and the $\gamma$ upgrade, we see that the number of evaluations as well as the group itself explain a small, but significant, part of the variance; the upgrade provokes more evaluations as well as an overall energy expense that cannot be explained simply by that number of evaluations.
 
 We can draw two conclusions here: the experimental protocol as well as the statistical models help us understand how one single change in the algorithm can affect, or not, energy consumption as well as fitness. In this case, quite clearly the change should be rejected, since we are spending more energy to an unnoticeable effect on the fitness.
+
+
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
