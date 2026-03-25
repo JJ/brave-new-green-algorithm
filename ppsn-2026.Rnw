@@ -13,7 +13,7 @@
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 %
-\title{}
+\title{Towards a very economic lunch, energetically speaking: energy/fitness tradeoffs in metaheuristics}
 %
 \titlerunning{}
 % If the paper title is too long for the running head, you can set
@@ -44,6 +44,10 @@ ITIS Software, Universidad de Málaga, Spain
 %
 \section{Introduction and state of the art}
 
+
+After \cite{cotta25}, it has been proved that operating context is going to have an influence in the measured energy consumption of any algorithm. There are many ways you can take that into account; one that has been implemented by many is to try and eliminate that dependence by trying to fix the temperature, lock clock frequencies and fix the core where the process is going to be running or performing any other kind of operation like a cool-down period after every run; however, the main issue with this approach is that operating context will influence results in complex ways in a real environment like the one most scientists can afford; but the second issue is that the way the implementation will influence that same operating environment, creating hysteresis effects like the ones observed in the paper above, will not be addressed. A different approach is the one we are taking in this line of research: to include the operating context variables in our model, first trying to minimize the the effect of these in the model, and second including them as part of the model so that how the algorithm behaves in different conditions can be understood and taken into account when taking different decisions about the algorithm design, parameter settings, or implementation issues like language or runtime versions.
+
+Using this model, we will be mainly looking at understanding how we can use the models to take decisions about changes, and how different changes, at the algorithm level, at the implementation level, and at the parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with more energy consumption. As an auxiliary research question, we would like to know if there is effectively a free lunch: better fitness with less energy, and what context would favor that kind of situation.
 
 The rest of the paper is organized as follows: next we will describe the experimental design, followed by the results of the experiments. Finally, we will discuss these results and draw our conclusions in Section \ref{sec:conclusions}.
 
