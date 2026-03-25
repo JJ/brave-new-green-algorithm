@@ -209,7 +209,38 @@ An ANOVA analysis of the variance explained by the top 10 terms of the joint mod
 
 We can draw two conclusions here: the experimental protocol as well as the statistical models help us understand how one single change in the algorithm can affect, or not, energy consumption as well as fitness. In this case, quite clearly the change should be rejected, since we are spending more energy to an unnoticeable effect on the fitness.
 
+A possible fitness-neutral path to optimization is to work on the platform making it faster. In the case of Julia, one straightforward path is to look for unused libraries in the dependencies list and eliminate it. That, however, will mainly work on the $B$ runs. In order to also optimize the $w$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations, where $p = $ population size.
 
+<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+load("data/ppsn_microopt.rds")
+
+ggplot(ppsn_microopt, aes(x = seconds, y = PKG, shape=factor(max_gens),color=factor(alpha))) +
+  geom_point(alpha=0.5, size=3) +
+  labs(x = "Time (s)",
+    y = "PKG (J)"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+
+ppsn_microopt$watts <- ppsn_microopt$PKG / ppsn_microopt$seconds
+ppsn_microopt$initial_temp <- (ppsn_microopt$initial_temp_1 + ppsn_microopt$initial_temp_2)/2
+ppsn_microopt$final_temp <- (ppsn_microopt$final_temp_1 + ppsn_microopt$final_temp_2)/2
+
+watt_model <- glm( watts ~ initial_temp + final_temp + steps*max_gens*population_size*alpha + evaluations + die, data = ppsn_microopt )
+
+ppsn_microopt$group <- "microopt"
+ppsn_microopt$die <- NULL
+comparison_microopt <- rbind(ppsn_speedup_fixed_gradient_descent, ppsn_microopt)
+
+comparison_microopt_w <- process_deltas(comparison_microopt)
+
+comparison_microopt_w$initial_temp <- (comparison_microopt_w$initial_temp_1 + comparison_microopt_w$initial_temp_2)/2
+comparison_microopt_w$final_temp <- (comparison_microopt_w$final_temp_1 + comparison_microopt_w$final_temp_2)/2
+
+ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, shape=group,color=final_temp)) +
+  geom_point(alpha=0.5) +
+  labs(x = "Delta Seconds",
+    y = "Delta PKG"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+@
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
