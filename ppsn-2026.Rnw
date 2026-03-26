@@ -11,6 +11,7 @@
 \urlstyle{rm}
 %
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 %
 \title{Towards a very economic lunch, energetically speaking: energy/fitness tradeoffs in metaheuristics}
 %
@@ -47,20 +48,24 @@ An algorithm is, by definition, an abstract construct: it exists independently o
 % This is also a very long paragraph. - M
 % Since the goal in this context is not necessarily to reduce energy consumption per se, but rather to obtain reliable and reproducible energy measurements, a common approach has been to try and eliminate the dependence of energy measurements on the operating context altogether. To that end, many authors have proposed fixing the temperature, ...
 There are many ways you can take that into account; one that has been implemented by many is to try and eliminate that dependence by trying to fix the temperature, lock clock frequencies and fix the core where the process is going to be running or performing any other kind of operation like a cool-down period after every run; however, the main issue with this approach is that operating context will influence results in complex ways in a real environment like the one most scientists can afford; but the second issue is that the way the implementation will influence that same operating environment, creating hysteresis effects like the ones observed in the paper above, will not be addressed.
-A different approach is the one we are taking in this line of research: to include the operating context variables in our statistical model,
+A different approach is the one we are taking in this line of research: to include the operating context variables in %% comienzo a editar -Carlos
+performance models, so that we can understand how they influence energy consumption, and how they interact with algorithm parameters. By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels.
 % Model is a very general term. In this case, our model is a energy measuring technique? energy measure model? - Mario
 % Talking about statistical model - JJ
-first trying to minimize the effect of these in the model, and second including them as part of the model so that how the algorithm behaves in different conditions can be understood and taken into account when taking different decisions about the algorithm design, parameter settings, or implementation issues like language or runtime versions.
+%first trying to minimize the effect of these in the model, and second including them as part of the model so that how the algorithm behaves in different conditions can be understood and taken into account when taking %different decisions about the algorithm design, parameter settings, or implementation issues like language or runtime versions.
+%% termino de editar -Carlos
 
-Using this model, we will be mainly looking at understanding how we can use the models to make decisions about changes, and how different changes, at the algorithm level, at the implementation level, and at the parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
+In this work, we take steps in this direction, %% termino de editar -Carlos
+looking at understanding how we can use the models to make decisions about changes, and how different changes, at the algorithm level, at the implementation level, and at the parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
 
 The rest of the paper is organized as follows: next we will describe the experimental design, followed by the results of the experiments. Finally, we will discuss these results and draw our conclusions in Section \ref{sec:conclusions}.
 
 \section{A brave new algorithm} \label{sec:bna}
 
-Far from trying to obscure the meaning of a metaheuristic by using a metaphor, our description of a Brave New Algorithm, based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm, by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.
+Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm, by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.  %% comienzo a editar -Carlos
+Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{bna25,merelo2022brave}, but we will give a brief description here for the sake of completeness.%% termino de editar -Carlos
 
-What the Brave New Algorithm introduces \cite{bna25,merelo2022brave} with respect to other evolutionary algorithms is the division of the evaluated population into {\em castes}, every one of which receives a differentiated treatment when it comes to reproduction; this treatment is inspired by how the different castes in the book reproduced. So reproduction goes as follows by caste:\begin{itemize}
+What BNA introduces with respect to other evolutionary algorithms is the division of the evaluated population into {\em castes}, every one of which receives a differentiated treatment when it comes to reproduction; this treatment is inspired by how the different castes in the book reproduced. More precisely, reproduction goes as follows by caste:\begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
 \item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
 \item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation.
@@ -72,12 +77,15 @@ All individuals will be ranked and then assigned to the castes in order accordin
 The algorithm implementation will use elitism to keep the best member of the previous population that will substitute the worst one, but other than that all individuals reproduce one way or the other. This is the main difference with respect to other evolutionary algorithms: the worst elements are not dropped from the reproduction pool, but mutated in a random or directed way (in the case of $\gamma$).This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes; this adds another parameter for experimental design, but still it allows customization for specific problems or problem sizes.
 
 The parameters that can be varied in the algorithm are then\begin{itemize}
-\item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. \item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
+\item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. 
+\item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
 \item Mutation rates for the different castes except $\gamma$, which can be set to the same value or customized for every caste.
 \item Maximum number of hill-climbing steps while there is still improvement in the fitness.
 \item The maximum number of generations without improvement, which is the stopping criterium.
 \end{itemize}
-
+%% comienzo a editar -Carlos
+Note that the orchestrated used of local improvement within this general evolutionary engine makes BNA fall within the general scope of memetic algorithms \cite{cotta2025harnessing}. %
+%% termino de editar -Carlos
 The algorithm is written in Julia \cite{perkel2019julia} and released as open source at \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}. It is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of the Brave New Algorithm, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
 
@@ -113,13 +121,13 @@ Our intention is to try, with experiments, to see the dependence of energy consu
 \item Population size is going to be set to 400 and 800; bigger population means more diversity giving it a better chance to exploit existing values, but also more exploration.
 \end{itemize}
 
-This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random. The result of this batch of  experiments are also hosted in the repository above.
-
-We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
+This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random. %% comienzo a editar -Carlos
+We have an open science policy and therefore, all code, experiment results and analyses are available under a free license at our repository \cite{Ceci2021bnea}.
+%% termino de editar -Carlos
 
 The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; from it we will perform different experiments changing algorithm or parameters.
 
-<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp" >>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig=TRUE, fig.height=4, fig.pos="h!tbp" >>=
 source("R/process_deltas.R")
 load("data/ppsn_speedup_fixed_gradient_descent.rds")
 load("data/gamma_upgrade.rds")
@@ -180,7 +188,7 @@ comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21"
 
 In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hillclimbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG energy and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for a higher energy consumption for the supposed upgrade of the $\gamma$ caste.
 
-<<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.gamma.model, message=FALSE, echo=FALSE, results=tex, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 
 base_gamma_model <- glm( delta_PKG ~ initial_temp + residual_final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_gamma_w)
 anova_base_gamma_model <- anova(base_gamma_model)
@@ -199,7 +207,7 @@ anova_base_gamma_value <- anova_base_gamma_model_table %>%
 library(kableExtra)
 anova_base_gamma_value_top10$F_value <- NULL
 anova_base_gamma_value_top10$p_value <- NULL
-kable(anova_base_gamma_value_top10, caption = "Top 10 coefficients in the ANOVA model for the gamma upgrade", col.names=c("Model term","Percentage of variance explained") ) %>%
+kable(anova_base_gamma_value_top10, caption = "Top 10 coefficients in the ANOVA model for the gamma upgrade", col.names=c("Model term","Percentage of variance explained"), format = "latex" ) %>%
   kable_styling( full_width = F, position = "center" )
 @
 
@@ -211,7 +219,7 @@ We can draw two conclusions here: the experimental protocol as well as the stati
 
 A possible fitness-neutral path to optimization is to work on the platform making it faster. In the case of Julia, one straightforward path is to look for unused libraries in the dependencies list and eliminate it. That, however, will mainly work on the $B$ runs. In order to also optimize the $w$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations, where $p = $ population size.
 
-<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig=TRUE, fig.height=4, fig.pos="h!tbp">>=
 load("data/ppsn_microopt.rds")
 
 ggplot(ppsn_microopt, aes(x = seconds, y = PKG, shape=factor(max_gens),color=factor(alpha))) +
@@ -241,6 +249,8 @@ ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, shape=group,
     y = "Delta PKG"
   ) + theme(legend.position = "bottom") + theme_minimal()
 @
+
+
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
