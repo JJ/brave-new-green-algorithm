@@ -11,6 +11,7 @@
 \urlstyle{rm}
 %
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 %
 \title{Towards a very economic lunch, energetically speaking: energy/fitness tradeoffs in metaheuristics}
 %
@@ -18,12 +19,14 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3}\orcidID{0000-0002-5902-0159} \and Mario García-Valdez \inst{4}}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3}\orcidID{0000-0002-5902-0159} \and Mario García-Valdez \inst{4} \and Carlos Cotta\orcidID{0000-0001-8478-7549} \inst{5}}
 \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
 \and
 Zenzorrito, Granada, Spain
 \and
 Instituto Tecnológico Nacional de México, Tijuana, México
+\and
+ITIS Software, Universidad de Málaga, Spain
 }
 %
 \authorrunning{Merelo et al.}
@@ -78,7 +81,7 @@ The parameters that can be varied in the algorithm are then\begin{itemize}
 \item The maximum number of generations without improvement, which is the stopping criterium.
 \end{itemize}
 
-The algorithm is written in Julia \cite{perkel2019julia} and released as open source at \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}. It is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of the Brave New Algorithm, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
+The algorithm is written in Julia \cite{perkel2019julia} and released as open source \cite{Ceci2021bnea}. Julia is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of the Brave New Algorithm, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
 
 \section{Experiments and results}\label{sec:exp}
@@ -107,13 +110,13 @@ For workload runs we capture the following data, additionally to the operating d
 For this paper we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason why we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures) and the algorithm parameters as well as results (fitness, evaluations). Introducing more degree of freedoms would not give us more insights into this model, and it might confuse the interpretation of results. In the discussion section we will include, however, how these results can be generalized to other problems and dimensions. Statistical analysis, however, will give us the certainty we need to draw conclusions from this set of experiments.
 
 Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions, and the dependence of fitness reached on the latter, in order to check if it is possible at all to reach lower levels of fitness spending less or the same energy. The four parameters that we will be changing are:\begin{itemize}
-\item $\alpha$ percentage with two values: 10 and 25. Since it is the main lever for the exploitation/exploration balance, we are basically looking for better fitness values with less space exploration (less evaluations).
+\item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are basically looking for better fitness values with less space exploration (less evaluations).
 \item The number or {\sf steps} for hillclimbing in the $\gamma$ caste is related to exploration. We will test 16 and 64 steps.
 \item The number of generations without improvement to stop or {\sf max\_gens} will be set to 10 and 25; more generations allow more exploration and the possibility to go up a notch in fitness.
 \item Population size is going to be set to 400 and 800; bigger population means more diversity giving it a better chance to exploit existing values, but also more exploration.
 \end{itemize}
 
-This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random. The result of this batch of  experiments are also hosted in the repository above.
+This gives us 16 different parameter settings, for each of which we perform 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random. This batch of experiments thus includes 7808 runs, and the results are also hosted in the repository above.
 
 We have an open science policy and all code and tests are available under a free license at the repository mentioned above.
 
@@ -249,7 +252,7 @@ ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, shape=group,
 \begin{credits}
 \subsubsection{\ackname}
 
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
 
 \end{credits}
 
