@@ -222,7 +222,7 @@ We can draw two conclusions here: the experimental protocol as well as the stati
 
 A possible fitness-neutral path to optimization is to work on the platform making it faster. In the case of Julia, one straightforward path is to look for unused libraries in the dependencies list and eliminate it. That, however, will mainly work on the $B$ runs. In order to also optimize the $w$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations, where $p = $ population size.
 
-<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=4, fig.pos="h!tbp">>=
 load("data/ppsn_microopt.rds")
 
 ppsn_microopt$group <- "microopt"
@@ -276,7 +276,7 @@ anova_microopt_energy_model_table  %>%
 
 Effectively, the generalized linear model yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the amount of seconds that have been gained with this optimization all other things being equal. If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that microoptimizaton explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
 
-<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Low mutation rate for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments", fig.height=4, fig.pos="h!tbp">>=
 load("data/ppsn_low_mutation.rds")
 load("data/ppsn_microopt.rds") # redo this, we can use the die now
 
@@ -310,7 +310,7 @@ ggplot(comparison_microopt_low_mutation, aes(x = final_temp, y = PKG, color=grou
 
 @
 
-After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate originally was set at 40\%, in this case we will lower it to 10\%, meaning that when changing a chromosome only one element of the chromosome will be changed. While this might seem an obvious way or reducing random search, that is, exploration, what we are interested in is in the way it will affect first the operating conditions, and then obviously the energy consumed as well as the fitness reached. This is why we look first, in Figure \ref{fig:ppsn.low.mutation} at the energy spent in $W$ and $B$ runs (in two panels) by the new baseline (the previously analyzed microoptimization version) and this one, called {\em low mutation}. We use the final temperature (taken as the average of the temperature of the two dies) as the $x$ axis, because it will depend on the operating conditions, the general change brought by the previous runs of the same parameters or similar, and obviously the experiment; $y$ axis is the total PKG energy. We can observe the difference between the two groups, but what is interesting here is that the final temperature for the $B$ runs, which in principle has a dependence only on population size, is lower for the low mutation group. This indicates that the energy spent for the $B$ runs is {\em covariant} with the one spent by the workload. While subtracting the baseline runs from the workload runs to obtain workload-only energy might be useful for reducing the inter-quartile range and eliminate a part of the framework overhead, what we see here is that we need to take $B$ into the model in order to compute the dependence; it might be more complicated than the average, with one having more weight than other, or simply less than the average, which would compromise the actual value of the workload.
+After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate originally was set at 40\%, in this case we will lower it to 10\%, meaning that when changing a chromosome only one element of the chromosome will be changed. While this might seem an obvious way or reducing random search, that is, exploration, what we are interested in is in the way it will affect first the operating conditions, and then obviously the energy consumed as well as the fitness reached. This is why we look first, in Figure \ref{fig:ppsn.low.mutation} at the energy spent in $W$ and $B$ runs (in two panels) by the new baseline (the previously analyzed microoptimization version) and this one, called {\em low mutation}. We use the final temperature (taken as the average of the temperature of the two dies) as the $x$ axis, because it will depend on the operating conditions, the general change brought by the previous runs of the same parameters or similar, and obviously the experiment; $y$ axis is the total PKG energy. We can observe the difference between the two groups, but what is interesting here is that the final temperature for the $B$ runs, which in principle has a dependence only on population size, is lower for the microopt group. This indicates that the energy spent for the $B$ runs is {\em covariant} with the one spent by the workload. While subtracting the baseline runs from the workload runs to obtain workload-only energy might be useful for reducing the inter-quartile range and eliminate a part of the framework overhead, what we see here is that we need to take $B$ into the model in order to compute the dependence; it might be more complicated than the average, with one having more weight than other, or simply less than the average, which would compromise the actual value of the workload.
 
 In order to take that into account, we will perform a sequential series of models, residualizing several parts of the complex model, so that we can have a more accurate picture of the dependence of energy on energy parameters and, especially, on the change of the values that we have performed here.
 
@@ -349,10 +349,20 @@ anova_low_mutation_energy_model_top10$p_value <- NULL
 
 kable(anova_low_mutation_energy_model_top10, caption = "Top 10 coefficients in the ANOVA model for the low mutation change",  format = "latex" ) %>%
   kable_styling( full_width = F, position = "center" )
+
+low_mutation_energy_interaction_model <- glm( PKG ~ PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + group*evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
+
+# compare these two models using AIC
+model_comparison <- AIC( low_mutation_energy_model, low_mutation_energy_interaction_model )
+
+evaluations_model <- glm( evaluations ~ group + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
+comparison_microopt_low_mutation_covariates$residual_evaluations <- residuals( evaluations_model )
+
+low_mutation_energy_mediated_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + residual_evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
 @
 
-Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature and delta and seconds. Using GLM we create a model that includes all variables as well as the baseline PKG  values, which would account for the framework overhead. Indeed, the previous $B$ PKG value explains is the top variable explaining the variance.
-
+Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature and delta and seconds. Using GLM we create a model that includes all variables as well as the baseline PKG  values, which would account for the framework overhead. Indeed, the previous $B$ PKG value is the top variable explaining the variance. We can already query this model about how much energy we are saving or not with this model; the coefficient is
+\Sexpr{round(low_mutation_energy_model$coefficients["groupmicroopt"], 2)}; all things being equal, this is the saving in Joules you will get on average if we do not apply this change. This is a small quantity, however; we need to take into account that there is a relatively small dependence on the number of evaluations \Sexpr{signif(low_mutation_energy_model$coefficients["evaluations"], digits=2)} that, however, is significant only at the \Sexpr{round(summary(low_mutation_energy_model)$coefficients["evaluations","Pr(>|t|)"], 3)} level.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
