@@ -88,6 +88,7 @@ The parameters that can be varied in the algorithm are then\begin{itemize}
 %% comienzo a editar -Carlos
 Note that the orchestrated used of local improvement within this general evolutionary engine makes BNA fall within the general scope of memetic algorithms \cite{cotta2025harnessing}. %
 %% termino de editar -Carlos
+%% Je - JJ
 
 The algorithm is written in Julia \cite{perkel2019julia} and released as open source \cite{Ceci2021bnea}. Julia is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of the Brave New Algorithm, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
@@ -308,6 +309,21 @@ ggplot(comparison_microopt_low_mutation, aes(x = final_temp, y = PKG, color=grou
   ) + theme(legend.position = "bottom") + theme_minimal()
 
 @
+
+After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate originally was set at 40\%, in this case we will lower it to 10\%, meaning that when changing a chromosome only one element of the chromosome will be changed. While this might seem an obvious way or reducing random search, that is, exploration, what we are interested in is in the way it will affect first the operating conditions, and then obviously the energy consumed as well as the fitness reached. This is why we look first, in Figure \ref{fig:ppsn.low.mutation} at the energy spent in $W$ and $B$ runs (in two panels) by the new baseline (the previously analyzed microoptimization version) and this one, called {\em low mutation}. We use the final temperature (taken as the average of the temperature of the two dies) as the $x$ axis, because it will depend on the operating conditions, the general change brought by the previous runs of the same parameters or similar, and obviously the experiment; $y$ axis is the total PKG energy. We can observe the difference between the two groups, but what is interesting here is that the final temperature for the $B$ runs, which in principle has a dependence only on population size, is lower for the low mutation group. This indicates that the energy spent for the $B$ runs is {\em covariant} with the one spent by the workload. While subtracting the baseline runs from the workload runs to obtain workload-only energy might be useful for reducing the inter-quartile range and eliminate a part of the framework overhead, what we see here is that we need to take $B$ into the model in order to compute the dependence; it might be more complicated than the average, with one having more weight than other, or simply less than the average, which would compromise the actual value of the workload.
+
+In order to take that into account, we will perform a sequential series of models, residualizing several parts of the complex model, so that we can have a more accurate picture of the dependence of energy on energy parameters and, especially, on the change of the values that we have performed here.
+
+<<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
+low_mutation_group_temp_model <- glm( initial_temp ~ group + work, data = comparison_microopt_low_mutation )
+comparison_microopt_low_mutation$residual_initial_temp <- residuals( low_mutation_group_temp_model )
+
+low_mutation_group_final_temp_model <- glm( delta_temp ~ group + work + initial_temp + seconds, data = comparison_microopt_low_mutation )
+comparison_microopt_low_mutation$residual_delta_temp <- residuals( low_mutation_group_final_temp_model )
+
+
+@
+
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
