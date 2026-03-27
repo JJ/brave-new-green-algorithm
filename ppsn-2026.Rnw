@@ -277,6 +277,36 @@ Effectively, the generalized linear model yields a coefficient for the microopti
 
 <<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Low mutation rate for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 load("data/ppsn_low_mutation.rds")
+load("data/ppsn_microopt.rds") # redo this, we can use the die now
+
+ppsn_low_mutation$group <- "low_mutation"
+ppsn_microopt$group <- "microopt"
+
+comparison_microopt_low_mutation <- rbind(ppsn_low_mutation, ppsn_microopt)
+comparison_microopt_low_mutation[ startsWith( comparison_microopt_low_mutation$work, "base-"),]$work <- "Base"
+comparison_microopt_low_mutation[ !startsWith( comparison_microopt_low_mutation$work, "Base"),]$work <- "Workload"
+
+comparison_microopt_low_mutation %>% group_by( work, group, die ) %>% summarise( count = n(), .groups="drop" ) -> comparison_microopt_low_mutation_summary
+
+comparison_microopt_low_mutation$initial_temp <- comparison_microopt_low_mutation$initial_temp_1 + comparison_microopt_low_mutation$initial_temp_2 / 2
+comparison_microopt_low_mutation$final_temp <- comparison_microopt_low_mutation$final_temp_1 + comparison_microopt_low_mutation$final_temp_2 / 2
+
+comparison_microopt_low_mutation %>% group_by( work, group, die ) %>%
+  summarise( mean_initial_temp = mean(initial_temp),
+             mean_final_temp = mean(final_temp),
+             mean_PKG = mean(PKG),
+             mean_seconds = mean(seconds),
+             .groups="drop" ) -> comparison_microopt_low_mutation_operating_conditions_summary
+
+comparison_microopt_low_mutation$delta_temp <- comparison_microopt_low_mutation$final_temp - comparison_microopt_low_mutation$initial_temp
+
+ggplot(comparison_microopt_low_mutation, aes(x = final_temp, y = PKG, color=group )) +
+  geom_point(alpha=0.5) +
+  facet_wrap(~work) +
+  labs(x = "Final Temperature",
+    y = "PKG Energy"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+
 @
 
 \section{Discussion and conclusions}\label{sec:conclusions}
