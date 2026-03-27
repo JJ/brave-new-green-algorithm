@@ -6,12 +6,11 @@
 \usepackage{color}
 \usepackage{amsmath}
 
-
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
 %
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+
 %
 \title{Towards a very economic lunch, energetically speaking: energy/fitness tradeoffs in metaheuristics}
 %
@@ -79,7 +78,7 @@ All individuals will be ranked and then assigned to the castes in order accordin
 The algorithm implementation will use elitism to keep the best member of the previous population that will substitute the worst one, but other than that all individuals reproduce one way or the other. This is the main difference with respect to other evolutionary algorithms: the worst elements are not dropped from the reproduction pool, but mutated in a random or directed way (in the case of $\gamma$).This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes; this adds another parameter for experimental design, but still it allows customization for specific problems or problem sizes.
 
 The parameters that can be varied in the algorithm are then\begin{itemize}
-\item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size. 
+\item Population size. Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size.
 \item $\alpha$ percentage, which is the essential parameter for controlling the exploitation/exploration balance.
 \item Mutation rates for the different castes except $\gamma$, which can be set to the same value or customized for every caste.
 \item Maximum number of hill-climbing steps while there is still improvement in the fitness.
@@ -130,7 +129,7 @@ We have an open science policy and therefore, all code, experiment results and a
 
 The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; from it we will perform different experiments changing algorithm or parameters.
 
-<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig=TRUE, fig.height=4, fig.pos="h!tbp" >>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp" >>=
 source("R/process_deltas.R")
 load("data/ppsn_speedup_fixed_gradient_descent.rds")
 load("data/gamma_upgrade.rds")
@@ -191,7 +190,7 @@ comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21"
 
 In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hillclimbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG energy and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for a higher energy consumption for the supposed upgrade of the $\gamma$ caste.
 
-<<ppsn.gamma.model, message=FALSE, echo=FALSE, results=tex, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 
 base_gamma_model <- glm( delta_PKG ~ initial_temp + residual_final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_gamma_w)
 anova_base_gamma_model <- anova(base_gamma_model)
@@ -222,20 +221,8 @@ We can draw two conclusions here: the experimental protocol as well as the stati
 
 A possible fitness-neutral path to optimization is to work on the platform making it faster. In the case of Julia, one straightforward path is to look for unused libraries in the dependencies list and eliminate it. That, however, will mainly work on the $B$ runs. In order to also optimize the $w$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations, where $p = $ population size.
 
-<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig=TRUE, fig.height=4, fig.pos="h!tbp">>=
+<<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Micro-optimizations for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 load("data/ppsn_microopt.rds")
-
-ggplot(ppsn_microopt, aes(x = seconds, y = PKG, shape=factor(max_gens),color=factor(alpha))) +
-  geom_point(alpha=0.5, size=3) +
-  labs(x = "Time (s)",
-    y = "PKG (J)"
-  ) + theme(legend.position = "bottom") + theme_minimal()
-
-ppsn_microopt$watts <- ppsn_microopt$PKG / ppsn_microopt$seconds
-ppsn_microopt$initial_temp <- (ppsn_microopt$initial_temp_1 + ppsn_microopt$initial_temp_2)/2
-ppsn_microopt$final_temp <- (ppsn_microopt$final_temp_1 + ppsn_microopt$final_temp_2)/2
-
-watt_model <- glm( watts ~ initial_temp + final_temp + steps*max_gens*population_size*alpha + evaluations + die, data = ppsn_microopt )
 
 ppsn_microopt$group <- "microopt"
 ppsn_microopt$die <- NULL
@@ -246,13 +233,47 @@ comparison_microopt_w <- process_deltas(comparison_microopt)
 comparison_microopt_w$initial_temp <- (comparison_microopt_w$initial_temp_1 + comparison_microopt_w$initial_temp_2)/2
 comparison_microopt_w$final_temp <- (comparison_microopt_w$final_temp_1 + comparison_microopt_w$final_temp_2)/2
 
-ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, shape=group,color=final_temp)) +
+ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, color=factor(alpha), shape=factor(group))) +
   geom_point(alpha=0.5) +
   labs(x = "Delta Seconds",
     y = "Delta PKG"
   ) + theme(legend.position = "bottom") + theme_minimal()
 @
 
+Figure \ref{fig:ppsn.microopt}, which plots baseline measurements in red and this optimized version in blue-turquoise, show that, effectively, we have a lower energy consumption for any value of $\alpha$, shown with different shapes. And this is achieved mainly through the reduction in running time brought by optimization
+
+<<ppsn.microopt.model, message=FALSE, echo=FALSE, fig.cap="Model for the micro-optimization", fig.height=4, fig.pos="h!tbp">>=
+
+microopt_time_model <- glm( delta_seconds ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_microopt_w)
+comparison_microopt_w$residual_seconds <- residuals( microopt_time_model )
+microopt_model <- glm( delta_PKG ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_microopt_w)
+
+microopt_fitness_model <- glm( diff_fitness ~ group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_microopt_w )
+
+comparison_microopt_w %>% group_by( population_size, steps, max_gens, alpha, group ) %>%
+  summarise( mean_diff_fitness = mean(diff_fitness),
+             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
+             mean_delta_PKG = mean(delta_PKG),
+             trim_mean_delta_PKG = mean(delta_PKG, trim=0.2),
+             mean_evaluations = mean(evaluations) ) -> summary_comparison_microopt
+
+microopt_energy_model <- glm( delta_PKG ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_microopt_w)
+anova_microopt_energy_model <- anova(microopt_energy_model)
+
+anova_microopt_energy_model_table <- data.frame( term = rownames(anova_microopt_energy_model),
+           F_value = anova_microopt_energy_model$F,
+           p_value = anova_microopt_energy_model$`Pr(>F)`)
+
+anova_microopt_energy_model_table  %>%
+  filter( !is.na(F_value) ) %>%
+  filter ( p_value < 0.05 ) %>%
+  arrange( desc(F_value) ) %>%
+  head(10) %>%
+  mutate( percentage_variance = F_value / sum(F_value, na.rm=T) * 100 ) -> anova_microopt_top10
+
+@
+
+Effectively, the generalized linear model yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the amount of seconds that have been gained with this optimization all other things being equal. If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that microoptimizaton explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
 
 
 
