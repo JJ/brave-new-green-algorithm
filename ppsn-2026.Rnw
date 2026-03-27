@@ -275,7 +275,9 @@ anova_microopt_energy_model_table  %>%
 
 Effectively, the generalized linear model yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the amount of seconds that have been gained with this optimization all other things being equal. If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that microoptimizaton explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
 
-
+<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Low mutation rate for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
+load("data/ppsn_low_mutation.rds")
+@
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
