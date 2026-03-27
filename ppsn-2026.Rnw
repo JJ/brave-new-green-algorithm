@@ -321,8 +321,37 @@ comparison_microopt_low_mutation$residual_initial_temp <- residuals( low_mutatio
 low_mutation_group_final_temp_model <- glm( delta_temp ~ group + work + initial_temp + seconds, data = comparison_microopt_low_mutation )
 comparison_microopt_low_mutation$residual_delta_temp <- residuals( low_mutation_group_final_temp_model )
 
+source("R/process_covariates.R")
 
+comparison_microopt_low_mutation_covariates <- process_covariates( comparison_microopt_low_mutation )
+
+low_mutation_time_model <- glm( seconds ~ seconds_baseline_prev + seconds_baseline_post + group + residual_initial_temp + residual_delta_temp + evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
+
+comparison_microopt_low_mutation_covariates$residual_seconds <- residuals( low_mutation_time_model )
+
+low_mutation_energy_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
+
+anova_low_mutation_energy_model <- anova( low_mutation_energy_model )
+
+anova_low_mutation_energy_model_table <- data.frame( term = rownames(anova_low_mutation_energy_model),
+           F_value = anova_low_mutation_energy_model$F,
+           p_value = anova_low_mutation_energy_model$`Pr(>F)`)
+
+anova_low_mutation_energy_model_table  %>%
+  filter( !is.na(F_value) ) %>%
+  filter ( p_value < 0.05 ) %>%
+  arrange( desc(F_value) ) %>%
+  head(10) %>%
+  mutate( percentage_variance = F_value / sum(F_value, na.rm=T) * 100 ) -> anova_low_mutation_energy_model_top10
+
+anova_low_mutation_energy_model_top10$F_value <- NULL
+anova_low_mutation_energy_model_top10$p_value <- NULL
+
+kable(anova_low_mutation_energy_model_top10, caption = "Top 10 coefficients in the ANOVA model for the low mutation change",  format = "latex" ) %>%
+  kable_styling( full_width = F, position = "center" )
 @
+
+Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature and delta and seconds. Using GLM we create a model that includes all variables as well as the baseline PKG  values, which would account for the framework overhead. Indeed, the previous $B$ PKG value explains is the top variable explaining the variance.
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
