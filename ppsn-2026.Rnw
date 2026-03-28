@@ -383,6 +383,33 @@ ggplot(comparison_microopt_low_mutation_covariates, aes(x = evaluations, y = dif
 
 So had to pay for lunch, although it was not an expensive one. Did we manage to achieve better fitness in the process? In Figure \ref{fig:ppsn.low.mutation.fitness.table} we plot with different shapes the new baseline, {\sf microopt}, vs. the current {\sf low\_mutation} which uses circles, using log-scaled evaluations as $x$ axis and log-scaled difference to optimum fitness ({\sf diff\_fitness}) as $y$; the color scale stands for PKG energy in joules. There are two distinct {\em clouds} for every shape: the triangle ({\sf microopt}) cloud starts to the left, that is, less evaluations, and on top, worse {\sf diff\_fitness}. There is an issue with this block: the slope is very small, that is, more evaluations achieve only a small improvement in fitness. On the other hand, that does not happen with the {\sf low\_mutation} cluster: while it is slightly redder, more energy expense, more evaluations, more energy expenses, effectively achieve much better fitness. The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to keep a high diversity in the population, not getting stuck in a value for {\tt max\_gens} and thus stopping.
 
+<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments", fig.height=4, fig.pos="h!tbp">>=
+load("data/ppsn_no_alpha.rds")
+ppsn_no_alpha$group <- "no_alpha"
+comparison_low_mutation_no_alpha <- rbind(ppsn_no_alpha, ppsn_low_mutation)
+comparison_low_mutation_no_alpha[ startsWith( comparison_low_mutation_no_alpha$work, "base-"),]$work <- "Base"
+comparison_low_mutation_no_alpha[ !startsWith( comparison_low_mutation_no_alpha$work, "Base"),]$work <- "Work"
+
+comparison_low_mutation_no_alpha$initial_temp <- comparison_low_mutation_no_alpha$initial_temp_1 + comparison_low_mutation_no_alpha$initial_temp_2 / 2
+
+comparison_low_mutation_no_alpha$final_temp <- comparison_low_mutation_no_alpha$final_temp_1 + comparison_low_mutation_no_alpha$final_temp_2 / 2
+
+comparison_low_mutation_no_alpha_covariates <- process_covariates( comparison_low_mutation_no_alpha )
+
+no_alpha_plot <- ggplot(comparison_low_mutation_no_alpha_covariates, aes(x = diff_fitness, y = PKG, color=interaction(group,alpha),shape=factor(alpha) )) +
+  geom_point(alpha=0.5) +
+  scale_x_log10()+
+  labs(x = "Diff Fitness",
+    y = "PKG Energy"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+
+ggMarginal(no_alpha_plot, type="density", groupFill=T, alpha=0.5)
+@
+
+The level of fitness achieved, however, can probably be improved, so we will try and perform an additional parametric improvement, taking into account that the $\alpha$ percentage has a significant influence in the energy spent, as well as the fitness achieved: we will suppress mutation for this {\em caste}, leaving it to reproduce only via crossover. Additionally, we will differentiate the $\delta$ and $\epsilon$ caste, giving the last one a 20\% probability of changing an element, that is, 2 elements changed for every individuals; we will call this configuration {\sf no\_alpha}. What we see in Figure \ref{fig:ppsn.cero.alpha} is a PKG (in J) vs. {\sf diff\_fitness} plot that uses different colors for the two groups interacting with the $\alpha$ percentage.
+
+It is interesting to see how there is not a big difference between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, the fact that we eliminate mutation makes a difference in fitness, with a higher percentage leading to lower fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to check effectively if we have finally achieved a free lunch.
+
 \section{Discussion and conclusions}\label{sec:conclusions}
 
 
