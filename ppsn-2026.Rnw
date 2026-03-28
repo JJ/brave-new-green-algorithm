@@ -412,7 +412,7 @@ It is interesting to see how there is not a big difference between the two $\alp
 
 <<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Model for the no alpha change.", fig.height=4, fig.pos="h!tbp">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
-comparisn_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
+comparison_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
 comparison_low_mutation_no_alpha_covariates$max_gens <- factor(comparison_low_mutation_no_alpha_covariates$max_gens)
 comparison_low_mutation_no_alpha_covariates$population_size <- factor(comparison_low_mutation_no_alpha_covariates$population_size)
 
