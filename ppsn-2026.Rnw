@@ -410,6 +410,69 @@ The level of fitness achieved, however, can probably be improved, so we will try
 
 It is interesting to see how there is not a big difference between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, the fact that we eliminate mutation makes a difference in fitness, with a higher percentage leading to lower fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to check effectively if we have finally achieved a free lunch.
 
+<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Model for the no alpha change.", fig.height=4, fig.pos="h!tbp">>=
+comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
+comparisn_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
+comparison_low_mutation_no_alpha_covariates$max_gens <- factor(comparison_low_mutation_no_alpha_covariates$max_gens)
+comparison_low_mutation_no_alpha_covariates$population_size <- factor(comparison_low_mutation_no_alpha_covariates$population_size)
+
+no_alpha_evaluations_model <- glm( evaluations ~ group*alpha + steps*max_gens*population_size, data = comparison_low_mutation_no_alpha_covariates )
+comparison_low_mutation_no_alpha_covariates$residual_evaluations <- residuals( no_alpha_evaluations_model )
+
+no_alpha_initial_temp_model <- glm( initial_temp ~ group + seconds, data = comparison_low_mutation_no_alpha_covariates )
+comparison_low_mutation_no_alpha_covariates$residual_initial_temp <- residuals( no_alpha_initial_temp_model )
+
+no_alpha_seconds_model <- glm( seconds ~ group + initial_temp + evaluations + steps*max_gens*population_size, data = comparison_low_mutation_no_alpha_covariates )
+comparison_low_mutation_no_alpha_covariates$residual_seconds <- residuals( no_alpha_seconds_model )
+
+no_alpha_energy_model <- glm( PKG ~ alpha*group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_seconds + residual_evaluations + steps*max_gens*population_size, data = comparison_low_mutation_no_alpha_covariates )
+
+anova_no_alpha_energy_model <- anova( no_alpha_energy_model )
+
+comparison_low_mutation_no_alpha_covariates %>% group_by( population_size, steps, max_gens, alpha, group ) %>%
+  summarise( mean_diff_fitness = mean(diff_fitness),
+             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
+             mean_PKG = mean(PKG),
+             trim_mean_PKG = mean(PKG, trim=0.2),
+             mean_evaluations = mean(evaluations) ) -> summary_comparison_no_alpha
+
+energy_effort_summary <- comparison_low_mutation_no_alpha_covariates %>%
+  # 1. Create a bin for the log10 fitness (e.g., rounds -1.2 to -1)
+  # You can use round() or floor() depending on how you want to capture the interval
+  mutate(fitness_level = round(log10(diff_fitness))) %>%
+
+  # 2. Filter only for the target fitness levels (-1 through -6)
+  filter(fitness_level %in% c(-1, -2, -3, -4, -5, -6)) %>%
+
+  # 3. Group by your experimental group and the new fitness level
+  group_by(fitness_level,group) %>%
+
+  # 4. Summarize the PKG (energy) to find the effort required
+  summarise(
+    median_effort = median(PKG, na.rm = TRUE), # Median is usually safer with scatter outliers
+    mean_effort   = mean(PKG, na.rm = TRUE),
+    min_effort    = min(PKG, na.rm = TRUE),    # The absolute lowest energy used to hit this level
+    n_samples     = n(),                       # Good to know how many data points are in this bin
+    .groups       = "drop"
+  ) %>%
+
+  # 5. (Optional) Sort it so it reads cleanly
+  arrange(-fitness_level, desc(group))
+
+comparison_low_mutation_no_alpha_covariates$fitness_level = round(log10(comparison_low_mutation_no_alpha_covariates$diff_fitness))
+
+ggplot(comparison_low_mutation_no_alpha_covariates, aes(x = factor(-fitness_level), y = PKG, fill = group)) +
+  geom_violin() +
+  labs(x = "Fitness Level (log10 scale)", y = "Median Energy (PKG in Joules)", fill = "Experimental Group") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+@
+
+We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, understanding that as the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that this last one needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
+
+We have thus fund a very economic lunch indeed, which can even be free if we take into account that the energy needed by {\sf no\_alpha} to reach the -3 level is lower than the energy needed by {\sf low\_mutation} to reach the level above, -2.
+
 \section{Discussion and conclusions}\label{sec:conclusions}
 
 
