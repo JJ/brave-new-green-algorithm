@@ -364,6 +364,25 @@ low_mutation_energy_mediated_model <- glm( PKG ~ group + PKG_baseline_prev + PKG
 Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature and delta and seconds. Using GLM we create a model that includes all variables as well as the baseline PKG  values, which would account for the framework overhead. Indeed, the previous $B$ PKG value is the top variable explaining the variance. We can already query this model about how much energy we are saving or not with this model; the coefficient is
 \Sexpr{round(low_mutation_energy_model$coefficients["groupmicroopt"], 2)}; all things being equal, this is the saving in Joules you will get on average if we do not apply this change. This is a small quantity, however; we need to take into account that there is a relatively small dependence on the number of evaluations \Sexpr{signif(low_mutation_energy_model$coefficients["evaluations"], digits=2)} that, however, is significant only at the \Sexpr{round(summary(low_mutation_energy_model)$coefficients["evaluations","Pr(>|t|)"], 3)} level.
 
+<<ppsn.low.mutation.fitness.table, message=FALSE, echo=FALSE, fig.cap="Fitness vs evaluations, colored by PKG energy spend in Joules", fig.height=4, fig.pos="h!tbp">>=
+comparison_microopt_low_mutation_covariates %>% group_by( population_size, steps, max_gens, alpha, group ) %>%
+  summarise( mean_diff_fitness = mean(diff_fitness),
+             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
+             mean_PKG = mean(PKG),
+             trim_mean_PKG = mean(PKG, trim=0.2),
+             mean_evaluations = mean(evaluations) ) -> summary_comparison_low_mutation
+ggplot(comparison_microopt_low_mutation_covariates, aes(x = evaluations, y = diff_fitness, shape=group,color=PKG)) +
+  scale_x_log10() +
+  scale_y_log10() +
+  scale_color_gradient(low = "blue", high = "red") +
+  geom_point(alpha=0.5,size=3) +
+  labs(y = "Diff Fitness",
+    x = "Evaluations"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+@
+
+So had to pay for lunch, although it was not an expensive one. Did we manage to achieve better fitness in the process? In Figure \ref{fig:ppsn.low.mutation.fitness.table} we plot with different shapes the new baseline, {\sf microopt}, vs. the current {\sf low\_mutation} which uses circles, using log-scaled evaluations as $x$ axis and log-scaled difference to optimum fitness ({\sf diff\_fitness}) as $y$; the color scale stands for PKG energy in joules. There are two distinct {\em clouds} for every shape: the triangle ({\sf microopt}) cloud starts to the left, that is, less evaluations, and on top, worse {\sf diff\_fitness}. There is an issue with this block: the slope is very small, that is, more evaluations achieve only a small improvement in fitness. On the other hand, that does not happen with the {\sf low\_mutation} cluster: while it is slightly redder, more energy expense, more evaluations, more energy expenses, effectively achieve much better fitness. The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to keep a high diversity in the population, not getting stuck in a value for {\tt max\_gens} and thus stopping.
+
 \section{Discussion and conclusions}\label{sec:conclusions}
 
 
