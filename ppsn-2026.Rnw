@@ -434,7 +434,9 @@ comparison_low_mutation_no_alpha_covariates %>% group_by( population_size, steps
              trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
              mean_PKG = mean(PKG),
              trim_mean_PKG = mean(PKG, trim=0.2),
-             mean_evaluations = mean(evaluations) ) -> summary_comparison_no_alpha
+             mean_evaluations = mean(evaluations),
+             mean_initial_temp = mean(initial_temp),
+             mean_residual_seconds = mean(residual_seconds) ) -> summary_comparison_no_alpha
 
 energy_effort_summary <- comparison_low_mutation_no_alpha_covariates %>%
   # 1. Create a bin for the log10 fitness (e.g., rounds -1.2 to -1)
