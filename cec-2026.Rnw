@@ -11,20 +11,20 @@
 \title{Can we measure energy consumption in population-based metaheuristics?}
 
 \author{
-\IEEEauthorblockN{A. N. Onymous-Authors}
-\IEEEauthorblockA{Affiliation\\
-Email:
-Hidden place and ORCID}
+% \IEEEauthorblockN{A. N. Onymous-Authors}
+% \IEEEauthorblockA{Affiliation\\
+% Email:
+% Hidden place and ORCID}
 
-% \IEEEauthorblockN{JJ Merelo}
-% \IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
-% University of Granada\\
-% Email: jmerelo@ugr.es\\
-% CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
-% \and
-% \IEEEauthorblockN{Cecilia Merelo-Molina}
-% \IEEEauthorblockA{Zenzorrito, Granada, Spain\\
-% ORCID: 0000-0002-5902-0159}
+\IEEEauthorblockN{JJ Merelo}
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
+University of Granada\\
+Email: jmerelo@ugr.es\\
+CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+\and
+\IEEEauthorblockN{Cecilia Merelo-Molina}
+\IEEEauthorblockA{Zenzorrito, Granada, Spain\\
+ORCID: 0000-0002-5902-0159}
 }
 %
 \maketitle
