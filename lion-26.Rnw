@@ -11,7 +11,7 @@
 
 \titlerunning{Is there a carbon-free lunch?}
 
-\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo-Molina\inst{3} \and Pablo García-Sánchez\inst{1,2}\orcidID{0000-0003-4644-2894} \and Mario García-Valdez \inst{4}}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo-Molina\inst{3}\orcidID{0000-0002-5902-0159} \and Pablo García-Sánchez\inst{1,2}\orcidID{0000-0003-4644-2894} \and Mario García-Valdez \inst{4}\orcidID{0000-0002-2593-1114} \and Juan Luis Jiménez-Laredo \inst{1}\orcidID{0000-0002-9416-2005}}
 
 %
 \authorrunning{Merelo et al.}
@@ -103,7 +103,7 @@ System designers have widely employed evolutionary algorithms and other metaheur
 %Other researchers have explored the inherent challenges of accurately measuring the energy consumption of these algorithms, while others have investigated algorithmic strategies to improve their energy efficiency. In what follows, we present a brief state of the art covering these works. %PABLO: se dice que a continuación se van a presentar, pero luego se habla del objetivo secundario, no están bien hilados estos dos párrafos. El objetivo secundario no se ha mencionado en la intro (o no lo he visto claro)
 % JJ: Eliminado.
 
-As a secondary objective in this paper, we have wanted to deal with methodological and implementation issues in a non-mainstream language; in fact, there are several implementations of evolutionary algorithms in Julia, such as \cite{sanchez2023evolp}. Before that, Julia had been used \cite{merelo2016comparison} as a baseline for comparing performance in basic evolutionary algorithms, with its performance being close to the median of all languages tested. Some other languages like Java or C++ might be several orders of magnitude faster. However, performance does not translate directly to energy consumption, and besides, back then Julia was still in its early versions vs. the more mature implementation that is now in production.
+As a secondary objective in this paper, we have wanted to deal with methodological and implementation issues in a non-mainstream language; in fact, there are several implementations of evolutionary algorithms in Julia, such as \cite{sanchez2023evolp} or {\sf Evolutionary.jl} \cite{evolutionaryjl}. Before that, Julia had been used \cite{merelo2016comparison} as a baseline for comparing performance in basic evolutionary algorithms, with its performance being close to the median of all languages tested. Some other languages like Java or C++ might be several orders of magnitude faster. However, performance does not translate directly to energy consumption, and besides, back then Julia was still in its early versions vs. the more mature implementation that is now in production.
 
 Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level, clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper.
 
