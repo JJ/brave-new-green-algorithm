@@ -36,9 +36,7 @@ algorithm results, with different choices having an independent impact on energy
 and algorithmic efficiency. In this paper, we will explore this trade-off in the
 Brave New Algorithm, a population-based metaheuristic implemented in the
 language Julia, which uses a JIT compiler whose overhead needs to be taken into
-account, %PABLO: Es relevante lo de Julia en el abstract? Si se usa algo
-específico de optimización del lenguaje, decirlo aquí. JJ: Lo del overhead es
-importante analyzing how different operator optimizations impact the performance
+account, analyzing how different operator optimizations impact the performance
 and energy consumption and finally, once a certain level of algorithmic
 performance is reached, how different parametrizations will impact both
 outcomes. We will especially look at the possibility of improving energy and
@@ -81,18 +79,6 @@ following a sound methodology for measuring the impact of changes and measuring 
 
 Additionally, we are interested in exploring Julia as a language for EA implementation from different point of views, including performance and energy consumption; its JIT compiler generates high-performance code and it includes easy parallelization features, as well as native support for mathematical operations and data structures. Although not explicitly explored in this paper, we need to set the methodology as well as the baseline results for further advances in this area.
 
-%PABLO: En general, por ahora no me queda claro el objetivo. ¿Hacer una metodología? ¿Qué métricas se usan para medir la calidad?
-% JJ: las dos cosas, primero la metodología y luego las medidas. Si no tienes una buena metodología no puedes comparar.
-
-% Podría mencionarse la complejidad adicional que agregan aspectos de bajo nivel como la recolección de basura,
-% sobre todo si se realizan asignaciones frecuentes de memoria:
-% https://docs.julialang.org/en/v1/devdocs/gc/
-
-% Sería conveniente aclarar si estos efectos se consideran explícitamente en este
-% trabajo o si se asumen como parte del costo de ejecución interno.
-% - Mario
-% Son parte del coste de ejecución, en principio, aunque la carga de trabajo debe minimizar también los efectos de GC. Puedes incluir algo, pero ya te digo que no hay mucho espacio, solo hay 15 páginas - JJ
-
 The rest of the paper is organized as follows: the next Section describes the state of the art in the exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and how it has been parametrized for the purpose of this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the trade-offs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
 
 
@@ -105,7 +91,7 @@ System designers have widely employed evolutionary algorithms and other metaheur
 
 As a secondary objective in this paper, we have wanted to deal with methodological and implementation issues in a non-mainstream language; in fact, there are several implementations of evolutionary algorithms in Julia, such as \cite{sanchez2023evolp} or {\sf Evolutionary.jl} \cite{evolutionaryjl}. Before that, Julia had been used \cite{merelo2016comparison} as a baseline for comparing performance in basic evolutionary algorithms, with its performance being close to the median of all languages tested. Some other languages like Java or C++ might be several orders of magnitude faster. However, performance does not translate directly to energy consumption, and besides, back then Julia was still in its early versions vs. the more mature implementation that is now in production.
 
-Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level, clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper.
+Moreover, our main interest is optimizing energy consumption. This can be done at many different levels, from the lowest, hardware level, to the implementation level, up to the algorithmic level. Clearly at this level the range of possible optimizations will be relatively small, but still it gives leverage to scientists that cannot change any other level to make their algorithm implementation {\em greener}. Some researchers have applied it to machine learning algorithms \cite{gutierrez2022analysing}; there are not so many cases where it has been applied to metaheuristics such as the one used in this paper.
 
 %PABLO: Veo un poquito corto el Soa. Podéis citar nuestro paper de energía de EAs: https://www.mdpi.com/1999-4893/18/9/593
 %Por ejemplo, justo después de la línea 59 podéis añadir (antes del "In what follows"): In fact, hardware and programming languages have a significant impact in the energy efficiency of EAs: authors in \cite{Luque25EnergyEAs} propose a unified metric (fitnes/kWh) to compare different EA frameworks in several hardware scenarios, showing that lower-power devices are sometimes more efficient than high-performance servers, and as previosly addressed in \cite{vuestro paper de comparativa de lenguajes}, programming language is also a major parameter in energy efficiency. As discussed in the present work, the population size is also a key factor that surpasses the influence of the chosen hardware and implementation. (editad esto a vuestro gusto)
@@ -113,11 +99,11 @@ Moreover, our main interest is optimizing energy consumption. This can be done a
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
-The Brave New Algorithm \cite{merelo2022brave} is an evolutionary algorithm, using the usual mechanism of mutation, crossover, and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize} %PABLO: un poquito más aparte de "in castes"? xD
-\item $\alpha$ generates new members by coupling the best individuals among them, to then undergo mutation and crossover.
-\item $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
-\item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
-\item $\gamma$ generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
+The Brave New Algorithm \cite{merelo2022brave} is an evolutionary algorithm, using the usual mechanism of mutation, crossover, and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
+\item The $\alpha$ caste generates new members by coupling the best individuals among them, to then undergo mutation and crossover.
+\item The $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
+\item The $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
+\item The $\gamma$ caste generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
 \end{itemize}
 
 The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, 2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation, the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are devoted to exploitation and the rest to exploration, the proportion of individuals in them is the main parameter governing the balance.
@@ -191,13 +177,13 @@ baseline_results$color <- ifelse(baseline_results$dimension==3,"red","blue")
 ggplot(baseline_results, aes(x=seconds,y=PKG)) + geom_point( shape=baseline_results$shape, color=baseline_results$color) + geom_smooth(method="lm", formula=y~x, se=FALSE)
 @
 
-Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. time taken for every experiment, with triangles representing a $P=400$ and circles $P= 200$; blue is for $D = 5$ and red for $D = 3$. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundred Joules, although most results are below 350 Joules and 6.8 seconds. This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{10.1145/3638530.3664093}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide events might affect one of the parameter combinations more than others.
+Figure \ref{fig:evoapps.baseline.results} plots the PKG energy (in Joules) vs. time taken for every experiment, with triangles representing a $P=400$ and circles $P= 200$; blue is for $D = 5$ and red for $D = 3$. In general, energy consumption will depend linearly on time, but there are clusters of data points with the same shape and color that hint at these having an influence on energy consumption beyond simple time. We should also observe the dispersion in a range of several hundred milliseconds as well as several hundred Joules, although most results are below 350 Joules and 6.8 seconds. This dispersion, however, is a real issue. Besides hysteretic effects that have repeatedly been observed in this context \cite{cotta24}, there is an additional issue that occurs when measurements take a relatively long time: some system-wide events might affect one of the parameter combinations more than others.
 
 <<evoapps.baseline.violin, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Violin plot for the distribution of energy spent for every parameter value, initial configuration.">>=
 ggplot(baseline_results, aes(x=factor(dimension),fill=factor(population_size), y=PKG)) + geom_violin() + theme_minimal() + labs(x="Dimension", y="Energy (J)") + scale_y_log10()
 @
 
-What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, over all for the combination of $D = 3$ and $P = 200$; not only that, but there are three clusters along the violin. These three accumulations for certain energy values happen across the parameter values.
+What we see in Figure \ref{fig:evoapps.baseline.violin} is a violin plot that shows a big dispersion, especially for the combination of $D = 3$ and $P = 200$; not only that, but there are three clusters along the violin. These three accumulations for certain energy values happen across the parameter values.
 Any of these variables have a high variance and many outliers. This is why we need to carefully consider what kind of statistical measure we should use for summarizing the results so that they can be subtracted from the measurements that carry the workload. Finally, we settled on the {\em trimmed mean}, eliminating the 20\% values with the highest and lowest values. This gives a more robust central tendency measure, which is also closer to the median.
 
 We should take into account that profiling for every kind of algorithm needs its own methodology that is adequate to the dispersion in the measurements taken; however, a high dispersion combined with time (or temperature) related effects will always lead to a certain amount of uncertainty in the conclusions. That will not invalidate these conclusions, but they will have to be explained and factored in when any kind of result is reached \cite{merelo25:time}. %PABLO: si tienes alguna referencia (y espacio) que poner aquí para que quede más justificado estaría guay
