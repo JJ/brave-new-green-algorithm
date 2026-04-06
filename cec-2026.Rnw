@@ -100,8 +100,7 @@ this, since we can use it to generate the rest. In practice, what we have done
 is to vary the percentage of the $\gamma$ caste, the "first" that performs local
 search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
 
-The implementation of the algorithm used is available under a free license at \url{https://hiddenu.rl}
-% \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}.
 
 \section{Experimental methodology and results}\label{sec:results}
 
@@ -354,9 +353,7 @@ Creating a methodology that allows a more precise comparison of the energy consu
 At any rate, we have answered here the main research question by proposing a statistically sound methodology, based on the reduction of variability and thus the improvement of reproducibility, for measuring energy consumption of different parametrization of population based algorithms, that focuses on the energy spent by the workload itself, eliminating to the the extent that is possible the effects of the rest of the system and the language or framework overhead. This methodology, in turn, will be used to craft the Brave New Algorithm at different levels (language, implementation, algorithm parametrization) so that it reduces its carbon footprint, at the same time it keeps or improves the fitness levels reached.
 
 \section*{Acknowledgements}
-% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
-Supported by a project\\
-taking this much space
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
 \bibliographystyle{IEEEtran}
 \bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
