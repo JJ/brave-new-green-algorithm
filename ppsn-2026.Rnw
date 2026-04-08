@@ -569,6 +569,16 @@ We have thus fund a very economic lunch indeed, which can even be free if we tak
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
+We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or doing it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try and achieve better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
+
+While that has been the final objective, we have needed to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework first relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, repeated execution of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU so that new processes are always run in the {\em hotter} die, and eventually creating models of the result so that we can not only find out which configuration consumes the most energy, but also which factor among the operating conditions, experimental intervention and algorithm parameters contribute the most to energy consumption and in which direction, using residualized models that separate the interaction among the different experimental variables.
+
+One of the innovations included in this paper is to include the baseline runs in the model, instead of subtracting averages from the workload; the model shows a strong dependence that {\em explains} a good percentage of the variance, but the modelling allows us to estimate precisely how much and thus compare the amount of energy spent only by the workload; this avoids unrealistic scenarios where subtracting averages of baselines from the workload lead to very small or even negative energy values \cite{merelo25}.
+
+Using this experimental framework and analysis, we have been able to discard a specific change in the algorithm and eventually adopt a parametrization, leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation, that reaches a -5 fitness level (equivalent to $10^{-5}$ difference to optimum fitness) with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
+
+The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}, we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make up they leave to their offspring; but at the same time, we tip the balance towards exploitation ad the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
+
 
 \begin{credits}
 \subsubsection{\ackname}
