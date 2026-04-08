@@ -54,19 +54,6 @@ In the case of optimization algorithms, there is another view of performance: ho
 
 This is especially true for one of the most important factors in population-based optimization: the exploration/exploitation balance. Exploration and exploitation generate new individuals spending a different amount of energy; in practice, sampling the search space will spend energy depending on what you use, besides having a fixed cost due to the allocation and reallocation of memory; of course the number of individuals generated depending on the balance will also have an influence on the energy profile.
 
-% El texto previo que explica el balance entre exploración y explotación y el
-% costo computacional de los operadores es interesante y se debería expander un poco.
-% Por ejemplo:
-% - En algunos casos los operadores no generan nuevos individuos (cuando se
-% utilizan estructuras mutables).
-% - Hay casos en los que borrar, acutalizar y agregar objetos en memoria tiene
-% distinto costo.
-% - Se podría agregar el otro balance entre el costo de ejecución de las
-% instrucciones y la mejora en la búsqueda que generan, que a su vez podría reducir el
-% costo de ejecución total.
-% - Mario
-% He intentado reescribirlo. Si se te ocurre algo más - JJ
-
 We will be working here with a version of an evolutionary algorithm called the Brave New Algorithm \cite{merelo2022brave}, which was designed with this exploitation/exploration balance in mind.
 % En este caso especificar el tipo de balance (de estrategia de búsqueda o de 'costo beneficio'?) - Mario
 % Especificado
