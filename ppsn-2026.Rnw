@@ -557,13 +557,13 @@ comparison_low_mutation_no_alpha_covariates$fitness_level = round(log10(comparis
 
 ggplot(comparison_low_mutation_no_alpha_covariates, aes(x = factor(-fitness_level), y = PKG, fill = group)) +
   geom_violin() +
-  labs(x = "Fitness Level (log10 scale)", y = "Median Energy (PKG in Joules)", fill = "Experimental Group") +
+  labs(x = "Fitness Level (negative log10 scale)", y = "Median Energy (PKG in Joules)", fill = "Experimental Group") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 @
 
-We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, understanding that as the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that this last one needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
+We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, understanding that as the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that the latter needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
 
 We have thus fund a very economic lunch indeed, which can even be free if we take into account that the energy needed by {\sf no\_alpha} to reach the -3 level is lower than the energy needed by {\sf low\_mutation} to reach the level above, -2.
 
