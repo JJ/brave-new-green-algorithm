@@ -38,7 +38,7 @@ ITIS Software, Universidad de Málaga, Spain
 %The abstract should briefly summarize the contents of the paper in
 %150--250 words.
 
-\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\keywords{Green computing  \and Energy profiling methodologies \and Metaheuristics.}
 \end{abstract}
 %
 %
@@ -46,14 +46,12 @@ ITIS Software, Universidad de Málaga, Spain
 \section{Introduction and state of the art}
 
 An algorithm is, by definition, an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences the measured energy consumption of any algorithm's implementation.
-Since the goal in this context is not necessarily to reduce energy consumption per se, but rather to obtain reliable and reproducible energy measurements, a common approach has been to try to entirely eliminate the dependence of energy measurements on the operating context.
+When implementing a metaheuristic, or making some change that could potentially have an impact in performance or energy consumption, we are usually aiming for efficiency in both fronts if possible; the same applies when tweaking the parameters used in the algorithm. However, in order to rely on energy measurement to take decisions, we need to obtain reliable and reproducible energy measurements. In order to do that, a common approach has been to try to entirely eliminate the dependence of energy measurements on the operating context \cite{bna25,merelo25}.
 
-To that end, many authors have proposed fixing the temperature, lock clock frequencies and fix the core where the process is going to be running or performing any other kind of operation like a cool-down period after every run; however, the main issue with this approach is that operating context will influence results in complex ways in a real environment like the one most scientists can afford; but the second issue is that the way the implementation will influence that same operating environment, creating hysteresis effects like the ones observed in the paper above, will not be addressed.
+To that end, many authors have proposed fixing the temperature, lock clock frequencies and fix the core \cite{pereira2017energy} where the process is going to be running, performing any other kind of operation like a cool-down period after every run (suggested, for instance, by \cite{cotta25} or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue with this approach is that operating context will influence results in complex ways in a real environment like the one most scientists can afford, that is, a desktop computer; but the second issue is that the way the implementation will influence that same operating environment, creating hysteresis-like effects cite{cotta25}.
 
-A different approach is the one we are taking in this line of research: to include the operating context variables in %% comienzo a editar -Carlos
-performance models, so that we can understand how they influence energy consumption, and how they interact with algorithm parameters. By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels.
-%first trying to minimize the effect of these in the model, and second including them as part of the model so that how the algorithm behaves in different conditions can be understood and taken into account when taking %different decisions about the algorithm design, parameter settings, or implementation issues like language or runtime versions.
-%% termino de editar -Carlos
+A different approach is the one we are taking in this line of research: to include the operating context variables in
+performance models, so that we can understand how they influence energy consumption, and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such. By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels. Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying together implementation and algorithmic issues, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
 
 In this work, we take steps in this direction, %% termino de editar -Carlos
 looking at understanding how we can use the models to make decisions about changes, and how such changes, whether at the algorithmic, implementation, or parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with slightly more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
@@ -98,20 +96,11 @@ Far from trying to obscure the meaning of a metaheuristic by using a metaphor \c
 Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave,bna25}, but we will give a brief description here for the sake of completeness.%% termino de editar -Carlos
 %% Sorting references by number -Carlos
 
-%% comienzo a editar -Carlos
-What BNA introduces with respect to other
-%evolutionary algorithms
-EAs
-is the division of the
-%evaluated
-population into {\em castes} (i.e., strata),
-%every one of which receives
+What BNA introduces with respect to other EAs is the division of the population into {\em castes} (i.e., strata),
 each one receiving a differentiated treatment
-%when it comes to
 for reproduction.
 %% tuning down the metaphor -Carlos
-%; this treatment is inspired by how the different castes in the book reproduced.
-%% termino de editar -Carlos
+%% :-) - JJ
 More precisely, reproduction goes as follows by caste:\begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
 \item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
@@ -119,16 +108,10 @@ More precisely, reproduction goes as follows by caste:\begin{itemize}
 \item The $\gamma$ caste will use hillclimbing for a number of steps to improve its fitness.
 \end{itemize}
 
-All individuals will be ranked
-according to their fitness
-and then assigned to the castes;
-%in order according to their fitness;
-in particular, the $\alpha$ caste will receive the best while the $\gamma$ caste will get only the last ones; percentages assigned to every caste will be an algorithm parameter, although in order to simplify we will only change the $\alpha$ percentage, with $\delta$ and $\epsilon$ getting always 5\%, $\beta$ double $\alpha$ and finally $\gamma$ the rest; this gives us a single parameter to regulate this aspect of the algorithm, which is strongly related to the exploration/exploitation balance.
+All individuals will be ranked according to their fitness and then assigned to the castes;
+in particular, the $\alpha$ caste will receive the best while the $\gamma$ caste will get only the last ones; percentages assigned to every caste will be an algorithm parameter, although in order to simplify we will only change the $\alpha$ percentage, with $\delta$ and $\epsilon$ getting always 5\%; $\beta$ is always double that of $\alpha$ and finally $\gamma$ the rest; this gives us a single parameter to regulate this aspect of the algorithm, which is strongly related to the exploration/exploitation balance.
 
-The algorithm
-%implementation will use
-uses elitism to keep the best member of the previous population
-%that will substitute the worst one,
+The algorithm uses elitism to keep the best member of the previous population
 (replacing the worst one) but other than that all individuals reproduce one way or the other. This is the main difference with respect to other EAs: the worst elements are not dropped from the reproduction pool, but mutated in a random or directed way (in the case of $\gamma$).This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes;
 while
 this adds another parameter for experimental design,
