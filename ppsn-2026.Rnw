@@ -46,7 +46,7 @@ ITIS Software, Universidad de Málaga, Spain
 \section{Introduction and state of the art}
 
 An algorithm is, by definition, an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences the measured energy consumption of any algorithm's implementation. %% Make this more compact -Carlos
-When implementing a metaheuristic, adapting it, or tweaking its parameters, we are usually aiming for efficiency in both performance and energy consumption if possible. However, in order to rely on energy measurement to take decisions, we need to obtain reliable and reproducible energy measurements. 
+When implementing a metaheuristic, adapting it, or tweaking its parameters, we are usually aiming for efficiency in both performance and energy consumption if possible. However, in order to rely on energy measurement to take decisions, we need to obtain reliable and reproducible energy measurements.
 
 A common approach in this context has been to try to entirely eliminate the dependence of energy measurements on the operating context \cite{merelo25,bna25}. %% swaps references to use natural order -Carlos
 %% Saving orphan lines -Carlos
@@ -575,15 +575,13 @@ We all know that there is no free lunch \cite{wolpert2002no}: if you want better
 %%Simplified the structure. Check. -Carlos
 While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only allowing to find out which configuration consumes the most energy, but also which factors among the operating conditions, experimental intervention and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using residualized models that separate the interaction among the different experimental variables.
 
-%%Minor edits here -Carlos  
+%%Minor edits here -Carlos
 One of the innovations included in this paper is to include the baseline runs in the model, instead of subtracting averages from the workload; the model shows a strong dependence that {\em explains} a good percentage of the variance, but the modelling allows us to estimate precisely by how much, and thus compare the amount of energy spent only by the workload; this avoids unrealistic scenarios where subtracting averages of baselines from the workload lead to very small or even negative energy values \cite{merelo25}.
 
 %%Maybe this paragraph does not need to mention the algorithmic details (describe din detail in the experimentation), and only the results - Carlos
-Using this experimental framework and analysis, we have been able to discard a specific change in the algorithm and eventually adopt a parametrization 
-%leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation, 
-that reaches a 
-%-5 fitness level (equivalent to 
-$10^{-5}$ difference to optimum fitness with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
+Using this experimental framework and analysis, we have been able to discard a specific change in the algorithm and eventually adopt a parametrization
+%leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation,
+that reaches a $10^{-5}$ difference to optimum fitness with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
 
 The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}, we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make up they leave to their offspring; but at the same time, we tip the balance towards exploitation ad the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
 
