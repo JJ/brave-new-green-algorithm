@@ -105,7 +105,7 @@ More precisely, reproduction goes as follows by caste:\begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
 \item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
 \item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation.
-\item The $\gamma$ caste will use hillclimbing for a number of steps to improve its fitness.
+\item The $\gamma$ caste will use hill-climbing for a number of steps to improve its fitness.
 \end{itemize}
 
 All individuals will be ranked according to their fitness and then assigned to the castes;
@@ -146,7 +146,7 @@ BNA, opening new venues of research as well as energy-saving. In this paper, how
 \section{Experiments and results}\label{sec:exp}
 
 We have used the following hardware-software stack for the experiments\begin{itemize}
-\item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 32 threads in an heterogenous configuration, with cores power-capped depending on their performance.
+\item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 32 threads in an heterogeneous configuration, with cores power-capped depending on their performance.
 \item We are running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}.
 \item We are running Julia 1.11.9. This is not the latest stable release (that would be 1.12.5), but initial performance tests made us discard it.
 \item We will be using RAPL counters to measure energy via the {\sf pinpoint} command-line tool \cite{pinpoint} with a sampling period of 0.1 s. For system temperature we will be using {\em sensors} that tap an AMD driver.
@@ -173,7 +173,7 @@ For this paper we have focused on a single problem and a single dimension: The S
 
 Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions, and the dependence of fitness reached on the latter, in order to check if it is possible at all to reach lower levels of fitness spending less or the same energy. The four parameters that we will be changing are:\begin{itemize}
 \item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are basically looking for better fitness values with less space exploration (less evaluations).
-\item The number or {\sf steps} for hillclimbing in the $\gamma$ caste is related to
+\item The number or {\sf steps} for hill-climbing in the $\gamma$ caste is related to
 %exploration.
 exploitation. %% local search is an intensifying operator, so more steps means more fitness-oriented exploitation.
 We will test 16 and 64 steps.
@@ -246,7 +246,7 @@ comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21"
 # ggMarginal(temp_t_comparison, type="density", groupFill=T, alpha=0.5)
 @
 
-In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hillclimbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG
+In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hill-climbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG
 %% this is really a delta workload PKG (with respect to empty load?). Please, explain -Carlos
 energy and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for a higher energy consumption for the
 %supposed upgrade of the $\gamma$ caste.
@@ -360,7 +360,7 @@ Figure \ref{fig:ppsn.microopt}, which plots baseline measurements in red and thi
 %% add acronym used later -Carlos
 Effectively, the generalized linear model (GLM) yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the amount of seconds that have been gained with this optimization all other things being equal.
 
-If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that microoptimizaton explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
+If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that micro-optimization explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
 
 <<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments", fig.height=4, fig.pos="!tbp">>=
 load("data/ppsn_low_mutation.rds")
