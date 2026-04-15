@@ -583,7 +583,10 @@ Using this experimental framework and analysis, we have been able to discard a s
 %leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation,
 that reaches a $10^{-5}$ difference to optimum fitness with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
 
-The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}, we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make up they leave to their offspring; but at the same time, we tip the balance towards exploitation ad the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
+The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}: we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make up they leave to their offspring; second, we tip the balance towards exploitation ad the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
+
+Although the main point of the paper has been well proved by using a single BBOB function, it would be interesting to work with other more-energy demanding functions, as was found in \cite{merelo25}. The energy consumption model will most probably change giving more influence in the final profile to the number of evaluations. By how much, however, remains to be seen and measured.
+On the other hand, this methodology of researching energy efficiency together with online performance puts the Brave New Algorithm in a position where more competitive results can be achieved, so an investigation into its possibilities in the BBOB suite is already within reach. This is, however, left as future work.
 
 
 \begin{credits}
