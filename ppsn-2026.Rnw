@@ -35,9 +35,7 @@ ITIS Software, Universidad de Málaga, Spain
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-%The abstract should briefly summarize the contents of the paper in
-%150--250 words.
-
+Making an algorithm more efficient often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. But can we minimize the cost of achieving new fitness levels by understanding better how and why the algorithm spends energy? In this paper we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions, using a measurement protocol that includes these conditions and then a statistical analysis that considers the influence of all algorithmic and operating parameters together with the change  (in parametrization or implementation) that we want to evaluate. Applying this model to a evolutionary algorithm version with stratified population called Brave New Algorithm, we reach a parametrization and implementation solution that is able to reach an optimum at a very low cost, or reach certain levels of fitness spending much less energy than others evaluated.
 \keywords{Green computing  \and Energy profiling methodologies \and Metaheuristics.}
 \end{abstract}
 %
