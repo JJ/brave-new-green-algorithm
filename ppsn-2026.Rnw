@@ -474,7 +474,7 @@ it is slightly redder, more evaluations and more energy expenses, much better fi
 
 The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to keep a high diversity in the population, not getting stuck in a value for {\tt max\_gens} and thus stopping.
 
-<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments", fig.height=4, fig.pos="!tbp">>=
+<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments", fig.height=3, fig.pos="!tbp">>=
 load("data/ppsn_no_alpha.rds")
 ppsn_no_alpha$group <- "no_alpha"
 comparison_low_mutation_no_alpha <- rbind(ppsn_no_alpha, ppsn_low_mutation)
@@ -501,7 +501,7 @@ The level of fitness achieved, however, can probably be improved, so we will try
 
 It is interesting to see how there is not a big difference between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, the fact that we eliminate mutation makes a difference in fitness, with a higher percentage leading to lower fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to check effectively if we have finally achieved a free lunch.
 
-<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Model for the no alpha change.", fig.height=4, fig.pos="!tbp">>=
+<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
 comparison_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
 comparison_low_mutation_no_alpha_covariates$max_gens <- factor(comparison_low_mutation_no_alpha_covariates$max_gens)
@@ -557,9 +557,7 @@ comparison_low_mutation_no_alpha_covariates$fitness_level = round(log10(comparis
 ggplot(comparison_low_mutation_no_alpha_covariates, aes(x = factor(-fitness_level), y = PKG, fill = group)) +
   geom_violin() +
   labs(x = "Fitness Level (negative log10 scale)", y = "Median Energy (PKG in Joules)", fill = "Experimental Group") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
+  theme_minimal()
 @
 
 We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, understanding that as the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that the latter needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
