@@ -25,7 +25,7 @@
 \and
 Zenzorrito, Granada, Spain
 \and
-Instituto Tecnológico Nacional de México, Tijuana, Mexico
+Tecnológico Nacional de México, Tijuana, Mexico
 \and
 ITIS Software, Universidad de Málaga, Spain
 }
@@ -36,7 +36,9 @@ ITIS Software, Universidad de Málaga, Spain
 %
 \begin{abstract}
 %% Changes to improve flow
-Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises as to whether it is possible to minimize the cost of achieving new fitness levels by understanding better how and why the algorithm spends energy. In this paper we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions, and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with stratified population,
+% Making an optimization (or genetic) algorithm more effective? Later in the text 
+% there are references to properties applied only to these algorithms. - M
+Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions, and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with stratified population, %populations? - M
 %called Brave New Algorithm, %% Commented out for generalizability -Carlos
 we %reach a parametrization and implementation 
 attain an algorithmic solution that reaches an optimum at a very low cost, or %reach certain levels of fitness 
