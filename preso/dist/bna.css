@@ -12,8 +12,7 @@
     --r-heading-color:#333;
     --r-heading-line-height:1.2;
     --r-heading-letter-spacing:-.05em;
-    --r-heading-text-transform:uppercase;
-    --r-heading-text-shadow:none;
+    --r-heading-text-shadow:1px 1px 2px black;;
     --r-heading-font-weight:normal;
     --r-heading1-text-shadow:none;
     --r-heading1-size:2.11em;
@@ -54,7 +53,6 @@
     font-weight:var(--r-heading-font-weight);
     line-height:var(--r-heading-line-height);
     letter-spacing:var(--r-heading-letter-spacing);
-    text-transform:var(--r-heading-text-transform);
     text-shadow:var(--r-heading-text-shadow);
     word-wrap:break-word
 }
