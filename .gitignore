@@ -45,3 +45,4 @@ auto/
 *.gz
 *~
 .RData
+.positai
