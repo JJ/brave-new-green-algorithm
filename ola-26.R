@@ -252,7 +252,10 @@ ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
   geom_bar(ola_mixed_v11_7[ ola_mixed_v11_7$work == "ola-mixed", ], mapping=aes(x=cumulative_time, y=delta_PKG), stat="identity", alpha=0.2, color="blue" ) +
   theme_minimal() +
   xlab("Cumulative Time (seconds)") +
-  ylab("Package energy (Joules)") + labs(color="Experiment")
+  ylab("PKG energy (Joules)") + labs(color="Type of run") +
+  scale_color_discrete(labels = c("Baseline", "Workload"))
+
+ggsave( "preso/img/new-baseline-plot.png", width=6, height=4.5)
 
 
 ## ----ola.mixed.comparison, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent compared with different ways of measuring the workload effect; we also compare two values of the maximum number of generations run without improving fitness.",fig.height=3, fig.pos="h!tb", fig.height=4----
