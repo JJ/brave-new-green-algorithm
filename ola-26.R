@@ -131,9 +131,11 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   geom_point() +
   theme_minimal() +
   xlab("Delta Time (seconds)") +
-  ylab("Delta Package energy (Joules)") +
-  labs(color="Measurement frequency") + guides(color=guide_legend(title="Experiment"))
+  ylab("Delta PKG energy (Joules)") +
+  guides(color=guide_legend(title="Sampling frequency"))+
+  scale_color_discrete(labels = c("50 ms", "100 ms"))
 
+ggsave( "preso/img/workload-sampling-frequency.png", width=6, height=4.5)
 
 ## ----ola.micro, echo=FALSE, warning=F, message=F----------------------------------------------------
 baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
@@ -206,11 +208,12 @@ ggplot(initial_vs_v2_workload, aes(x=work, y=delta_PKG, color=as.factor(work))) 
   geom_violin() +
   theme_minimal() +
   xlab("Version") +
-  ylab("Delta Package energy (Joules)") +
+  ylab("Workload Delta Package energy (Joules)") +
   labs(color="Implementation version") +
-  facet_wrap( ~ population_dimension )
+  facet_wrap( ~ population_dimension ) +
+  scale_color_discrete(labels = c("Baseline", "Micro-optimized"))
 
-
+ggsave( "preso/img/microptimization-violin-plot.png", width=6, height=4.5)
 
 ## ----ola.micro.hysteresis, echo=FALSE, warning=F, message=F,fig.cap="PKG energy data vs. accumulated time for the two baseline runs we are examining", fig.pos="h!tb", fig.height=3----
 baseline_data_ola_100s$cumulative_time <- cumsum(baseline_data_ola_100s$seconds)
@@ -228,7 +231,6 @@ ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_ti
   xlab("Cumulative Time (seconds)") +
   ylab("Package energy (Joules)") +
   labs(color="Measurement type")
-
 
 
 ## ----ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=3, fig.pos="h!tb"----
