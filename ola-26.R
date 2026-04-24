@@ -208,10 +208,11 @@ ggplot(initial_vs_v2_workload, aes(x=work, y=delta_PKG, color=as.factor(work))) 
   geom_violin() +
   theme_minimal() +
   xlab("Version") +
-  ylab("Workload Delta Package energy (Joules)") +
+  ylab("Workload ΔPKG energy (Joules)") +
   labs(color="Implementation version") +
   facet_wrap( ~ population_dimension ) +
-  scale_color_discrete(labels = c("Baseline", "Micro-optimized"))
+  scale_color_discrete(labels = c("Baseline", "Micro-optimized"))+
+  theme(axis.text.x = element_blank())
 
 ggsave( "preso/img/microptimization-violin-plot.png", width=6, height=4.5)
 
@@ -225,13 +226,15 @@ baseline_ola_v2_data$work <- "Baseline v2"
 workload_ola_v2_data$cumulative_time <- cumsum(workload_ola_v2_data$seconds)
 workload_ola_v2_data$work <- "Workload v2"
 
-ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_time, y=PKG, color=work) ) +
+ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_time, y=PKG, color=work, shape=factor(dimension)) ) +
   geom_point() +
   theme_minimal() +
   xlab("Cumulative Time (seconds)") +
-  ylab("Package energy (Joules)") +
-  labs(color="Measurement type")
+  ylab("PKG energy (Joules)") +
+  labs(color="Implementation version\nBaseline run", shape="Problem dimension") +
+  scale_color_discrete(labels = c("Baseline", "Micro-optimized"))
 
+ggsave( "preso/img/microoptimization-baseline-timeline-plot.png", width=6, height=4.5)
 
 ## ----ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=3, fig.pos="h!tb"----
 ola_mixed_v11_7 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
