@@ -354,6 +354,8 @@ ggplot(ola_v11_7_vs_8_data, aes(x=population_dimension, y=delta_PKG, color=as.fa
   ylim(0,250)+
   facet_wrap(~ max_gens)
 
+ggsave( "preso/img/version-comparison-plot.png", width=6, height=4.5)
+
 
 ## ----ola.no0, echo=F, fig.height=4, fig.cap="Avoiding zero energy runs, comparison of results"------
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
