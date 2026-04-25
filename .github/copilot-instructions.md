@@ -30,6 +30,7 @@ This is an **academic research repository** for a series of papers studying the 
 ├── preso/                 # Static HTML presentation (dist/, img/, index.html)
 ├── *.Rnw                  # Sweave/knitr LaTeX paper sources (one per conference)
 ├── *.Rmd                  # R Markdown documents (explainer, extended versions)
+├── Makefile               # Generic build targets: make all/pdfs/html/deps/<file>.pdf/<file>.html
 ├── ola-26.R               # Standalone R code extracted from ola-26.Rnw
 ├── example.jl             # Julia usage example for BraveNewAlgorithm.jl
 ├── *.bib                  # BibTeX bibliography files (GAs.bib, energy.bib, etc.)
@@ -71,28 +72,18 @@ Each file corresponds to a specific conference submission:
 
 ## Building / Rendering
 
-### Render a single R Markdown document
-```r
-rmarkdown::render("ola-26-explainer.Rmd")
-```
+Use `make` (see `Makefile` in the repository root):
 
-### Render a Sweave/knitr paper (produces PDF via LaTeX)
-```bash
-Rscript -e "knitr::knit('ola-26.Rnw')"
-pdflatex ola-26.tex
-bibtex ola-26
-pdflatex ola-26.tex
-pdflatex ola-26.tex
-```
+| Target | Effect |
+|---|---|
+| `make all` | Render all `.Rnw` papers to PDF and all `.Rmd` files to HTML |
+| `make pdfs` | Render all `.Rnw` papers to PDF |
+| `make html` | Render all `.Rmd` files to HTML |
+| `make deps` | Install system (`pandoc`, `libuv1-dev`) and R package dependencies |
+| `make foo.pdf` | Render a single paper, e.g. `make ola-26.pdf` |
+| `make foo.html` | Render a single document, e.g. `make ola-26-explainer.html` |
 
-### Install required R packages
-```r
-install.packages(c("rmarkdown", "ggplot2", "dplyr", "knitr", "kableExtra",
-                   "reshape2", "ggridges", "marginaleffects", "equatiomatic"))
-```
-
-System dependencies (Ubuntu): `pandoc`, `libuv1-dev`.  
-Install with: `sudo apt-get install -y pandoc libuv1-dev`
+The `.Rnw` pipeline is: `knitr::knit` → `pdflatex` → `bibtex` → `pdflatex` × 2.
 
 ## CI Workflow (`.github/workflows/static.yml`)
 
@@ -110,10 +101,3 @@ Install with: `sudo apt-get install -y pandoc libuv1-dev`
 5. **Hysteresis**: Hardware thermal state (temperature) affects measurements. Mitigation strategies (mixed/interleaved runs, filtering zero-energy rows) are intentional — do not remove them.
 6. **`null_baseline_columns`**: A recurring R pattern that drops irrelevant columns from baseline data before merging. Keep it consistent across analyses.
 7. **Julia example**: `example.jl` is illustrative only; the actual experiments are run externally via the `BraveNewAlgorithm.jl` package and produce the CSV/RDS files in `data/`.
-
-## Known Errors & Workarounds
-
-- **Negative delta energy values**: Arise when baseline energy exceeds workload energy due to thermal hysteresis or RAPL quirks. Handled by running interleaved baseline/workload experiments (see `ola-mixed` data) rather than pre/post baselines.
-- **Zero-energy RAPL readings**: Occasional zero-valued PKG rows from RAPL measurement gaps. Filtered out in the `ola-no0` experiment variants (`data/ola-1.11.8-ola-no0-*.csv`).
-- **R package `equatiomatic`**: May not be on CRAN; install from GitHub if needed: `remotes::install_github("datalorax/equatiomatic")`.
-- **`libuv1-dev` system dependency**: Required by some R packages on Ubuntu. Already included in the CI workflow.
