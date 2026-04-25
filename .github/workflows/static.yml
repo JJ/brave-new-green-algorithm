@@ -38,7 +38,7 @@ jobs:
         run: |
           pandoc README.md \
             --standalone \
-            --metadata title="Brave New Green Algorithm" \
+            --metadata title="Brave New Green Algorithm papers and presentations" \
             --css academic.css \
             --highlight-style tango \
             -o index.html
