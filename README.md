@@ -1,7 +1,18 @@
 # Brave new green algorithm
 
 Papers that use Brave New Algorithm for different purposes, mainly
-measuring energy expenses; it uses code at [BraveNewAlgorithm.jl](https://github.com/CeciMerelo/BraveNewAlgorithm.jl)
+measuring energy expenses; it uses code at
+[BraveNewAlgorithm.jl](https://github.com/CeciMerelo/BraveNewAlgorithm.jl) and
+is hosted at [a GitHub
+repository](https://github.com/JJ/brave-new-green-algorithm).
+
+## Description
+
+The Brave New Algorithm is an evolutionary algorithm that constraints
+reproduction according to a system of *castes* inspired in the Brave New World
+novel by Aldous Huxley. That way it can control more effectively the
+exploration-exploitation balance. It is fully described in [this
+paper](https://link.springer.com/chapter/10.1007/978-3-031-08266-5_20) 
 
 ## Source for papers
 
