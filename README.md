@@ -1,8 +1,16 @@
 # Brave new green algorithm
 
 Papers that use Brave New Algorithm for different purposes, mainly
-measuring energy expenses.
+measuring energy expenses; it uses code at [BraveNewAlgorithm.jl](https://github.com/CeciMerelo/BraveNewAlgorithm.jl)
 
+## Source for papers
+
+These are the sources of the papers accepted so far
+
+* [`ola-26.Rnw`](ola-26.Rnw), for the [OLA 26
+  conference](https://ola2026.sciencesconf.org/) in Chania,
+  Crete. [`ola-26.R`](ola-26.R) contains just the code used to generate tables
+  and graphs.
 
 ## Bibliography
 
