@@ -46,3 +46,6 @@ auto/
 *~
 .RData
 .positai
+
+# Generated static page
+index.html
