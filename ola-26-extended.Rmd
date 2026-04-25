@@ -1,0 +1,253 @@
+---
+title: "🔍 How Far Is Each Workload Run from Its Baseline?"
+subtitle: "An explicit look at the per-combination baseline subtraction in the OLA-26 experiments"
+author: "JJ Merelo & Cecilia Merelo-Molina"
+date: "`r format(Sys.Date(), '%B %Y')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    fig_caption: true
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE,
+  warning   = FALSE,
+  message   = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5,
+  dpi       = 150
+)
+```
+
+```{r libraries}
+library(ggplot2)
+library(dplyr)
+library(ggridges)
+```
+
+---
+
+## Context
+
+The OLA-26 paper computes *workload energy* by subtracting a **per-combination trimmed-mean baseline** from each raw workload measurement — but the subtraction is presented only as a summary table.
+It is impossible to see, run-by-run, how far individual workload readings sit from their respective baseline average, or whether the spread differs between parameter combinations.
+
+This document fills that gap.
+The three views below all come from the same pair of data files:
+
+* **Baseline**: `ola-base-ola-baseline-14-Dec-12-06-42.csv` (100 ms RAPL sampling)
+* **Workload**: `ola-1.11.7-ola-14-Dec-13-02-30.csv`
+
+The four parameter combinations tested are chromosome dimension × population size:
+**Dim 3 | Pop 200**, **Dim 3 | Pop 400**, **Dim 5 | Pop 200**, **Dim 5 | Pop 400**.
+
+---
+
+## Data preparation
+
+```{r load-data}
+null_cols <- c("alpha", "max_gens", "different_seeds",
+               "diff_fitness", "generations", "evaluations")
+
+# ── Baseline (100 ms sampling) ───────────────────────────────────────────────
+baseline <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline[null_cols] <- NULL
+
+# Per-combination trimmed mean (20 % trimming) — this is the value subtracted
+baseline_summary <- baseline %>%
+  group_by(dimension, population_size) %>%
+  summarise(
+    n_baseline       = n(),
+    trimmed_mean_PKG = mean(PKG, trim = 0.2),
+    sd_PKG           = sd(PKG),
+    .groups = "drop"
+  ) %>%
+  mutate(param_combo = paste0("Dim ", dimension, " | Pop ", population_size))
+
+# ── Workload ─────────────────────────────────────────────────────────────────
+workload <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+workload$param_combo <- paste0("Dim ", workload$dimension,
+                                " | Pop ", workload$population_size)
+
+# Join the per-combination trimmed mean onto every workload row
+workload <- workload %>%
+  left_join(
+    baseline_summary %>% select(dimension, population_size, trimmed_mean_PKG, sd_PKG),
+    by = c("dimension", "population_size")
+  ) %>%
+  mutate(
+    delta_PKG = PKG - trimmed_mean_PKG,
+    run_index = ave(seq_along(PKG), param_combo, FUN = seq_along)
+  )
+```
+
+The trimmed means that will be subtracted are:
+
+```{r baseline-means}
+baseline_summary %>%
+  select(param_combo, n_baseline, trimmed_mean_PKG, sd_PKG) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+---
+
+## View 1 — Every run plotted against its own baseline
+
+> *Each workload run as a dot. The dashed line is the trimmed-mean baseline for that combination — the exact value that will be subtracted.*
+
+Vertical segments connect each run to its baseline:
+green segments reach upward (Δ PKG > 0), pink segments reach downward (Δ PKG < 0).
+The shaded band is ±1 SD of the baseline energy, giving a sense of how variable the idle system itself was.
+
+```{r view1-plot, fig.cap="**Fig. 1** — Workload PKG energy per run (dark points) with per-combination trimmed-mean baseline overlaid (dashed orange line). Green segments indicate runs above the baseline; pink segments indicate runs below. Shaded band = ±1 SD of baseline energy."}
+pal_sign <- c("TRUE" = "#3D9970", "FALSE" = "#E07A5F")
+
+ggplot(workload, aes(x = as.numeric(run_index), y = PKG)) +
+  # ±1 SD baseline band
+  geom_rect(
+    data = baseline_summary,
+    aes(xmin = -Inf, xmax = Inf,
+        ymin = trimmed_mean_PKG - sd_PKG,
+        ymax = trimmed_mean_PKG + sd_PKG),
+    fill = "#F28E2B", alpha = 0.10, inherit.aes = FALSE
+  ) +
+  # sign-coded vertical segments
+  geom_segment(
+    aes(xend = as.numeric(run_index),
+        yend = trimmed_mean_PKG,
+        colour = delta_PKG >= 0),
+    alpha = 0.40, linewidth = 0.6
+  ) +
+  # workload points
+  geom_point(colour = "grey20", size = 2.2, alpha = 0.80) +
+  # baseline average line
+  geom_hline(
+    data = baseline_summary,
+    aes(yintercept = trimmed_mean_PKG),
+    linetype = "dashed", colour = "#F28E2B", linewidth = 1.0
+  ) +
+  scale_colour_manual(
+    values = pal_sign,
+    labels = c("TRUE" = "Above baseline (Δ PKG > 0)",
+               "FALSE" = "Below baseline (Δ PKG < 0)"),
+    name = NULL
+  ) +
+  facet_wrap(~ param_combo, ncol = 2, scales = "free_y") +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position  = "bottom",
+    strip.text       = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    plot.title       = element_text(face = "bold"),
+    plot.subtitle    = element_text(colour = "grey40")
+  ) +
+  labs(
+    title    = "Workload runs vs. their per-combination baseline average",
+    subtitle = "Dashed line = trimmed mean of baseline (the subtracted value) · Shaded band = ±1 SD",
+    x        = "Run index within parameter combination",
+    y        = "PKG energy (Joules)"
+  )
+```
+
+**What to take away:** The baseline average does not sit at the centre of the workload distribution — individual runs land 100–200 J above or below it.
+Because only a *constant* is subtracted, the spread of Δ PKG is essentially the same as the spread of the raw workload PKG.
+Runs that fall below their own baseline line produce *negative* Δ PKG values, visible here as pink segments.
+
+---
+
+## View 2 — Δ PKG distributions per combination
+
+> *What does the subtracted delta look like for each parameter combination?*
+
+```{r view2-violin, fig.cap="**Fig. 2** — Violin + notched box-plot of Δ PKG for each parameter combination. The red dotted line marks zero; values below it are negative deltas. Notch = 95 % CI for the median."}
+combo_pal <- c(
+  "Dim 3 | Pop 200" = "#4E79A7",
+  "Dim 3 | Pop 400" = "#76B7B2",
+  "Dim 5 | Pop 200" = "#F28E2B",
+  "Dim 5 | Pop 400" = "#E15759"
+)
+
+ggplot(workload,
+       aes(x = param_combo, y = delta_PKG,
+           fill = param_combo, colour = param_combo)) +
+  geom_violin(alpha = 0.35, linewidth = 0.4, width = 0.85) +
+  geom_boxplot(
+    width = 0.18, notch = TRUE,
+    outlier.size = 1.8, outlier.alpha = 0.5,
+    fill = "white", colour = "grey30", alpha = 0.9
+  ) +
+  geom_hline(yintercept = 0, linetype = "dotted",
+             colour = "red", linewidth = 0.8) +
+  scale_fill_manual(values = combo_pal) +
+  scale_colour_manual(values = combo_pal) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position  = "none",
+    axis.text.x      = element_text(angle = 15, hjust = 1),
+    panel.grid.minor = element_blank(),
+    plot.title       = element_text(face = "bold"),
+    plot.subtitle    = element_text(colour = "grey40")
+  ) +
+  labs(
+    title    = "Distribution of Δ PKG per parameter combination",
+    subtitle = "Δ PKG = workload PKG − per-combination trimmed-mean baseline · Red line at zero",
+    x        = NULL,
+    y        = "Δ PKG energy (Joules)"
+  )
+```
+
+---
+
+## View 3 — Ridgeline density of Δ PKG
+
+> *An overlapping density view makes it easier to compare the shape of each combination's distribution.*
+
+```{r view3-ridge, fig.height=4.5, fig.cap="**Fig. 3** — Ridgeline density of Δ PKG. Vertical lines mark Q1, median (solid) and Q3. The red dashed line is at zero."}
+ggplot(workload,
+       aes(x = delta_PKG, y = param_combo, fill = param_combo)) +
+  geom_density_ridges(
+    alpha          = 0.55,
+    scale          = 0.85,
+    quantile_lines = TRUE,
+    quantiles      = c(0.25, 0.5, 0.75),
+    linewidth      = 0.4
+  ) +
+  geom_vline(xintercept = 0, linetype = "dashed",
+             colour = "red", linewidth = 0.8) +
+  scale_fill_manual(values = combo_pal) +
+  theme_ridges(font_size = 14) +
+  theme(
+    legend.position = "none",
+    plot.title      = element_text(face = "bold"),
+    plot.subtitle   = element_text(colour = "grey40")
+  ) +
+  labs(
+    title    = "Ridgeline density of Δ PKG per parameter combination",
+    subtitle = "Quantile lines at Q1, median, Q3 · Red dashed line at zero",
+    x        = "Δ PKG energy (Joules)",
+    y        = NULL
+  )
+```
+
+**What to take away:** The distributions are roughly similar across combinations, but their centres (medians) and tails differ.
+The fraction of runs producing a *negative* Δ PKG varies between combinations — a direct consequence of how variable the idle system was during the (separately recorded) baseline campaign.
+This motivates the *sequential mixed* approach described in the paper, where each workload run is paired with the baseline run that immediately preceded it.
+
+---
+
+## About
+
+This document is a companion to the OLA-26 paper
+*"Best practices in measuring energy consumption in population-based metaheuristics"*
+by Merelo & Merelo-Molina.
+All data and code are available at <https://github.com/JJ/brave-new-green-algorithm>.
+
+*Research supported by the Ministerio español de Economía y Competitividad under project PID2023-147409NB-C21.*

@@ -47,10 +47,13 @@ jobs:
         with:
           r-version: 'release'
       - name: Install R dependencies
-        run: install.packages(c("rmarkdown", "ggplot2", "dplyr", "knitr"))
+        run: install.packages(c("rmarkdown", "ggplot2", "dplyr", "knitr", "ggridges"))
         shell: Rscript {0}
-      - name: Render ola-26-explainer.Rmd to HTML
-        run: Rscript -e "rmarkdown::render('ola-26-explainer.Rmd', output_file='ola-26-explainer.html')"
+      - name: Render all Rmd files to HTML
+        run: |
+          for f in *.Rmd; do
+            Rscript -e "rmarkdown::render('${f}')"
+          done
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact
