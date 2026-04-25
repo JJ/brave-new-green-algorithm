@@ -32,6 +32,11 @@ jobs:
       - name: Checkout
 
         uses: actions/checkout@v5
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-pandoc-libuv1-dev
       - name: Install pandoc and system dependencies for R packages
         run: |
           sudo apt-get update -y
