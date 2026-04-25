@@ -38,10 +38,10 @@ library(dplyr)
 
 Every time you run an algorithm — whether it is training a neural network, searching for the shortest route, or running a genetic algorithm — your computer **consumes electricity**.
 That electricity has a carbon footprint.
-As artificial intelligence and optimisation become ubiquitous, the collective cost is enormous.
+As artificial intelligence and optimization become ubiquitous, the collective cost is enormous.
 
-Yet measuring *exactly* how much energy a specific piece of code uses turns out to be surprisingly hard.
-This article summarises the key lessons from our paper
+Yet measuring *exactly* how much energy a specific algorithm implementation uses turns out to be surprisingly hard.
+This article summarizes the key lessons from our paper
 *"Best practices in measuring energy consumption in population-based metaheuristics"*
 in **five** concrete findings, each illustrated with data.
 
