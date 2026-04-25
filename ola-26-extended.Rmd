@@ -202,6 +202,7 @@ ggplot(workload,
     x        = NULL,
     y        = "Δ PKG energy (Joules)"
   )
+ggsave("preso/img/baseline-workload-comparison.png", height=4.5, width=8)
 ```
 
 ---
