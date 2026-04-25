@@ -30,7 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+
+        uses: actions/checkout@v5
       - name: Install pandoc
         run: sudo apt-get install -y pandoc
       - name: Generate index.html from README.md
@@ -42,9 +43,9 @@ jobs:
             --highlight-style tango \
             -o index.html
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           # Upload entire repository
           path: '.'
