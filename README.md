@@ -22,6 +22,10 @@ These are the sources of the papers accepted so far
   conference](https://ola2026.sciencesconf.org/) in Chania,
   Crete. [`ola-26.R`](ola-26.R) contains just the code used to generate tables
   and graphs. [The presentation](preso/index.html) is also contained in the place.
+  [`ola-26-explainer.Rmd`](ola-26-explainer.Rmd) is a self-contained R Markdown
+  article that retells the main findings in accessible language with enhanced
+  visualisations, suitable for a blog post or social-media thread. Render it with
+  `rmarkdown::render("ola-26-explainer.Rmd")` to produce an HTML document.
 
 ## Bibliography
 

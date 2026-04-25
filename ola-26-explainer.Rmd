@@ -1,0 +1,428 @@
+---
+title: "🌱 Making Algorithms Greener: A Data Story"
+subtitle: "Best practices for measuring — and reducing — the energy consumed by optimisation algorithms"
+author: "JJ Merelo & Cecilia Merelo-Molina"
+date: "`r format(Sys.Date(), '%B %Y')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    fig_caption: true
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo       = TRUE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.align  = "center",
+  fig.width  = 9,
+  fig.height = 5,
+  dpi        = 150
+)
+```
+
+```{r libraries}
+library(ggplot2)
+library(dplyr)
+```
+
+---
+
+## Why does this matter?
+
+Every time you run an algorithm — whether it is training a neural network, searching for the shortest route, or running a genetic algorithm — your computer **consumes electricity**.
+That electricity has a carbon footprint.
+As artificial intelligence and optimisation become ubiquitous, the collective cost is enormous.
+
+Yet measuring *exactly* how much energy a specific piece of code uses turns out to be surprisingly hard.
+This article summarises the key lessons from our paper
+*"Best practices in measuring energy consumption in population-based metaheuristics"*
+in **five** concrete findings, each illustrated with data.
+
+---
+
+## The algorithm under the microscope
+
+We studied the **Brave New Algorithm (BNA)** — an evolutionary optimisation algorithm inspired by Aldous Huxley's novel *Brave New World*.
+Like natural evolution, it maintains a population of candidate solutions and improves them over successive generations.
+Its distinguishing feature is a **caste system**: the population is divided into groups (α, β, γ, δ, ε), each with a different reproduction strategy, giving fine-grained control over the balance between broad exploration and focused exploitation of good solutions.
+
+The BNA was implemented in **Julia** and benchmarked on a standard test function (the Sphere function) with different population sizes (200, 400) and chromosome dimensions (3, 5).
+Energy measurements were taken with **pinpoint**, a command-line tool that reads the CPU's built-in power sensors (RAPL interface) at configurable intervals.
+
+---
+
+## The challenge: separating signal from noise
+
+Energy measurements are noisy.
+The CPU does not just run your algorithm; it also runs the operating system, background processes, and its own housekeeping routines.
+On top of that, the hardware itself gradually heats up and changes its power profile over the course of an experiment.
+
+Our methodology uses two types of runs:
+
+* **Baseline runs** — the algorithm generates only the initial population (the overhead from the runtime and hardware).
+* **Workload runs** — the full algorithm, including all evolutionary operators.
+
+By subtracting the baseline energy from the workload energy we obtain the **delta energy** — the net cost of running the actual algorithm.
+The following sections describe four methodological improvements that make this delta more reliable and precise.
+
+---
+
+## Finding 1 — Slow down the measuring tool {#finding-1}
+
+> *Measuring twice a second is better than measuring twenty times a second.*
+
+The default sampling period of *pinpoint* is **50 ms** (20 samples per second).
+We doubled it to **100 ms** (10 samples per second).
+A lower sampling frequency means fewer interruptions to the CPU's own accounting, which leads to more stable readings.
+
+```{r finding1-data}
+null_baseline_columns <- c("alpha", "max_gens", "different_seeds",
+                           "diff_fitness", "generations", "evaluations")
+
+baseline_data_evoapps <- read.csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+baseline_data_evoapps[null_baseline_columns] <- NULL
+
+baseline_data_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_data_ola_100s$work <- "ola-baseline"
+baseline_data_ola_100s[null_baseline_columns] <- NULL
+
+# Compute deltas helper (reused in later sections)
+compute_deltas <- function(baseline_summary, workload) {
+  workload$delta_PKG     <- 0
+  workload$delta_seconds <- 0
+  for (dim in c(3, 5)) {
+    for (pop_size in c(200, 400)) {
+      mask <- workload$dimension == dim & workload$population_size == pop_size
+      n    <- sum(mask)
+      brow <- baseline_summary$population_size == pop_size & baseline_summary$dimension == dim
+      workload$delta_PKG[mask]     <- workload$PKG[mask]     - rep(baseline_summary$median_energy[brow], n)
+      workload$delta_seconds[mask] <- workload$seconds[mask] - rep(baseline_summary$median_time[brow],   n)
+    }
+  }
+  workload
+}
+
+baseline_data_evoapps %>%
+  group_by(dimension, population_size) %>%
+  summarise(median_energy = median(PKG), median_time = median(seconds),
+            .groups = "drop") -> summary_baseline_evoapps
+
+workload_evoapps <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
+workload_evoapps <- compute_deltas(summary_baseline_evoapps, workload_evoapps)
+
+baseline_data_ola_100s %>%
+  group_by(dimension, population_size) %>%
+  summarise(median_energy = median(PKG), median_time = median(seconds),
+            .groups = "drop") -> summary_baseline_ola
+
+workload_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+workload_ola <- compute_deltas(summary_baseline_ola, workload_ola)
+
+workload_combined <- rbind(workload_evoapps, workload_ola)
+
+# Readable labels: evoapps data used 50 ms sampling, ola data used 100 ms
+workload_combined$Experiment <- case_when(
+  grepl("evoapps|bna", workload_combined$work) ~ "50 ms sampling",
+  grepl("^ola",        workload_combined$work) ~ "100 ms sampling",
+  TRUE ~ workload_combined$work
+)
+```
+
+```{r finding1-plot, fig.cap="**Fig. 1** — Delta energy vs delta time for two sampling configurations. The 100 ms configuration (teal) spreads measurements more evenly and avoids the cluster of suspiciously small energy values below 50 J seen with 50 ms sampling (coral)."}
+pal <- c("50 ms sampling" = "#E07A5F", "100 ms sampling" = "#3D9970")
+
+ggplot(workload_combined,
+       aes(x = delta_seconds, y = delta_PKG, colour = Experiment)) +
+  geom_point(alpha = 0.55, size = 2) +
+  scale_colour_manual(values = pal) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        plot.title    = element_text(face = "bold"),
+        plot.subtitle = element_text(colour = "grey40")) +
+  labs(
+    title    = "Sampling frequency changes what you see",
+    subtitle = "Each dot is one algorithm run; axes show time and energy *above* the idle baseline",
+    x        = "Delta time (seconds)",
+    y        = "Delta energy (Joules)",
+    colour   = NULL
+  )
+```
+
+**What to take away:** Switching to 100 ms sampling visibly shifts the distribution of measured energies — and eliminates a cluster of implausibly small values that were artefacts of the over-frequent polling, not real measurements.
+
+---
+
+## Finding 2 — Hardware drift is real {#finding-2}
+
+> *Your computer is not the same machine at minute 1 as it is at minute 40.*
+
+Even when running the exact same workload, the energy readings change over the course of a long experimental session.
+The CPU gradually warms up; the thermal management system adjusts clock speeds and voltages.
+This **hysteresis** effect can easily be mistaken for a real difference between algorithm versions.
+
+```{r finding2-data}
+baseline_ola_v2 <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
+baseline_ola_v2[null_baseline_columns] <- NULL
+
+baseline_data_ola_100s$cumulative_time <- cumsum(baseline_data_ola_100s$seconds)
+baseline_data_ola_100s$Run             <- "Baseline v1"
+
+baseline_ola_v2$cumulative_time <- cumsum(baseline_ola_v2$seconds)
+baseline_ola_v2$Run             <- "Baseline v2"
+
+timeline_data <- rbind(
+  baseline_data_ola_100s[, c("cumulative_time", "PKG", "Run")],
+  baseline_ola_v2[,        c("cumulative_time", "PKG", "Run")]
+)
+```
+
+```{r finding2-plot, fig.cap="**Fig. 2** — Energy per run plotted against cumulative time. The same algorithm, different recording sessions. Notice how energy levels shift after ~2000 s in the v1 baseline — caused by hardware state changes, not algorithm changes."}
+pal2 <- c("Baseline v1" = "#4E79A7", "Baseline v2" = "#F28E2B")
+
+ggplot(timeline_data, aes(x = cumulative_time, y = PKG, colour = Run)) +
+  geom_point(alpha = 0.5, size = 1.8) +
+  geom_smooth(method = "loess", span = 0.3, se = FALSE, linewidth = 1.2) +
+  annotate("rect",
+           xmin = 2000, xmax = max(timeline_data$cumulative_time),
+           ymin = -Inf,  ymax = Inf,
+           fill = "#E07A5F", alpha = 0.08) +
+  annotate("text",
+           x = 2200, y = max(timeline_data$PKG) * 0.97,
+           label = "Hardware enters\na new thermal regime",
+           hjust = 0, size = 3.5, colour = "#E07A5F") +
+  scale_colour_manual(values = pal2) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        plot.title    = element_text(face = "bold"),
+        plot.subtitle = element_text(colour = "grey40")) +
+  labs(
+    title    = "Hardware drift inflates apparent differences",
+    subtitle = "Both runs use the same algorithm — the shift after 2000 s is pure hardware noise",
+    x        = "Cumulative time (seconds)",
+    y        = "Energy per run (Joules)",
+    colour   = NULL
+  )
+```
+
+**What to take away:** A block of experiments run early in the day will not have the same energy profile as one run later — even on the same machine.
+Averaging baselines collected over hours and subtracting them from workload runs collected in a different window amplifies this noise.
+
+---
+
+## Finding 3 — Keep baseline and workload back-to-back {#finding-3}
+
+> *The best correction for a shifting baseline is a baseline that shifts with the workload.*
+
+The fix is elegant: instead of collecting all baselines first and all workloads second, **interleave** them.
+Each workload run is preceded immediately by a fresh baseline run, and the delta is computed from *that* pair.
+When the hardware drifts, it drifts for both, so the delta stays stable.
+
+```{r finding3-data}
+ola_mixed <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
+ola_mixed$cumulative_time <- cumsum(ola_mixed$seconds)
+
+for (i in 2:nrow(ola_mixed)) {
+  if (ola_mixed$work[i] == "ola-mixed") {
+    ola_mixed$delta_seconds[i] <- ola_mixed$seconds[i] - ola_mixed$seconds[i - 1]
+    ola_mixed$delta_PKG[i]     <- ola_mixed$PKG[i]     - ola_mixed$PKG[i - 1]
+  }
+}
+
+ola_mixed$Type <- recode(ola_mixed$work,
+  "base-ola-mixed" = "Baseline",
+  "ola-mixed"      = "Workload"
+)
+```
+
+```{r finding3-plot, fig.cap="**Fig. 3** — Interleaved baseline (coral) and workload (teal) runs plotted over time. The blue bars show the net energy delta per workload run. Both series track each other closely, so drift is cancelled out in the delta."}
+pal3 <- c("Baseline" = "#E07A5F", "Workload" = "#3D9970")
+
+delta_rows <- ola_mixed[ola_mixed$work == "ola-mixed" & ola_mixed$delta_PKG > 0, ]
+
+ggplot(ola_mixed, aes(x = cumulative_time, y = PKG, colour = Type)) +
+  geom_point(alpha = 0.55, size = 1.8) +
+  geom_smooth(aes(group = Type), method = "loess", span = 0.35,
+              se = FALSE, linewidth = 1.1) +
+  geom_bar(data    = delta_rows,
+           mapping = aes(x = cumulative_time, y = delta_PKG),
+           stat    = "identity", inherit.aes = FALSE,
+           fill    = "#4E79A7", alpha = 0.35, width = 30) +
+  scale_colour_manual(values = pal3) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        plot.title    = element_text(face = "bold"),
+        plot.subtitle = element_text(colour = "grey40")) +
+  labs(
+    title    = "Interleaving neutralises hardware drift",
+    subtitle = "Blue bars = net workload energy (delta). Baseline and workload follow the same thermal trajectory.",
+    x        = "Cumulative time (seconds)",
+    y        = "Energy per run (Joules)",
+    colour   = NULL
+  )
+```
+
+**What to take away:** When the baseline and workload are measured in the same thermal context, their raw energies may both go up or both go down — but the *difference* stays stable, which is what we care about.
+
+---
+
+## Finding 4 — Stay up to date with your language runtime {#finding-4}
+
+> *A free 10% energy saving: just update Julia.*
+
+Once the measurement methodology is solid, it becomes sensitive enough to detect small but real improvements.
+We compared two patch releases of Julia — **v1.11.7** (our original version) and **v1.11.8** (released December 2025) — running the exact same algorithm with the exact same data.
+
+```{r finding4-data}
+ola_mixed_v118 <- read.csv("data/ola-1.11.8-mixed-inverted-ola-mixed-inverted-16-Dec-09-02-52.csv")
+ola_mixed_v118$cumulative_time <- cumsum(ola_mixed_v118$seconds)
+
+for (i in 2:nrow(ola_mixed_v118)) {
+  if (ola_mixed_v118$work[i] == "ola-mixed-inverted") {
+    ola_mixed_v118$delta_seconds[i] <- ola_mixed_v118$seconds[i] - ola_mixed_v118$seconds[i - 1]
+    ola_mixed_v118$delta_PKG[i]     <- ola_mixed_v118$PKG[i]     - ola_mixed_v118$PKG[i - 1]
+  }
+}
+
+w117 <- ola_mixed[ola_mixed$work == "ola-mixed", ]
+w117$Julia <- "v1.11.7"
+
+w118 <- ola_mixed_v118[ola_mixed_v118$work == "ola-mixed-inverted", ]
+w118$Julia <- "v1.11.8"
+
+version_data <- bind_rows(
+  w117 %>% select(-any_of("Type")),
+  w118
+)
+version_data$population_dimension <- paste0(
+  "Pop. ", version_data$population_size,
+  " | Dim. ", version_data$dimension
+)
+version_data$max_gens_label <- paste("Max gens:", version_data$max_gens)
+```
+
+```{r finding4-plot, fig.height=6, fig.cap="**Fig. 4** — Notched box plots of delta energy for each Julia version, split by stopping criterion. Non-overlapping notches indicate a statistically significant difference. v1.11.8 (teal) is clearly lower — especially for max_gens = 25."}
+pal4 <- c("v1.11.7" = "#E07A5F", "v1.11.8" = "#3D9970")
+
+ggplot(version_data %>% filter(delta_PKG > 0, delta_PKG < 300),
+       aes(x = population_dimension, y = delta_PKG, fill = Julia)) +
+  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
+               position = position_dodge(0.8), width = 0.6) +
+  scale_fill_manual(values = pal4) +
+  facet_wrap(~ max_gens_label) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position   = "top",
+    axis.text.x       = element_text(angle = 35, hjust = 1),
+    strip.text        = element_text(face = "bold"),
+    plot.title        = element_text(face = "bold"),
+    plot.subtitle     = element_text(colour = "grey40")
+  ) +
+  labs(
+    title    = "Updating Julia saves real energy",
+    subtitle = "Non-overlapping notches → statistically significant saving. Y-axis clipped to 0–300 J.",
+    x        = NULL,
+    y        = "Delta energy (Joules)",
+    fill     = "Julia version"
+  )
+```
+
+**What to take away:** A routine patch-level update of the Julia runtime delivered a measurable and statistically significant energy reduction — around 10% in several configurations and even more for longer runs.
+Running the latest stable version of your language runtime is one of the cheapest optimisations available.
+
+---
+
+## Finding 5 — Discard zero-energy readings {#finding-5}
+
+> *If the sensor reports zero, the measurement failed. Repeat it.*
+
+Occasionally, *pinpoint* returns an energy measurement of exactly 0 Joules.
+This is not a real result — the process simply ran and the sensor missed it.
+Earlier versions of our experiment runner ignored these; we changed it to **repeat** any run that produced a zero reading until a valid measurement was obtained.
+
+```{r finding5-data}
+ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv")
+ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
+
+for (i in 2:nrow(ola_mixed_no0)) {
+  if (ola_mixed_no0$work[i] == "ola-no0") {
+    ola_mixed_no0$delta_seconds[i] <- ola_mixed_no0$seconds[i] - ola_mixed_no0$seconds[i - 1]
+    ola_mixed_no0$delta_PKG[i]     <- ola_mixed_no0$PKG[i]     - ola_mixed_no0$PKG[i - 1]
+  }
+}
+
+w118_no0 <- w118
+w118_no0$Approach <- "Allow zero readings"
+
+no0_workload <- ola_mixed_no0[ola_mixed_no0$work == "ola-no0", ]
+no0_workload$Approach <- "Discard zero readings"
+
+no0_comparison <- bind_rows(w118_no0, no0_workload)
+no0_comparison$population_dimension <- paste0(
+  "Pop. ", no0_comparison$population_size,
+  " | Dim. ", no0_comparison$dimension
+)
+no0_comparison$max_gens_label <- paste("Max gens:", no0_comparison$max_gens)
+```
+
+```{r finding5-plot, fig.height=6, fig.cap="**Fig. 5** — Discarding zero-energy runs (teal) produces tighter, less dispersed distributions than allowing them (coral). Smaller spread = higher reproducibility."}
+pal5 <- c("Allow zero readings" = "#E07A5F", "Discard zero readings" = "#3D9970")
+
+ggplot(no0_comparison,
+       aes(x = population_dimension, y = delta_PKG, fill = Approach)) +
+  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
+               position = position_dodge(0.8), width = 0.6) +
+  scale_fill_manual(values = pal5) +
+  facet_wrap(~ max_gens_label) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position   = "top",
+    axis.text.x       = element_text(angle = 35, hjust = 1),
+    strip.text        = element_text(face = "bold"),
+    plot.title        = element_text(face = "bold"),
+    plot.subtitle     = element_text(colour = "grey40")
+  ) +
+  labs(
+    title    = "Filtering bad sensor readings tightens the results",
+    subtitle = "Tighter boxes = more reproducible measurements across experiments",
+    x        = NULL,
+    y        = "Delta energy (Joules)",
+    fill     = NULL
+  )
+```
+
+**What to take away:** Data quality matters.
+Repeating failed measurements improves not only accuracy but also *reproducibility* — a core requirement for scientific benchmarking.
+
+---
+
+## Key takeaways
+
+| # | Practice | Why it helps |
+|---|----------|--------------|
+| 1 | Use 100 ms RAPL sampling | Reduces polling overhead; extends the measurement range |
+| 2 | Beware of hardware drift | Measurements taken hours apart are not directly comparable |
+| 3 | Interleave baseline & workload | Drift affects both equally, cancelling out in the delta |
+| 4 | Stay current with your runtime | Free, significant energy savings from compiler improvements |
+| 5 | Discard zero-energy sensor readings | Improves accuracy and reproducibility |
+
+With these five practices in place, it becomes possible to detect and attribute energy differences of **10% or less** — differences that would be invisible with a less careful methodology.
+
+---
+
+## About the research
+
+This work is part of an ongoing effort to establish reproducible, rigorous methodologies for energy profiling of population-based metaheuristics.
+The full paper, all data, and all code are available in the [GitHub repository](https://github.com/JJ/brave-new-green-algorithm) under an open licence.
+
+The research is supported by the *Ministerio español de Economía y Competitividad* under project PID2023-147409NB-C21.
+
+---
+
+*Source: Merelo & Merelo-Molina — "Best practices in measuring energy consumption in population-based metaheuristics", OLA 2026, Chania, Crete.*
