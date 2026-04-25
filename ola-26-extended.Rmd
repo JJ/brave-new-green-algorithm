@@ -43,8 +43,8 @@ It is impossible to see, run-by-run, how far individual workload readings sit fr
 This document fills that gap.
 The three views below all come from the same pair of data files:
 
-* **Baseline**: `ola-base-ola-baseline-14-Dec-12-06-42.csv` (100 ms RAPL sampling)
-* **Workload**: `ola-1.11.7-ola-14-Dec-13-02-30.csv`
+* **Baseline**: [`ola-base-ola-baseline-14-Dec-12-06-42.csv`](data/ola-base-ola-baseline-14-Dec-12-06-42.csv) (100 ms RAPL sampling)
+* **Workload**: [`ola-1.11.7-ola-14-Dec-13-02-30.csv`](data/ola-base-ola-baseline-14-Dec-12-06-42.csv)
 
 The four parameter combinations tested are chromosome dimension × population size:
 **Dim 3 | Pop 200**, **Dim 3 | Pop 400**, **Dim 5 | Pop 200**, **Dim 5 | Pop 400**.
@@ -140,7 +140,7 @@ ggplot(workload, aes(x = as.numeric(run_index), y = PKG)) +
                "FALSE" = "Below baseline (Δ PKG < 0)"),
     name = NULL
   ) +
-  facet_wrap(~ param_combo, ncol = 2, scales = "free_y") +
+  facet_wrap(~ param_combo, ncol = 2) +
   theme_minimal(base_size = 14) +
   theme(
     legend.position  = "bottom",
@@ -157,7 +157,7 @@ ggplot(workload, aes(x = as.numeric(run_index), y = PKG)) +
   )
 ```
 
-**What to take away:** The baseline average does not sit at the centre of the workload distribution — individual runs land 100–200 J above or below it.
+**What to take away:** The baseline average does not sit at the centre of the workload distribution — individual runs land 100–200 J above or below it. Theoretically, it should be very similar, since different combinations of problem size and population size shouldn't affect it too much.
 Because only a *constant* is subtracted, the spread of Δ PKG is essentially the same as the spread of the raw workload PKG.
 Runs that fall below their own baseline line produce *negative* Δ PKG values, visible here as pink segments.
 
