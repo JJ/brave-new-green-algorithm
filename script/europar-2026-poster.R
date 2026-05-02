@@ -72,10 +72,88 @@ ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp, shape=dim
   scale_color_viridis_c(trans=custom_pow) +
   geom_point()  + labs( x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
 
-ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp_1, shape=dimension)) +
-  scale_color_viridis_c(trans=custom_pow) +
+ggplot(europar_taskset_base, aes(x=seconds, y=PKG, shape=dimension, color=factor(population_size))) +
   geom_point()  + labs( x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
 
+europar_taskset_base$power <- europar_taskset_base$PKG/europar_taskset_base$seconds
+
+ggplot( europar_taskset_base, aes(x=initial_temp, y=power,color=dimension,shape=population_size))+geom_point()+theme_minimal()
+
+# Fit a basic linear model of Energy vs Time
+base_model <- lm(PKG ~ seconds, data = europar_taskset_base)
+
+# Add the residuals (distance from the trendline) back to your dataset
+europar_taskset_base$residuals <- resid(base_model)
+
+# Plot the density to find the valley
+d <- density(europar_taskset_base$residuals)
+plot(d, main="Density of Residuals")
+
+# 2. Extract the X (residual values) and Y (density/frequency) coordinates
+x_vals <- d$x
+y_vals <- d$y
+
+# 3. Find where the slope changes from negative (going down the peak)
+# to positive (going up the next peak).
+# diff() calculates the difference between consecutive points.
+# sign() converts those differences to +1 (increasing) or -1 (decreasing).
+# diff(sign()) equals 2 exactly at the bottom of a valley (-1 to +1).
+valley_indices <- which(diff(sign(diff(y_vals))) == 2) + 1
+
+# 4. Create a data frame of all the local valleys found
+valleys <- data.frame(residual_value = x_vals[valley_indices],
+                      density = y_vals[valley_indices])
+
+# 5. If there's minor noise, there might be multiple tiny valleys.
+# We want the main, deepest one (lowest density). We use the last one, after the "flat" initial surface
+exact_cutoff <- valleys$residual_value[5]
+
+# Apply the exact mathematical cutoff to separate the streaks
+europar_taskset_base$streak_group <- as.factor(ifelse(europar_taskset_base$residuals > exact_cutoff, "Upper_Streak", "Lower_Streak"))
+
+streak_glm <- glm(streak_group ~ initial_temp_1*initial_temp_2 + population_size*dimension + seconds,
+                  data = europar_taskset_base, # Using the subset where the split happens
+                  family = binomial)
+
+ggplot(europar_taskset_base, aes(x = initial_temp_1, y = initial_temp_2, color = streak_group)) +
+  geom_point(size = 2, alpha = 0.7) +
+  # Using distinct, contrasting colors to make the boundary pop
+  scale_color_manual(values = c("Lower_Streak" = "#43aa8b", "Upper_Streak" = "#f94144")) +
+  labs(title = "The True Cause of the Energy Split",
+       subtitle = "Interaction between Initial Temp 1 and Initial Temp 2",
+       x = "Initial Temperature 1",
+       y = "Initial Temperature 2",
+       color = "Energy Baseline") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold", size = 14))
+
+europar_taskset_base$delta_temp <- europar_taskset_base$initial_temp_1 - europar_taskset_base$initial_temp_2
+
+ggplot(europar_taskset_base, aes(x=initial_temp_1, y=power,color=streak_group))+geom_point()+theme_minimal()
+
+# Trying to find why they overlap
+#
+
+
+# install.packages("plotly")
+library(plotly)
+
+plot_ly(europar_taskset_base,
+        x = ~initial_temp_1,
+        y = ~power,
+        z = ~initial_temp_2,
+        color = ~streak_group,
+        colors = c("#f94144", "#43aa8b"),
+        type = "scatter3d",
+        mode = "markers",
+        marker = list(size = 3, opacity = 0.8)) %>%
+  layout(title = "Unmasking the Overlap in 3D")
+
+power_model <- glm( power ~ initial_temp_1 * initial_temp_2 + streak_group, data=europar_taskset_base)
+summary(power_model)
+
+ggplot( europar_taskset_base, aes(x=initial_temp_2,y=power, color=streak_group))+ geom_point()+theme_minimal()
 
 ## ----europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline measurements with and without taskset.", fig.height=3, fig.pos="h!tb", out.width="100%"----
 library(philentropy) # For KL function
