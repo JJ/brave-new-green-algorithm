@@ -150,10 +150,12 @@ plot_ly(europar_taskset_base,
         marker = list(size = 3, opacity = 0.8)) %>%
   layout(title = "Unmasking the Overlap in 3D")
 
-power_model <- glm( power ~ initial_temp_1 * initial_temp_2 + streak_group, data=europar_taskset_base)
+power_model <- glm( power ~ initial_temp_2 * initial_temp_1, data=europar_taskset_base)
 summary(power_model)
 
-ggplot( europar_taskset_base, aes(x=initial_temp_2,y=power, color=streak_group))+ geom_point()+theme_minimal()
+ggplot( europar_taskset_base, aes(x=initial_temp_2,y=power,color=initial_temp_2)) + scale_color_viridis_c(trans=custom_pow) + geom_point()+geom_smooth(formula=y~x, method="lm")+ theme_minimal()
+
+anova_power <- anova(power_model)
 
 ## ----europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline measurements with and without taskset.", fig.height=3, fig.pos="h!tb", out.width="100%"----
 library(philentropy) # For KL function
