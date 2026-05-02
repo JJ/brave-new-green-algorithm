@@ -348,7 +348,7 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 \end{credits}
 
 \bibliographystyle{splncs04}
-\bibliography{energy,ga-energy,GAs}
+\bibliography{energy,ga-energy,GAs,ours}
 
 \end{document}
 
