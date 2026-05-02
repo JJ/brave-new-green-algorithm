@@ -91,7 +91,7 @@ We will try to adjust two different generalized linear models to this data (usin
 
 In principle, this variability was expected which is why every workload run is between two baseline runs, expected to eliminate at least part of the variability from the measurement.
 %
-<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload measures, initial experiment.", fig.height=3.5, fig.pos="h!tb">>=
+<<europar.initial.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload measures, initial experiment; color corresponds to problem dimension.", fig.height=3.5, fig.pos="h!tb">>=
 source("R/process_deltas.R")
 europar_test_processed <- process_deltas( europar_test )
 europar_test_processed$dimension <- as.factor(europar_test_processed$dimension)
