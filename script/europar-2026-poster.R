@@ -111,7 +111,6 @@ europar_taskset_processed$dimension <- as.factor(europar_taskset_processed$dimen
 europar_taskset_processed$population_size <- as.factor(europar_taskset_processed$population_size)
 
 europar_die1_workload <- rbind( europar_taskset_processed, europar_test_processed)
-save(europar_die1_workload, file="data/europar_die1_workload.rds")
 
 
 ## ----europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%"----
@@ -127,7 +126,6 @@ taskset_die2_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension
 taskset_joint_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data =  joint_base_taskset)
 
 joint_base_taskset_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
-save(joint_base_taskset_with_die2, file="data/joint_base_taskset_with_die2.rds")
 predict_with_die2 <- predict(taskset_die2_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 predict_with_joint <- predict(taskset_joint_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 
@@ -177,7 +175,6 @@ kable(joint_base_with_die2_summary,
 
 ## ----europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Workload energy vs. time, die-2 experiment.", fig.height=2.5, fit.pos="h!", out.width="100%"----
 europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
-save(europar_taskset_die2_processed, file="data/europar_taskset_die2_processed.rds")
 europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
 europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
 ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
