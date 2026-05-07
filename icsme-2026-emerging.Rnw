@@ -63,7 +63,7 @@ problem dimension ($D$) equal to 3, 5, or 10, population size ($N$): 200 or 400,
 
 In order to be able to compute $E_w$, we make two kind of runs: $W$ runs run the whole algorithm to completion, $B$ (baseline) runs only create the initial population; these are run in a {\em sandwich} $B-W-B....W-B$ configuration, with 30 $W$ and 31 $B$, seeking to make operating conditions for them as close as possible. The energy consumption for any given workload $W_i$ is calculated by subtracting the average of the two surrounding baselines ($B_i$ and $B_{i+1}$) from the workload measurement. A whole experiment will run these processes for all parameter combination; then, it will be repeated 4 or 5 times, non-sequentially, at different moments in the day and after turning on the computer. This tries to ensure we gather data for as many different conditions as possible.
 
-Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X. This CPU features a 16 core, two-die architecture (called {\em chiplets}), allowing us to monitor temperature via two distinct sensors ({\tt Tccd1} and {\tt Tccd2}) using the {\tt k10temp-pci-00c3} driver. The interesting thing about this chip is that although architecturally it is homogeneous, during the process of fabrication cores are graded by their frequency capability and ranked according to it, giving those capable of higher frequencies the highest ID, and going down from there \footnote{Please consult technical explanation in documents such as \url{https://www.reddit.com/r/Amd/comments/dzjs7i/fastest_cores_is_windows_right_or_ryzen_master/}.}.
+Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X. This CPU features a 16 core, two-die architecture (called {\em chiplets}), allowing us to monitor temperature via two distinct sensors ({\tt Tccd1} and {\tt Tccd2}) using the {\tt k10temp-pci-00c3} driver. The interesting thing about this chip is that although architecturally it is homogeneous, during the process of fabrication cores are graded by their frequency capability and ranked according to it, giving those capable of higher frequencies the highest ID, and going down from there \footnote{Please consult the technical explanation in documents such as \url{https://www.reddit.com/r/Amd/comments/dzjs7i/fastest_cores_is_windows_right_or_ryzen_master/}.}.
 The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We utilize {\sf pinpoint} to tap the RAPL API \cite{pinpoint}. On this AMD architecture, measurements are restricted to Package (PKG) energy. The BNA algorithm is implemented in the language Julia, which uses a JIT compiler. A Perl script (running in superuser mode) automates the execution, processes readings from the `sensors` command, and outputs a CSV file.
 % I do not know if other hardware and BIOS settings should be mentioned.
 % For instance, a Noctua CPU Fan, or BIOS settings for the Mother Board (Performance vs Low Noise). But again this is the type of varialbes that the method is trying to bypass. - Mario
@@ -71,7 +71,7 @@ The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We utilize
 All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/hidd/en}
 %\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
-<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.env="figure*", fig.height=3>>=
+<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.height=4, fig.env="figure*">>=
 load("data/joint_base_taskset_with_die2.rds")
 library(ggplot2)
 library(scales)
@@ -87,7 +87,7 @@ ggplot(joint_base_taskset_with_die2, aes(x=seconds,y=PKG, color=initial_temp)) +
 
 As a baseline, we have run a series of experiments, in three different batches: one using a {\em natural} assignment of process to dies, the other two restricting the process either to die 1 (which would have the $P$-cores) or 2 (with the $E$ cores). For the initial analysis we will consider the $B$ and $W$ runs different workloads: the energy consumption of the $B$ runs should have a minimal dependence on algorithm parameters or problem size. This is intended as an initial exploration of the statistical models with a workload with a very small dependence on the algorithm parameters. We chart energy consumed vs. time in Figure \ref{fig:icsme.base}.
 
-<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.height=3 >>=
+<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.height=4, fig.pos="h!tb" >>=
 initial_base_model <- glm(PKG ~ I(initial_temp_1^2)*I(initial_temp_2^2) + initial_temp_1*initial_temp_2*dimension*population_size+seconds, data=joint_base_taskset_with_die2)
 
 base_time_model <- glm(seconds ~ dimension*population_size + initial_temp_1*initial_temp_2, data=joint_base_taskset_with_die2)
@@ -100,7 +100,8 @@ library(equatiomatic)
 extract_eq(initial_base_model, wrap = TRUE,
            use_coefs = TRUE,
         raw_indices = TRUE,
-        terms_per_line = 3,
+        terms_per_line = 2,
+        env="equation*",
         swap_var_names = c(
     "initial_temp_1"  = "T1",
     "I(initial_temp_2^2)" = "T2^2",
@@ -120,11 +121,13 @@ variance_explained_system_percent <- round(variance_anova_initial, 2)
 In order to understand the dependence of our measurement on the system operating conditions, we create a statistical model in two stages. The first stage models the running time $R$ using a generalized linear model {\sf glm} on the rest of the parameters; the residuals are then extracted, so that the $R$ parameter contains only non-explained variance. Then a second model that includes all parameters is created, again using {\sf glm}
 This is shown in Equation \ref{eq: eq1}. Since there are so many samples, all terms are significant, including the algorithm parameters, but the interesting issue here is how much of the variance is explained by these. In fact, die temperatures and time explain
 \Sexpr{variance_explained_system_percent}\%
-of the variance. In this small workload, there is indeed little room for actual algorithm parameters. Our stated objective is, as indicated, to find a way to constrain the dependence of our energy measurements on the operating conditions so that we can measure, with a higher precision, the consumption of two different configurations and present it in an actionable way. And this first model allows us to understand better how the operational context works; there are two negative terms on the square of temperatures: the system will be actively trying to turn down the amount of energy spent when the temperature is going up, and it will do so depending on the die: if the temperature of the second die goes up, it will more actively act to reduce it. This can be seen also on the positive dependence on the linear temperature term: the coefficient is bigger for $T_2$, the temperature of the second die: if it is higher, it is because more processes are running on it, and it will spend more energy because it takes longer. Time is always important: every second more will consume around 200 Joules (without taking into account other temperature terms, of course). We can already affirm that if the system temperature goes up, over all if it does in the second die, the system will act so that it eventually consumes less; however, the analysis of variance implies that in this admittedly very small workload algorithm parameters are two orders of magnitude less important than the operating context.
+of the variance. In this small workload, there is indeed little room for actual algorithm parameters.
+
+Our stated objective is, as indicated, to find a way to constrain the dependence of our energy measurements on the operating conditions so that we can measure, with a higher precision, the consumption of two different configurations and present it in an actionable way. And this first model allows us to understand better how the operational context works; there are two negative terms on the square of temperatures: the system will be actively trying to turn down the amount of energy spent when the temperature is going up, and it will do so depending on the die: if the temperature of the second die goes up, it will more actively act to reduce it. This can be seen also on the positive dependence on the linear temperature term: the coefficient is bigger for $T_2$, the temperature of the second die: if it is higher, it is because more processes are running on it, and it will spend more energy because it takes longer. Time is always important: every second more will consume around 200 Joules (without taking into account other temperature terms, of course). We can already affirm that if the system temperature goes up, over all if it does in the second die, the system will act so that it eventually consumes less; however, the analysis of variance implies that in this admittedly very small workload algorithm parameters are two orders of magnitude less important than the operating context.
 
 Although this model of the baseline runs might give us an initial idea of how temperature and power/frequency shape energy consumption, our interest is really in examining how much the workload actually spends.
 
-<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.env="figure*", fig.cap="Workload energy consumption for the baseline experiments", fig.height=3 >>=
+<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments", fig.height=3 >>=
 load("data/europar_die1_workload.rds")
 load("data/europar_taskset_die2_processed.rds")
 
@@ -137,25 +140,17 @@ workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2*dimen
 initial_workload$residual_delta_seconds <- residuals(workload_time_model)
 
 initial_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
+anova_initial_workload_model <- anova(initial_workload_model, test="F")
 
-extract_eq(initial_workload_model, wrap = TRUE,
-           use_coefs = TRUE,
-        raw_indices = TRUE,
-        terms_per_line = 3,
-        swap_var_names = c(
-    "initial_temp_1"  = "T1",
-    "I(initial_temp_2^2)" = "T2^2",
-    "initial_temp_2"  = "T2",
-    "I(initial_temp_1^2)" = "T1^2",
-    "dimension"  = "D",
-    "population_size" = "P",
-    "evaluations" ="F",
-    "residual_delta_seconds" = "R"
-  ), label="eq2" )
+sum_F_anova_initial_workload_model <- sum(anova_initial_workload_model$F[2:nrow(anova_initial_workload_model)])
+variance_anova_initial_workload <- 100*(anova_initial_workload_model$F[2]+anova_initial_workload_model$F[3]+anova_initial_workload_model$F[7])/sum_F_anova_initial_workload_model
+variance_explained_system_percent_workload <- round(variance_anova_initial_workload, 2)
 @
 
+We process workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithym, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies.
 
-<<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
+
+<<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.height=3 >>=
 load("data/icsm_hot_first.rds")
 icsme_hot_base <- icsm_hot_first[ startsWith(icsm_hot_first$work,"base-"), ]
 icsme_hot_base$dimension <- as.factor(icsme_hot_base$dimension)
@@ -170,6 +165,8 @@ Again, to have an initial idea of the behavior of this strategy, we create a mod
 But our main focus is to assess how actual workload consumption works.
 %
 <<icsme.hot.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the hot die strategy", fig.env="figure*", fig.height=3 >>=
+source("R/process_deltas.R")
+library(dplyr)
 icsme_hot_workload <- process_deltas(icsm_hot_first)
 icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
 icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
@@ -199,12 +196,6 @@ kable( icsme_hot_summary,
 @
 
 If we compare Table \ref{tab:icsme.hot.table} with  Table \ref{tab:icsme.comparison}, we can see that in most cases the trimmed mean is better. Since we have already established that most of the variance is explained by running time, this means that, effectively, hot-first strategy reduces running time by assigning it to the "hottest", that is, the $P$ cores, whenever possible. The importance of the quadratic term on temperature implies that, when the temperature is too high, the system will reduce frequency, again increasing the time needed to run the workload: however, apparently this strategy is more fine-grained than running in lower-frequency cores, making consumption slightly lower in most cases.
-
-<<icsme.hot.plot, echo=FALSE, message=FALSE, warning=F, fig.cap="Predicted workload energy consumption for the hot-first strategy", fig.height=4 >>=
-plot_predictions(icsme_hot_workload_model, condition = c("initial_temp","population_size", "dimension"))+
-  geom_point(data=icsme_hot_workload, aes(x=initial_temp,y=delta_PKG,fill=population_size), shape=21, alpha=0.5, inherit.aes=F, stroke=NA) +
-  theme_minimal() + labs(x="Initial Temperature", y="Workload Energy Consumption (Delta PKG)")
-@
 
 In this Figure \ref{fig:icsme.hot.plot} we show again how, for different problem sizes the size of the population in the population-based algorithm should be chosen based on the most probable temperature. Again, the scenario this draws is relatively complex for a decision: depending on the temperature, a big or small population will be more {\em green}. However, the model also allows what difference will it make: except for very high temperatures, the overall difference will be just a few joules. This leaves the scientist freedom to play with whatever figure makes the best of the algorithm.
 
