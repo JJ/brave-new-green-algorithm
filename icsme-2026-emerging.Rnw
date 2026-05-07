@@ -87,7 +87,7 @@ ggplot(joint_base_taskset_with_die2, aes(x=seconds,y=PKG, color=initial_temp)) +
 
 As a baseline, we have run a series of experiments, in three different batches: one using a {\em natural} assignment of process to dies, the other two restricting the process either to die 1 (which would have the $P$-cores) or 2 (with the $E$ cores). For the initial analysis we will consider the $B$ and $W$ runs different workloads: the energy consumption of the $B$ runs should have a minimal dependence on algorithm parameters or problem size. This is intended as an initial exploration of the statistical models with a workload with a very small dependence on the algorithm parameters. We chart energy consumed vs. time in Figure \ref{fig:icsme.base}.
 
-<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.env="figure*", fig.height=3 >>=
+<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.height=3 >>=
 initial_base_model <- glm(PKG ~ I(initial_temp_1^2)*I(initial_temp_2^2) + initial_temp_1*initial_temp_2*dimension*population_size+seconds, data=joint_base_taskset_with_die2)
 
 base_time_model <- glm(seconds ~ dimension*population_size + initial_temp_1*initial_temp_2, data=joint_base_taskset_with_die2)
@@ -112,187 +112,48 @@ extract_eq(initial_base_model, wrap = TRUE,
   ), label="eq1" )
 
 sum_F_anova_initial_base_model_residualized <- sum(anova_initial_base_model_residualized$F[2:nrow(anova_initial_base_model_residualized)])
-variance_anova_initial <- 100*(anova_initial_base_model_residualized$F[2]+anova_initial_base_model_residualized$F[3]+anova_initial_base_model_residualized$F[6])/sum_F_anova_initial_base_model_residualized
 
+variance_anova_initial <- 100*(anova_initial_base_model_residualized$F[2]+anova_initial_base_model_residualized$F[3]+anova_initial_base_model_residualized$F[6])/sum_F_anova_initial_base_model_residualized
+variance_explained_system_percent <- round(variance_anova_initial, 2)
 @
 
 In order to understand the dependence of our measurement on the system operating conditions, we create a statistical model in two stages. The first stage models the running time $R$ using a generalized linear model {\sf glm} on the rest of the parameters; the residuals are then extracted, so that the $R$ parameter contains only non-explained variance. Then a second model that includes all parameters is created, again using {\sf glm}
-This is shown in Equation \ref{eq: eq1}. Since there are so many samples, all terms are significant, including the algorithm parameters, but the interesting issue here is how much of the variance is explained by these. In fact, die temperatures and time explain \Sexpr{round(variance_anova_initial, 2)}\% of the variance. In this small workload, there is indeed little room for actual algorithm parameters. Our stated objective is, as indicated, to find a way to constrain the dependence of our energy measurements on the operating conditions so that we can measure, with a higher precision, the consumption of two different configurations and present it in an actionable way. And this first model allows us to understand better how the operational context works; there are two negative terms on the square of temperatures: the system will be actively trying to turn down the amount of energy spent when the temperature is going up, and it will do so depending on the die: if the temperature of the second die goes up, it will more actively act to reduce it. This can be seen also on the positive dependence on the linear temperature term: the coefficient is bigger for $T_2$, the temperature of the second die: if it is higher, it is because more processes are running on it, and it will spend more energy because it takes longer. Time is always important: every second more will consume around 200 Joules (without taking into account other temperature terms, of course). We can already affirm that if the system temperature goes up, over all if it does in the second die, the system will act so that it eventually consumes less; however, the analysis of variance implies that in this admittedly very small workload algorithm parameters are two orders of magnitude less important than the operating context.
+This is shown in Equation \ref{eq: eq1}. Since there are so many samples, all terms are significant, including the algorithm parameters, but the interesting issue here is how much of the variance is explained by these. In fact, die temperatures and time explain
+\Sexpr{variance_explained_system_percent}\%
+of the variance. In this small workload, there is indeed little room for actual algorithm parameters. Our stated objective is, as indicated, to find a way to constrain the dependence of our energy measurements on the operating conditions so that we can measure, with a higher precision, the consumption of two different configurations and present it in an actionable way. And this first model allows us to understand better how the operational context works; there are two negative terms on the square of temperatures: the system will be actively trying to turn down the amount of energy spent when the temperature is going up, and it will do so depending on the die: if the temperature of the second die goes up, it will more actively act to reduce it. This can be seen also on the positive dependence on the linear temperature term: the coefficient is bigger for $T_2$, the temperature of the second die: if it is higher, it is because more processes are running on it, and it will spend more energy because it takes longer. Time is always important: every second more will consume around 200 Joules (without taking into account other temperature terms, of course). We can already affirm that if the system temperature goes up, over all if it does in the second die, the system will act so that it eventually consumes less; however, the analysis of variance implies that in this admittedly very small workload algorithm parameters are two orders of magnitude less important than the operating context.
 
 Although this model of the baseline runs might give us an initial idea of how temperature and power/frequency shape energy consumption, our interest is really in examining how much the workload actually spends.
 
-<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Baseline energy consumption for workload runs", fig.env="figure*", fig.height=3 >>=
+<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.env="figure*", fig.cap="Workload energy consumption for the baseline experiments", fig.height=3 >>=
 load("data/europar_die1_workload.rds")
-ggplot(europar_die1_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
+load("data/europar_taskset_die2_processed.rds")
+
+initial_workload <- rbind( europar_die1_workload, europar_taskset_die2_processed )
+ggplot(initial_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
   scale_color_viridis_c(trans=custom_pow) +
   geom_point() + theme_minimal() + labs(x="Workload Time (s)", y="Workload Energy Consumption (PKG)", color="Initial Temperature")
-@
 
-We plot in Figure \ref{fig:icsme.baseline.workload} the result of plotting $\Delta E$ vs. $\delta r$, with color again related to temperature. The dispersion is quite high, which should be expected. We can also observe that in a few cases $\Delta E$ is very low or negative, due to sudden change of operating conditions between the $B$ and $W$ runs. Although we understand this is a non-physical result, it is a consequence of the system behavior; we need to perform many measurements to mitigate these issues, mainly in the statistical processing phase. At any rate, the dependence of energy measurements on running time, modified by the temperature is relatively clear. We will again use a generalized linear model for this, including in this case all the algorithm's parameters.
+workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
+initial_workload$residual_delta_seconds <- residuals(workload_time_model)
 
-<<icsme.baseline.workload.model, echo=FALSE, message=FALSE, fig.cap="Model of workload energy consumption as a function of time and temperature", fig.env="figure*", fig.height=3 >>=
-initial_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=europar_die1_workload)
+initial_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
+
 extract_eq(initial_workload_model, wrap = TRUE,
            use_coefs = TRUE,
         raw_indices = TRUE,
-        terms_per_line = 2,
+        terms_per_line = 3,
         swap_var_names = c(
-          "delta_PKG" = "Delta E",
-    "initial_temp"  = "T",
-    "I(initial_temp^2)" = "T^2",
+    "initial_temp_1"  = "T1",
+    "I(initial_temp_2^2)" = "T2^2",
+    "initial_temp_2"  = "T2",
+    "I(initial_temp_1^2)" = "T1^2",
     "dimension"  = "D",
     "population_size" = "P",
-    "evaluations" = "F",
-    "delta_seconds" = "Delta R"
+    "evaluations" ="F",
+    "residual_delta_seconds" = "R"
   ), label="eq2" )
-
-anova_workload_model <- anova(initial_workload_model, test="F")
 @
 
-The model is shown in Equation \ref{eq: eq2}. Most terms are significant in this case; it is important to notice, however, which ones are not:\begin{itemize}
-\item P=400 is not significantly different from P=200, except at the 10\% level when it interacts with $D=5$ and with $D=10$ and T. No other interaction or individual is significant.
-\item $F$, the number of evaluations, is only significant at the 10\% level by itself. The coefficient for it is very low, however, implying that at the number of evaluations these algorithms are reaching it is difficult to actually influence the energy consumption above and beyond operating conditions.
-\end{itemize}
-
-What is interesting to analyze here is how much of the variance is explained by the different terms. We apply the ANOVA (analysis of variance) method to the model, finding that the higher Fisher coefficient is for the $\Delta R$ term, which by itself explains \Sexpr{round(100*anova_workload_model$F[7]/sum(anova_workload_model$F[2:nrow(anova_workload_model)]),2)}\% of the variance. This is an issue that leaves relatively little room for the algorithm parameters to influence energy consumption.
-
-<<icsme.workload.die2, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for processes placed on the second die", fig.env="figure*", fig.height=3 >>=
-load("data/europar_taskset_die2_processed.rds")
-initial_die2_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=europar_taskset_die2_processed)
-anova_die2_workload_model <- anova(initial_die2_workload_model, test="F")
-@
-
-As indicated, we construct a separate model for the third series, in which processes are pinned to the second core using {\sf taskset}; in this case, $\Delta R$ is able to explain \Sexpr{round(100*anova_die2_workload_model$F[7]/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance. This is undoubtedly a better result; however, if we add the independent temperature terms, they will be able to explain \Sexpr{round(100*sum(anova_die2_workload_model$F[c(2,3,7)])/sum(anova_die2_workload_model$F[2:nrow(anova_die2_workload_model)]),2)}\% of the variance, not allowing enough space for comparing different configurations of the algorithm, at least for this admittedly small workload. This does not prevent scientists from comparing two different configurations of the algorithm looking for energy savings; however, the influence of the operating environment will always need to be taken into account so that instead of working with averages of measurements, we will need to compare the different models obtained for the different configurations in most cases. That is to say that since energy-aware optimization of the algorithm is going to be performed at different levels, we will need to understand if they change the running time in which case there is a high probability that measured energy will change accordingly or they change the model of energy consumption, in which case we will need to assess if parameter values are significant and what percentage of the variance they explain.
-This is why we need to understand also the temperature dynamics.
-%
-<<icsme.temperature, echo=FALSE, message=FALSE, fig.cap="Delta temperature vs. initial temperature", fig.env="figure*", fig.height=3 >>=
-load("data/icsme_delta_temperatures.rds")
-temperature_model <- glm(delta_temperature ~ initial_temperature*PKG*running_time+I(initial_temperature^2), data = delta_temperatures)
-
-anova_temperature_model <- anova(temperature_model)
-
-PKG_levels <- quantile( delta_temperatures$PKG, probs = c(0.1, 0.5, 0.9) )
-new_data <- expand.grid(
-  initial_temperature = seq(min(delta_temperatures$initial_temperature), max(delta_temperatures$initial_temperature), length.out = 100),
-  PKG = PKG_levels,
-  running_time = median(delta_temperatures$running_time)
-)
-
-new_data$predicted_delta_temperature <- predict(temperature_model, newdata = new_data)
-names(new_data)[names(new_data) == "PKG"] <- "PKG_levels"
-new_data$PKG_levels <- factor(new_data$PKG_levels, labels = c("Low PKG", "Medium PKG", "High PKG"))
-names(new_data)[names(new_data) == "predicted_delta_temperature"] <- "delta_temperature"
-ggplot(new_data, aes(x = initial_temperature, y = delta_temperature, color=PKG_levels)) +
-  geom_line() +
-  scale_fill_viridis_c(trans=custom_pow) +
-  geom_point(data = delta_temperatures, aes(x = initial_temperature, y = delta_temperature, fill=PKG ),
-             shape=21,inherit.aes=F, alpha=0.5, stroke=NA, size=2) +
-  labs( title = "Predicted Delta Temperature vs Initial Temperature",
-    x = "Initial Temperature",
-    y = "Predicted Delta Temperature",
-    color = "PKG Level"
-  ) + theme_minimal()
-
-@
-%
-We have extracted from the three sets of experiments above the temperature before and after every $W$ experiment, and computed the $\Delta$. Then we have modeled the dependence of the increment of temperature on the initial temperature, the PKG energy consumption and the running time and their interaction, as well as a quadratic term on temperature. The results of this model are shown in Figure \ref{fig:icsme.temperature}, where the increment in temperature is plotted against the initial temperature, with dots colored according to the PKG energy consumption the process has spent. All coefficients except for the interaction between PKG and $T$ are significant, but it is more interesting to analyze the variance, which yields that \Sexpr{round(100*anova_temperature_model$F[2]/sum(anova_temperature_model$F[2:nrow(anova_temperature_model)]),2)}\% of the variance is explained by the initial temperature, and  \Sexpr{round(100*sum(anova_temperature_model$F[c(2,3)])/sum(anova_temperature_model$F[2:nrow(anova_temperature_model)]),2)}\% by $T$ and PKG together. This is why the curves for low (10\%), median (50\%) and high (90\%) PKG are also plotted.
-
-What we see is that, in many cases, the system will manage to lower the temperature while running the workload; this is increasingly less likely when the initial temperature rises. When it does, two things happen: we already know that energy consumption will increase with initial temperature, so that increase will feedback into the increment of temperature by $W$ that is observed over 40º. But, more importantly, the quadratic term on the temperature is positive, which is why we see the parabolic regime of all three model curves, which also matches observed regimes in more general studies. In a nutshell, high initial temperature will provoke higher energy consumption, but also increment of temperatures for the next process, in a way that is consistent with the hysteretic effect observed by \cite{cotta25}.
-
-The operating environment will, then, have an influence on the measured PKG energy consumption, but these also will be influenced by the process and its variables. By residualizing these two variables, we will find out what is the effective part of the variance that is influenced by algorithm parameters and which by the non-controlled part of the operating environment.
-
-<<icsme.base.residualization, echo=FALSE, message=FALSE, fig.cap="Baseline energy consumption for processes placed on the first die, residualized by time", fig.env="figure*", fig.height=3 >>=
-base_time_model <- glm(seconds ~ dimension*population_size, data=joint_base_taskset_with_die2)
-joint_base_taskset_with_die2$residual_seconds <- residuals(base_time_model)
-
-base_temperature_model <- glm( initial_temp ~ dimension*population_size, data=joint_base_taskset_with_die2)
-joint_base_taskset_with_die2$residual_temperature <- residuals(base_temperature_model)
-
-residualized_base_model <- glm(PKG ~ I(residual_temperature^2) + residual_temperature*dimension*population_size+residual_seconds, data=joint_base_taskset_with_die2)
-anova_residualized_base_model <- anova(residualized_base_model, test="F")
-@
-
-It should be noted that although the {\em initial} temperature is taken obviously before the execution of every process, final temperature is going to be correlated with it; besides, we can anyway see if there's a correlation and residualize it. We effectively find a strong correlation for $D=10$, but we are more interested anyway in the residuals. We make another model of the dependence of running time on algorithm parameters, with the same kind of dependence. We make then a new model that used residualized temperatures and running time, and analyze the variance. This analysis of variance makes all terms significant at the 5\% level at least, but the temperature and running time terms, residualized, explain \Sexpr{sum(round(100*anova_residualized_base_model$F[c(2,3,6)]/sum(anova_residualized_base_model$F[2:nrow(anova_residualized_base_model)]),2))}\% of the variance. The operating environment is essentially explaining energy consumption. It is going to be extremely difficult for any optimization in the configuration to overcome this {\em noise}, since the noise-to-signal ration is in the two figures.
-
-This begs for a experimental protocol that acts on temperatures, instead of doing it directly on running time via core assignment. Since it is impossible to assess {\em a priori} what will be the effect, we will have to test and model different configurations. Thus, we will try a new strategy: assigning the process to the cooler die. We will again perform a series of 4 runs, separated by random time and also after several reboots.
-
-<<icsme.balanced, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the cooler die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
-load("data/icsme_balanced.rds")
-icsme_balanced_base <- icsme_balanced[ startsWith(icsme_balanced$work,"base-"), ]
-
-icsme_balanced_base$dimension <- as.factor(icsme_balanced_base$dimension)
-icsme_balanced_base$population_size <- as.factor(icsme_balanced_base$population_size)
-icsme_balanced_base_model <- glm(PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds, data=icsme_balanced_base)
-
-anova_balanced_base_model <- anova(icsme_balanced_base_model, test="F")
-library(marginaleffects)
-plot_predictions(icsme_balanced_base_model, condition = c("initial_temp","dimension"))+
-  geom_point(data=icsme_balanced_base, aes(x=initial_temp,y=PKG,fill=dimension),shape=21,alpha=0.5, stroke=NA, inherit.aes=F) +
-  theme_minimal() + labs(x="Initial Temperature", y="Energy Consumption (PKG)", title="Predicted Energy Consumption vs Initial Temperature") +
-  ylim(250,800)
-
-icsme_balanced_base_seconds <- glm(seconds ~ dimension*population_size, data=icsme_balanced_base)
-icsme_balanced_base$residual_seconds <- residuals(icsme_balanced_base_seconds)
-icsme_balanced_base_model_residualized <- glm(PKG ~ I(initial_temp^2 ) + initial_temp*dimension*population_size+residual_seconds, data=icsme_balanced_base)
-anova_balanced_base_model_residualized <- anova(icsme_balanced_base_model_residualized, test="F")
-
-@
-
-We will first work with the $B$ runs to find the overall relationship with temperature and running time, as well as the effect of algorithm parameters on the result; as shown above, the initial model did not show any effect of either problem size ($D$) or algorithm parameters ($P$) or significant contribution to the model. However, in this case the effect of problem size $D = 10$ is significant at the 10\% level; we can then plot different fit curves by level in Figure \ref{fig:icsme.balanced}, which also represents energy consumption vs. temperature. The GLM shows a significant contribution of the quadratic $T$ term, which in facts contributes the \Sexpr{round(100*anova_balanced_base_model$F[2]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\% of the variance. There is still a strong part of the variance in energy consumption that can be attributed to time, namely, \Sexpr{round(100*anova_balanced_base_model$F[6]/sum(anova_balanced_base_model$F[2:nrow(anova_balanced_base_model)]),2)}\%; however, as indicated above, running time is not outside the control of the scientist: it can be improved by optimizing the performance of the algorithm implementation. It is true that not all performance optimizations automatically imply a decrease of the average power used, which is why we will need to always measure and model how these performance changes will affect energy consumption at different temperature levels.
-
-Although this model is interesting for  understanding the influence of the operating context, we are more focused in seeing how it affects the workload measures.
-
-<<icsme.balanced.workload, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload energy consumption for the balanced temperature strategy", fig.height=4 >>=
-library(dplyr)
-source("R/process_deltas.R")
-icsme_balanced_workload <- process_deltas(icsme_balanced)
-icsme_balanced_workload$dimension <- as.factor(icsme_balanced_workload$dimension)
-icsme_balanced_workload$population_size <- as.factor(icsme_balanced_workload$population_size)
-
-icsme_balanced_workload_model <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations*delta_seconds, data=icsme_balanced_workload)
-
-anova_icsme_balanced_workload_model <- anova(icsme_balanced_workload_model, test="F")
-
-plot_predictions(icsme_balanced_workload_model, condition = c("initial_temp","population_size", "dimension"))+
-  geom_point(data=icsme_balanced_workload, aes(x=initial_temp,y=delta_PKG,fill=population_size), shape=21, alpha=0.5, inherit.aes=F, stroke=NA) +
-  theme_minimal() + labs(x="Initial Temperature", y="Workload Energy Consumption (Delta PKG)", title="Predicted Workload Energy Consumption vs Initial Temperature") +
-  ylim(-100,400)
-
-icsme_balanced_time_model <- glm(delta_seconds ~ dimension*population_size+evaluations, data=icsme_balanced_workload)
-icsme_balanced_workload$residual_seconds <- residuals(icsme_balanced_time_model)
-icsme_balanced_workload_model_residualized <- glm(delta_PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+evaluations+residual_seconds, data=icsme_balanced_workload)
-
-@
-
-A model of the workload yields similar results as those found for the baseline. There is again a significant dependence on $D=10$, by itself and combined with $P=400$; this is interesting, because this method allows these problem and algorithm parameters to be measured and compared, at least for some of them. As Figure \ref{fig:icsme.balanced.workload} shows, with this method we can already observe how population influences energy readings in a different way depending on the temperature, at least for $D=5,10$. The fit curves cross for a value of $T$ between 35º and 40º, indicating that depending on the initial temperature, one population or the other will be more energy efficient.
-
-An analysis of the variance explained by the model terms again shows that the quadratic T term is important, but the one that explains more variance is $\Delta R$: \Sexpr{round(100*anova_icsme_balanced_workload_model$F[7]/sum(anova_icsme_balanced_workload_model$F[2:nrow(anova_icsme_balanced_workload_model)]),2)}\% is due to the difference between the running time of the $W$ and surrounding $B$ runs. While, as indicated above, this is not bad {\em per se}, since it would indicate that optimizing performance would be a good strategy for decreasing energy consumption, it might indicate that the measurements are actually consuming more energy due to them running in low-power cores or low-power states in the cooler die, which is usually the $E$ die, for more time. Although a priori this would be a good strategy, the fact that we will be also measuring the energy spent by the $P$ die at the same time, which is impossible to separate, makes this a relatively risky strategy. We would need to actually compare energy energy measured by this strategy with the baseline, to find out if that is the case.
-
-<<icsme.comparison, echo=FALSE, message=FALSE, warning=F, fig.cap="Comparison of energy consumption between the balanced strategy and the baseline", fig.env="figure*", fig.height=3 >>=
-europar_die1_workload %>% group_by(dimension, population_size) %>%
-  summarise( mean_energy = mean(delta_PKG),
-             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
-            iqr_energy = IQR(PKG)) -> europar_die1_summary
-
-icsme_balanced_workload %>% group_by(dimension, population_size) %>%
-  summarise( mean_energy = mean(delta_PKG),
-             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
-            iqr_energy = IQR(PKG)) -> icsme_balanced_summary
-
-comparison_summary <- merge(europar_die1_summary, icsme_balanced_summary, by=c("dimension", "population_size"), suffixes = c("_baseline", "_balanced"))
-
-library(kableExtra)
-comparison_summary %>%
-  kable(
-    col.names = c("D", "P", "Baseline: Mean", "Trim Mean", "IQR", "Balanced: Mean", "Trim Mean", "IQR"),
-    table.env='table*',
-    caption = "Comparison of energy consumption between the baseline and balanced strategies"
-    )
-@
-
-Table \ref{tab:icsme.comparison}, which compares $\Delta E$ (in Joules) for the first two series of the baseline measurements (which run mostly on die 1) and the current one. It shows that although in general means and outlier-proof trimmed means are in the same area, in some cases, and notably in the significant factor $D=10$, they consume slightly more. Since our intention is to generalize from measurement strategy to experimental strategy, this would be an unwanted outcome. We should have to look for another strategy.
-
-The new experiment will revert the terms of the previous one: it will run the process on the hotter die of the two. This way, we rely on system mechanisms to prevent overheating, on the hypothesis that new processes would preferably run on the $P$ core, thus taking less time and thus consuming less energy. That is the justification for the experiment, but we will still need to run the experiment.
 
 <<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.env="figure*", fig.height=3 >>=
 load("data/icsm_hot_first.rds")
