@@ -143,12 +143,11 @@ initial_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2*dimens
 anova_initial_workload_model <- anova(initial_workload_model, test="F")
 
 sum_F_anova_initial_workload_model <- sum(anova_initial_workload_model$F[2:nrow(anova_initial_workload_model)])
-variance_anova_initial_workload <- 100*(anova_initial_workload_model$F[2]+anova_initial_workload_model$F[3]+anova_initial_workload_model$F[7])/sum_F_anova_initial_workload_model
+variance_anova_initial_workload <- 100*(anova_initial_workload_model$F[2]+anova_initial_workload_model$F[3]+anova_initial_workload_model$F[7]+anova_initial_workload_model$F[8]+anova_initial_workload_model$F[9])/sum_F_anova_initial_workload_model
 variance_explained_system_percent_workload <- round(variance_anova_initial_workload, 2)
 @
 
-We process workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithym, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies.
-
+We process experimental workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies. We perform again the model in two phases: first, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. The variance explained by the system is around \Sexpr{variance_explained_system_percent_workload}\%, still very high. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
 
 <<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.height=3 >>=
 load("data/icsm_hot_first.rds")
