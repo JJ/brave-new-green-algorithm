@@ -136,18 +136,31 @@ ggplot(initial_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
   scale_color_viridis_c(trans=custom_pow) +
   geom_point() + theme_minimal() + labs(x="Workload Time (s)", y="Workload Energy Consumption (PKG)", color="Initial Temperature")
 
-workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
+workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
 initial_workload$residual_delta_seconds <- residuals(workload_time_model)
 
-initial_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
+initial_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2+dimension*population_size*evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= initial_workload)
 anova_initial_workload_model <- anova(initial_workload_model, test="F")
 
 sum_F_anova_initial_workload_model <- sum(anova_initial_workload_model$F[2:nrow(anova_initial_workload_model)])
-variance_anova_initial_workload <- 100*(anova_initial_workload_model$F[2]+anova_initial_workload_model$F[3]+anova_initial_workload_model$F[7]+anova_initial_workload_model$F[8]+anova_initial_workload_model$F[9])/sum_F_anova_initial_workload_model
+
+variance_anova_initial_workload <- 100*(anova_initial_workload_model$F[2]+
+                                          anova_initial_workload_model$F[3]+
+                                          anova_initial_workload_model$F[7]+
+                                          anova_initial_workload_model$F[8]+
+                                          anova_initial_workload_model$F[9]+
+                                          anova_initial_workload_model$F[10]+
+                                          anova_initial_workload_model$F[14]
+    )/sum_F_anova_initial_workload_model
+
+variance_anova_T_initial_workload <- 100*(anova_initial_workload_model$F[2]+anova_initial_workload_model$F[3]+anova_initial_workload_model$F[8]+anova_initial_workload_model$F[9]+anova_initial_workload_model$F[10]+
+                                          anova_initial_workload_model$F[14])/sum_F_anova_initial_workload_model
+
 variance_explained_system_percent_workload <- round(variance_anova_initial_workload, 2)
+variance_explained_T_system_percent_workload <- round(variance_anova_T_initial_workload, 2)
 @
 
-We process experimental workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies. We perform again the model in two phases: first, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. The variance explained by the system is around \Sexpr{variance_explained_system_percent_workload}\%, still very high. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
+We process experimental workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies. We perform again the model in two phases: first, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. The variance explained by the system is around \Sexpr{variance_explained_system_percent_workload}\%, of which \Sexpr{variance_explained_T_system_percent_workload}\% is explained by the temperature terms. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
 
 <<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload delta E vs. delta R, colorized by average initial temperature for the {\\protect\\em hot-first strategy}.", fig.height=3 >>=
 load("data/icsm_hot_first.rds")
@@ -157,7 +170,7 @@ icsme_hot_workload <- process_deltas(icsm_hot_first)
 icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
 icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
 
-hot_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+dimension*population_size+evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
+hot_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
 icsme_hot_workload$residual_delta_seconds <- residuals(hot_workload_time_model)
 
 icsme_hot_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2+dimension*population_size*evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
@@ -166,6 +179,17 @@ anova_initial_workload_model <- anova(initial_workload_model, test="F")
 ggplot(icsme_hot_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
   scale_color_viridis_c(trans=custom_pow) +
   geom_point() + theme_minimal() + labs(x="Workload Time (s)", y="Workload Energy Consumption (PKG)", color="Initial Temperature")
+
+anova_icsme_hot_workload_model <- anova(icsme_hot_workload_model)
+sum_F_anova_icsme_hot_workload_model <- sum(anova_icsme_hot_workload_model$F[2:nrow(anova_icsme_hot_workload_model)])
+
+variance_anova_icsme_hot_workload <- 100*(anova_icsme_hot_workload_model$F[2]+anova_icsme_hot_workload_model$F[3]+anova_icsme_hot_workload_model$F[7]+anova_icsme_hot_workload_model$F[8]+anova_icsme_hot_workload_model$F[9]+anova_icsme_hot_workload_model$F[10]+
+                                          anova_icsme_hot_workload_model$F[14])/sum_F_anova_icsme_hot_workload_model
+
+variance_anova_T_icsme_hot_workload <- 100*(anova_icsme_hot_workload_model$F[2]+anova_icsme_hot_workload_model$F[3]+anova_icsme_hot_workload_model$F[8]+anova_icsme_hot_workload_model$F[9]+anova_icsme_hot_workload_model$F[10]+
+                                          anova_icsme_hot_workload_model$F[14])/sum_F_anova_icsme_hot_workload_model
+
+variance_explained_system_percent_workload <- round(variance_anova_initial_workload, 2)
 @
 %
 
