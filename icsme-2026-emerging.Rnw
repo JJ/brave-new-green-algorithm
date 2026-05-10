@@ -189,36 +189,54 @@ variance_anova_icsme_hot_workload <- 100*(anova_icsme_hot_workload_model$F[2]+an
 variance_anova_T_icsme_hot_workload <- 100*(anova_icsme_hot_workload_model$F[2]+anova_icsme_hot_workload_model$F[3]+anova_icsme_hot_workload_model$F[8]+anova_icsme_hot_workload_model$F[9]+anova_icsme_hot_workload_model$F[10]+
                                           anova_icsme_hot_workload_model$F[14])/sum_F_anova_icsme_hot_workload_model
 
-variance_explained_system_percent_workload <- round(variance_anova_initial_workload, 2)
+variance_hot_explained_system_percent_workload <- round(variance_anova_icsme_hot_workload, 2)
+variance_hot_T_explained_system_percent_workload <- round( variance_anova_T_icsme_hot_workload, 2)
 @
 %
 
 So what we propose and are going to evaluate in this paper is to use a {\em run-to-idle} strategy. Using the same {\em sandwich} strategy we proposed above, we will set up the running script so that the next process is always run in the die that has the highest temperature using {\sf taskset}. This is a {\em run-to-idle} strategy is based on the negative quadratic terms of the model above that show that when the temperature is higher, energy consumption decreases thanks to the different mechanisms the system has to keep the temperature within certain bounds, that often include running the process in the most energy-efficient core within the die. After processing data to extract $E_w$ and averaging the temperature for the two dies, we plot $\Delta E$ vs $\Delta R$ in Figure \ref{fig:icsme.hot}. We can observe differences with respect to \ref{fig:icsme.baseline.workload}: the range is smaller, there are very few less-than-zero workload energy data points, meaning that this strategy decreases the probability of big shifts in operating conditions from one run to the next, and overall energy consumption is less spread and also generally less. It is interesting to note that our system under study is the same in both cases: it is the experimental protocol what has achieved these changes.
 
-We create again the two-stage model that includes operating conditions and algorithm parameters, resulting in a model where the number of fitness evaluations in the population-based algorithm is significant at the 90\% level; this implies that, if a different implementation or parametrization of the algorithm results in a different number of evaluations, the model will be able to tell us by how much every individual evaluation will contribute to energy consumption (at the level of confidence indicated, of course).
+We create again the two-stage model that includes operating conditions and algorithm parameters, resulting in a model where the number of fitness evaluations in the population-based algorithm is significant at the 90\% level; this implies that, if a different implementation or parametrization of the algorithm results in a different number of evaluations, the model will be able to tell us by how much every individual evaluation will contribute to energy consumption (at the level of confidence indicated, of course). With this new protocol, the variance explained by operating conditions amounts to \Sexpr{variance_hot_explained_system_percent_workload}\% of which \Sexpr{variance_hot_T_explained_system_percent_workload}\% is related to temperature. The difference is relatively small indeed, and the variance explained by temperature has increased. Did we gain anything with the new protocol?
 
+<<icsme.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing temperature of the second die for the baseline and hot-first strattegy">>=
+icsme_hot_workload$work <- "hot-first"
+initial_workload$work <- "baseline"
 
+icsme_combined <- rbind(icsme_hot_workload,initial_workload)
+combined_workload_time_model <- glm( delta_seconds ~  work*initial_temp_1*initial_temp_2+dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
+icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
 
+icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work, data=icsme_combined)
+icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work, data=icsme_combined)
 
-<<icsme.hot.equation, echo=FALSE, message=FALSE, warning=F, fig.cap="Model of workload energy consumption for the hot-first strategy", fig.env="figure*", fig.height=3 >>=
-extract_eq(icsme_hot_workload_model, wrap = TRUE,
-           use_coefs = TRUE,
-        raw_indices = TRUE,
-        terms_per_line = 2,
-        swap_var_names = c(
-          "delta_PKG" = "Delta E",
-    "initial_temp"  = "T",
-    "I(initial_temp^2)" = "T^2",
-    "dimension"  = "D",
-    "population_size" = "P",
-    "delta_seconds" = "Delta R",
-    "evaluations" = "F"
-  ), label="eq3" )
+icsme_combined_workload_model <- glm( delta_PKG ~  work*initial_temp_1*initial_temp_2+dimension*population_size*evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
+
+anova_combined_workload_model <- anova( icsme_combined_workload_model )
+
+ggplot(icsme_combined, aes(x = initial_temp_2, fill = work)) +
+  geom_density(alpha = 0.6) +
+  scale_fill_manual(values = c("baseline" = "#E69F00", "hot-first" = "#56B4E9")) +
+  geom_vline(aes(xintercept = mean(initial_temp_2[work == "baseline"])),
+             color = "#E69F00", linetype = "dashed", size = 1) +
+  geom_vline(aes(xintercept = mean(initial_temp_2[work == "hot-first"])),
+             color = "#56B4E9", linetype = "dashed", size = 1) +
+  labs(
+    title = "Thermal Impact: Hot-First Strategy significantly lowers T2",
+    subtitle = "Dashed lines represent the mean temperature for each strategy",
+    x = "Initial Temperature 2 (°C)",
+    y = "Density",
+    fill = "Strategy"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 @
 
-The model for $\Delta R$ is shown in Equation \ref{eq: eq3}. The quadratic term in the temperature is negative, but although the coefficient value is relatively small, it is going to be important when temperature increases. Unlike running time, it is a term that is not under our control, and in general, it will mean that the system will throttle the CPU lowering voltage and frequency; so even if it is significant, its importance lies more in understanding how the system works that in a real variable we can influence to lower energy consumption. On the other hand, making the system faster using energy-neutral micro-optimizations will have a bigger impact in  lowering energy requirement, due to the $\Delta R$ coefficient \Sexpr{round(icsme_hot_workload_model$coefficients["delta_seconds"],4)}. This complex relationship between population rebates simplistic approaches to energy optimization that simply say that energy consumption increases with population size \cite{population}. That would be true in some temperature ranges and for some values of the problem size; in most cases, however, the influence of the population in energy consumption will be obscured by many other factors, including, of course, the operating environment.
+We create a dataset that combines the initial ("baseline") and hot-first ("hot-first") workload data, and again we
 
-In general, this {\em hot-first} protocol seems to offer more room for comparison of different parameters, which is why it is the best choice in measuring energy consumption of software, especially algorithm implementations, under different configurations at different levels (parametrization, framework, versions).
+
+
+
+
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
