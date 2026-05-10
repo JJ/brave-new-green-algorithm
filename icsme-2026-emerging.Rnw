@@ -149,7 +149,7 @@ variance_explained_system_percent_workload <- round(variance_anova_initial_workl
 
 We process experimental workload data by subtracting from every $W_n$ run $(B_n + B_{n+1})2$. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies. We perform again the model in two phases: first, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. The variance explained by the system is around \Sexpr{variance_explained_system_percent_workload}\%, still very high. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
 
-<<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Base energy consumption for processes placed on the hotter die. Please note we have clipped the y axis at 800", fig.height=3 >>=
+<<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload delta E vs. delta R, colorized by average initial temperature for the {\\protect\\em hot-first strategy}.", fig.height=3 >>=
 load("data/icsm_hot_first.rds")
 source("R/process_deltas.R")
 library(dplyr)
@@ -157,32 +157,24 @@ icsme_hot_workload <- process_deltas(icsm_hot_first)
 icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
 icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
 
-hot_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
+hot_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+dimension*population_size+evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
 icsme_hot_workload$residual_delta_seconds <- residuals(hot_workload_time_model)
 
-hot_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2*dimension*population_size+evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
+icsme_hot_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2+dimension*population_size*evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_hot_workload)
 anova_initial_workload_model <- anova(initial_workload_model, test="F")
 
+ggplot(icsme_hot_workload, aes(x=delta_seconds,y=delta_PKG, color=initial_temp)) +
+  scale_color_viridis_c(trans=custom_pow) +
+  geom_point() + theme_minimal() + labs(x="Workload Time (s)", y="Workload Energy Consumption (PKG)", color="Initial Temperature")
 @
 %
 
-So what we propose and are going to evaluate in this paper is to use a {\em run-to-idle} strategy. Using the same {\em sandwich} strategy we proposed above, we will set up the running script so that the next process is always run in the die that has the highest temperature using {\sf taskset}. This is a {\em run-to-idle} strategy is based on the negative quadratic terms of the model above that show that when the temperature is higher, energy consumption decreases thanks to the different mechanisms the system has to keep the temperature within certain bounds, that apparently include running the process in the most energy-efficient core within the die.
+So what we propose and are going to evaluate in this paper is to use a {\em run-to-idle} strategy. Using the same {\em sandwich} strategy we proposed above, we will set up the running script so that the next process is always run in the die that has the highest temperature using {\sf taskset}. This is a {\em run-to-idle} strategy is based on the negative quadratic terms of the model above that show that when the temperature is higher, energy consumption decreases thanks to the different mechanisms the system has to keep the temperature within certain bounds, that often include running the process in the most energy-efficient core within the die. After processing data to extract $E_w$ and averaging the temperature for the two dies, we plot $\Delta E$ vs $\Delta R$ in Figure \ref{fig:icsme.hot}. We can observe differences with respect to \ref{fig:icsme.baseline.workload}: the range is smaller, there are very few less-than-zero workload energy data points, meaning that this strategy decreases the probability of big shifts in operating conditions from one run to the next, and overall energy consumption is less spread and also generally less. It is interesting to note that our system under study is the same in both cases: it is the experimental protocol what has achieved these changes.
 
-<<icsme.hot.table, echo=FALSE, message=FALSE, warning=F, fig.cap="Comparison of energy consumption between the hot-first strategy and the baseline", fig.env="table*", fig.height=3 >>=
-icsme_hot_workload %>% group_by(dimension, population_size) %>%
-  summarise( mean_energy = mean(delta_PKG),
-             trimmed_mean_energy = mean(delta_PKG, trim = 0.1),
-            iqr_energy = IQR(PKG)) -> icsme_hot_summary
+We create again the two-stage model that includes operating conditions and algorithm parameters, resulting in a model where the number of fitness evaluations in the population-based algorithm is significant at the 90\% level; this implies that, if a different implementation or parametrization of the algorithm results in a different number of evaluations, the model will be able to tell us by how much every individual evaluation will contribute to energy consumption (at the level of confidence indicated, of course).
 
-kable( icsme_hot_summary,
-       col.names = c("D", "P", "Hot-first: Mean", "Trim Mean", "IQR"),
-       caption = "Comparison of energy consumption between the baseline and hot-first strategies"
-       )
-@
 
-If we compare Table \ref{tab:icsme.hot.table} with  Table \ref{tab:icsme.comparison}, we can see that in most cases the trimmed mean is better. Since we have already established that most of the variance is explained by running time, this means that, effectively, hot-first strategy reduces running time by assigning it to the "hottest", that is, the $P$ cores, whenever possible. The importance of the quadratic term on temperature implies that, when the temperature is too high, the system will reduce frequency, again increasing the time needed to run the workload: however, apparently this strategy is more fine-grained than running in lower-frequency cores, making consumption slightly lower in most cases.
 
-In this Figure \ref{fig:icsme.hot.plot} we show again how, for different problem sizes the size of the population in the population-based algorithm should be chosen based on the most probable temperature. Again, the scenario this draws is relatively complex for a decision: depending on the temperature, a big or small population will be more {\em green}. However, the model also allows what difference will it make: except for very high temperatures, the overall difference will be just a few joules. This leaves the scientist freedom to play with whatever figure makes the best of the algorithm.
 
 <<icsme.hot.equation, echo=FALSE, message=FALSE, warning=F, fig.cap="Model of workload energy consumption for the hot-first strategy", fig.env="figure*", fig.height=3 >>=
 extract_eq(icsme_hot_workload_model, wrap = TRUE,
