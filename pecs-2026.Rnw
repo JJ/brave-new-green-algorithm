@@ -241,15 +241,15 @@ joint_base_taskset$Experiment <- "Die 1"
 
 joint_base_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
 
-ggplot(joint_base_with_die2, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
+# ggplot(joint_base_with_die2, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
 wilcox_test_energy <- wilcox.test(PKG ~ Experiment, data = joint_base_with_die2)
-ggplot(joint_base_with_die2, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
+# ggplot(joint_base_with_die2, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
 wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_base_with_die2)
-ggplot(joint_base_with_die2, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
+# ggplot(joint_base_with_die2, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_base_with_die2)
 @
 
-Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
+% Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
 %
 <<europar.die2.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.">>=
 joint_base_with_die2_summary <- joint_base_with_die2 %>%
