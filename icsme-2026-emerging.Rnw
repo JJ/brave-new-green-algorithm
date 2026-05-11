@@ -198,7 +198,7 @@ So what we propose and are going to evaluate in this paper is to use a {\em run-
 
 We create again the two-stage model that includes operating conditions and algorithm parameters, resulting in a model where the number of fitness evaluations in the population-based algorithm is significant at the 90\% level; this implies that, if a different implementation or parametrization of the algorithm results in a different number of evaluations, the model will be able to tell us by how much every individual evaluation will contribute to energy consumption (at the level of confidence indicated, of course). With this new protocol, the variance explained by operating conditions amounts to \Sexpr{variance_hot_explained_system_percent_workload}\% of which \Sexpr{variance_hot_T_explained_system_percent_workload}\% is related to temperature. The difference is relatively small indeed, and the variance explained by temperature has increased. Did we gain anything with the new protocol?
 
-<<icsme.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing temperature of the second die for the baseline and hot-first strattegy">>=
+<<icsme.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing temperature of the second die for the baseline and hot-first strategy">>=
 icsme_hot_workload$work <- "hot-first"
 initial_workload$work <- "baseline"
 
@@ -255,9 +255,58 @@ icsme_hot_model_coefficients %>%
 
 In order to answer that question we create a combined dataset that includes the initial ("baseline") and hot-first ("hot-first") workload data, and include in the model a variable that represents the dataset. In the two-stage model, we already observe that the dependence of $\Delta R$ on {\sf hot-first} is significant; however, the main coefficient is positive, with negative terms on the interaction between {\sf hot-first} and the two die temperatures, and positive again on the product of the two temperatures; this draws a complex scenario that can be summarized on the new experiments taking more time if $T_1$ is more than around 44º. Although the direction of energy consumption might go against our initial assumption since time has a strong influence on energy consumption, what this certifies is that this new protocol has effectively changed how the experiments behave in one of the components, running time.
 
-Once the $\Delta R$ residuals are extracted and used for model of workload energy consumption depending on system and algorithm variables, what we find is that the coefficient of {\sf hot-first} is \Sexpr{coef(icsme_combined_workload_model)['workhot-first']}
+Once the $\Delta R$ residuals are extracted and used for model of workload energy consumption depending on system and algorithm variables, we find the coefficients shown in Table \ref{tab:icsme.hot.combined}, all of them significant. Again, this draws a complex scenario; although apparently the net contribution to energy consumption would be positive, for the range of temperatures that is actually experimented there is a zone where the {\sf hot-first} would, effectively, lower the energy consumption. We see, however, that the coefficients for $T_2$ have a higher value than the ones for the temperature of the first die; this is why we make a density plot in Figure \ref{fig:icsme.hot.combined} showing how the temperatures for the two sets of experiments are distributed. What we see is that {\sf hot-first} has a single peak, placed at a lower temperature than the baseline experiments. The new strategy presented in this paper significantly lowers the temperature of the second die.
 
+<<icsme.hot.combined.chart, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing energy consumption for the baseline and hot-first strategy">>=
+library(ggExtra)
 
+ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
+  # Map alpha to the calculated density level
+  stat_density_2d(aes(alpha = after_stat(level)),
+                  geom = "polygon",
+                  color = "white", # Adds a faint white line between depth levels
+                  linewidth = 0.2) +
+  # Control the transparency range (0.1 = outer edges, 0.8 = dense center)
+  scale_alpha_continuous(range = c(0.1, 0.8), guide = "none") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(
+    title = "Execution Time vs Energy (Shaded Depth)",
+    x = "Execution Time (delta_seconds)",
+    y = "Energy Consumption (delta_PKG)"
+  )
+
+# Keep this for additional content when the paper is approved
+# library(plotly)
+# library(MASS)
+#
+# # 1. Split the data by work factor
+# df_baseline <- subset(icsme_combined, work == "baseline")
+# df_hot <- subset(icsme_combined, work == "hot-first")
+#
+# # 2. Calculate the 2D Kernel Density Estimate (the "height" of the peaks)
+# # 'n=50' controls the grid resolution (smoothness of the 3D surface)
+# kde_base <- kde2d(df_baseline$delta_seconds, df_baseline$delta_PKG, n = 50)
+# kde_hot  <- kde2d(df_hot$delta_seconds, df_hot$delta_PKG, n = 50)
+#
+# # 3. Render the interactive 3D plot
+# plot_ly() %>%
+#   # Add the baseline surface (reds)
+#   add_surface(x = kde_base$x, y = kde_base$y, z = kde_base$z,
+#               colorscale = "Reds", opacity = 0.8, name = "Baseline", showscale = FALSE) %>%
+#   # Add the hot-first surface (blues/teals)
+#   add_surface(x = kde_hot$x, y = kde_hot$y, z = kde_hot$z,
+#               colorscale = "Blues", opacity = 0.8, name = "Hot-First", showscale = FALSE) %>%
+#   layout(
+#     title = "3D Density of Workloads",
+#     scene = list(
+#       xaxis = list(title = "delta_seconds"),
+#       yaxis = list(title = "delta_PKG"),
+#       zaxis = list(title = "Density")
+#     )
+#   )
+
+@
 
 
 
