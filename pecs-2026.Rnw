@@ -210,7 +210,7 @@ wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_e
 %
 An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will adapt the processes to be run in that specific die.
 
-<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%">>=
+<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload (left), and Delta E vs. Delta R (right), taskset on die 2.", fig.height=3,fig.pos="h!tb", out.width="100%", fig.show="hold", out.width="50%">>=
 load("data/europar_taskset_die2.rds")
 europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
 europar_taskset_die2$population_size <- as.factor(europar_taskset_die2$population_size)
@@ -231,6 +231,20 @@ probability_die2 <- predict_with_die2 / sum(predict_with_die2)
 probability_joint <- predict_with_joint / sum(predict_with_joint)
 
 kl_divergence_die2 <- KL(rbind(probability_die2, probability_joint), unit = "log")
+
+# Second chart
+#
+
+europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
+europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
+europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
+ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
+  geom_point(color=europar_taskset_die2_processed$dimension ) +
+  labs(
+    title = "Energy Consumption vs. Temperature",
+    x = "Delta seconds",
+    y = "Delta PKG"
+  ) + theme_minimal()
 @
 
 Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different. However, the model it follows is still the same, as certified by a very low Kullback-Leibler divergence of \Sexpr{kl_divergence_die2[[1]]}. It is very likely that the model depends on the system and general features of the implementation, and experimental design and parametrization are able to alter only the operational conditions. Let us see if that is the case with this experiment by looking at how energy, time and temperature behave.
@@ -276,21 +290,7 @@ kable(joint_base_with_die2_summary,
 @
 %
 However, as the Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature. However, we are mostly interested on what happens to the workload runs.
-%
-<<europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Workload energy vs. time, die-2 experiment.", fig.height=2.5, fit.pos="h!", out.width="100%">>=
-europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
-europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
-europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
-ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
-  geom_point(color=europar_taskset_die2_processed$dimension ) +
-  labs(
-    title = "Energy Consumption vs. Temperature",
-    x = "Delta seconds",
-    y = "Delta PKG"
-  ) + theme_minimal()
-@
-%
-We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with the initial configuration: less negative values, for instance.
+We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds, again using color for problem size in Figure \ref{fig:europar.die2}, showing the linear dependence between them. The variability is still high, but there is a clear difference with the initial configuration: less negative values, for instance.
 %
 <<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE>>=
 europar_taskset_die2_processed$Experiment <- "Die 2"
