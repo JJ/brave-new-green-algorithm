@@ -71,7 +71,7 @@ The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We utilize
 All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/hidd/en}
 %\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
-<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.height=4, fig.env="figure*">>=
+<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.pos="h!tb">>=
 load("data/joint_base_taskset_with_die2.rds")
 library(ggplot2)
 library(scales)
@@ -87,7 +87,8 @@ ggplot(joint_base_taskset_with_die2, aes(x=seconds,y=PKG, color=initial_temp)) +
 
 As a baseline, we have run a series of experiments, in three different batches: one using a {\em natural} assignment of process to dies, the other two restricting the process either to die 1 (which would have the $P$-cores) or 2 (with the $E$ cores). For the initial analysis we will consider the $B$ and $W$ runs different workloads: the energy consumption of the $B$ runs should have a minimal dependence on algorithm parameters or problem size. This is intended as an initial exploration of the statistical models with a workload with a very small dependence on the algorithm parameters. We chart energy consumed vs. time in Figure \ref{fig:icsme.base}.
 
-<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.height=4, fig.pos="h!tb" >>=
+\small
+<<icsme.model, echo=FALSE, message=FALSE, fig.cap="Model of energy consumption as a function of time and temperature", fig.pos="h!tb" >>=
 initial_base_model <- glm(PKG ~ I(initial_temp_1^2)*I(initial_temp_2^2) + initial_temp_1*initial_temp_2*dimension*population_size+seconds, data=joint_base_taskset_with_die2)
 
 base_time_model <- glm(seconds ~ dimension*population_size + initial_temp_1*initial_temp_2, data=joint_base_taskset_with_die2)
@@ -117,7 +118,7 @@ sum_F_anova_initial_base_model_residualized <- sum(anova_initial_base_model_resi
 variance_anova_initial <- 100*(anova_initial_base_model_residualized$F[2]+anova_initial_base_model_residualized$F[3]+anova_initial_base_model_residualized$F[6])/sum_F_anova_initial_base_model_residualized
 variance_explained_system_percent <- round(variance_anova_initial, 2)
 @
-
+\normalsize
 In order to understand the dependence of our measurement on the system operating conditions, we create a statistical model in two stages. The first stage models the running time $R$ using a generalized linear model {\sf glm} on the rest of the parameters; the residuals are then extracted, so that the $R$ parameter contains only non-explained variance. Then a second model that includes all parameters is created, again using {\sf glm}
 This is shown in Equation \ref{eq: eq1}. Since there are so many samples, all terms are significant, including the algorithm parameters, but the interesting issue here is how much of the variance is explained by these. In fact, die temperatures and time explain
 \Sexpr{variance_explained_system_percent}\%
@@ -127,7 +128,7 @@ Our stated objective is, as indicated, to find a way to constrain the dependence
 
 Although this model of the baseline runs might give us an initial idea of how temperature and power/frequency shape energy consumption, our interest is really in examining how much the workload actually spends.
 
-<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments", fig.height=3 >>=
+<<icsme.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments" >>=
 load("data/europar_die1_workload.rds")
 load("data/europar_taskset_die2_processed.rds")
 
