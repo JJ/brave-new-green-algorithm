@@ -194,20 +194,20 @@ kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
 @
 
 However, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
-
+%
 <<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=5, fig.show="hold", out.width="30%">>=
 europar_taskset_base$Experiment <- "Taskset"
 europar_test_base$Experiment <- "Base"
 
 joint_europar <- rbind(europar_taskset_base, europar_test_base)
-ggplot(joint_europar, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
+# (joint_europar, aes(x=Experiment, y=PKG))+geom_violin()+labs( title = "Energy Consumption Comparison", x = "Experiment Type", y = "Energy Consumption " ) + theme_minimal()
 wilcox_test_energy <- wilcox.test(PKG ~ Experiment, data = joint_europar)
-ggplot(joint_europar, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
+# ggplot(joint_europar, aes(x=Experiment, y=seconds))+geom_violin()+labs( title = "Time Comparison", x = "Experiment Type", y = "Time (s) " ) + theme_minimal()
 wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_europar)
-ggplot(joint_europar, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
+# ggplot(joint_europar, aes(x=Experiment, y=initial_temp))+geom_violin()+labs( title = "Temperature Comparison", x = "Experiment Type", y = "Temperature" ) + theme_minimal()
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_europar)
 @
-
+%
 An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will adapt the processes to be run in that specific die.
 
 <<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%">>=
@@ -290,7 +290,7 @@ ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
   ) + theme_minimal()
 @
 %
-We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with Figure \ref{fig:europar.initial.workload.model}: less negative values, for instance.
+We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds again using color for problem size in Figure \ref{fig:europar.die2.workload}, showing the linear dependence between them. The variability is still high, but there is a clear difference with the initial configuration: less negative values, for instance.
 %
 <<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE>>=
 europar_taskset_die2_processed$Experiment <- "Die 2"
