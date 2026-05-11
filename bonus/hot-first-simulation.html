@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empirical GLM Energy Simulator</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --border: #dfe6e9;
+            --primary: #0984e3;
+            --baseline-color: #e17055;
+            --hotfirst-color: #00cec9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            color: #2d3436;
+        }
+
+        .description {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .controls-section, .visual-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .controls-section {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background-color: #f1f2f6;
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            border: 1px solid var(--border);
+        }
+
+        button:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Dies Visualization */
+        .dies-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .die {
+            flex: 1;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: background-color 0.1s;
+        }
+
+        .die h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .die-temp {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        /* Chart */
+        .chart-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .bar-row {
+            margin-bottom: 20px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .bar-bg {
+            width: 100%;
+            background-color: #ecf0f1;
+            border-radius: 20px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        #baseline-bar .bar-fill {
+            background-color: var(--baseline-color);
+        }
+
+        #hotfirst-bar .bar-fill {
+            background-color: var(--hotfirst-color);
+        }
+
+        .conclusion {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 15px;
+        }
+
+        .conclusion.baseline-wins {
+            background-color: rgba(225, 112, 85, 0.1);
+            color: var(--baseline-color);
+        }
+
+        .conclusion.hotfirst-wins {
+            background-color: rgba(0, 206, 201, 0.1);
+            color: #01a3a4;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Empirical GLM Energy Simulator</h1>
+    <p class="description">
+        Interactive prediction of workload energy consumption (ΔPKG) based on empirically derived Generalized Linear Model (GLM) coefficients. Adjust initial die temperatures to see when the Hot-First scheduling strategy becomes mathematically optimal.
+    </p>
+
+    <div class="layout">
+        <div class="controls-section">
+            <div class="control-group">
+                <label>
+                    <span>Die 1 Temp (T1)</span>
+                    <span id="t1-val">55 °C</span>
+                </label>
+                <input type="range" id="t1-slider" min="35" max="75" step="1" value="55">
+                <small style="color: var(--text-muted);">Empirical range: 35-75°C</small>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <span>Die 2 Temp (T2)</span>
+                    <span id="t2-val">50 °C</span>
+                </label>
+                <input type="range" id="t2-slider" min="30" max="70" step="1" value="50">
+                <small style="color: var(--text-muted);">Empirical range: 30-70°C</small>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 25px 0;">
+            
+            <label>Apply Empirical Medians:</label>
+            <div class="preset-buttons">
+                <button onclick="applyPreset(55, 50)">Baseline Distribution Median (55°C / 50°C)</button>
+                <button onclick="applyPreset(48, 36)">Hot-First Distribution Median (48°C / 36°C)</button>
+            </div>
+        </div>
+
+        <div class="visual-section">
+            <div class="dies-container">
+                <div class="die" id="die1">
+                    <h3>Die 1 (Active)</h3>
+                    <div class="die-temp"><span id="die1-display">55</span>°C</div>
+                </div>
+                <div class="die" id="die2">
+                    <h3>Die 2 (Idle/Secondary)</h3>
+                    <div class="die-temp"><span id="die2-display">50</span>°C</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 style="margin-top: 0; text-align: center;">Predicted Energy (Joules)</h3>
+                
+                <div class="bar-row" id="baseline-bar">
+                    <div class="bar-label">
+                        <span>Baseline Strategy</span>
+                        <span class="bar-value" id="base-energy-txt">0 J</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" id="base-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <div class="bar-row" id="hotfirst-bar">
+                    <div class="bar-label">
+                        <span>Hot-First Strategy</span>
+                        <span class="bar-value" id="hot-energy-txt">0 J</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" id="hot-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <div id="conclusion-box" class="conclusion">
+                    Calculation...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+ // GLM Coefficients
+ const coef = {
+     base_int: -1136.0,
+     t1: 23.22,
+     t2: 45.76,
+     t1_sq: -0.2206,
+     t2_sq: -0.5159,
+     t1_t2: -0.2688,
+     t1sq_t2sq: 0.00006897,
+     
+     hot_main: 731.9,
+     hot_t1: -17.81,
+     hot_t2: -21.06,
+     hot_t1_t2: 0.5039
+ };
+
+ // DOM Elements
+ const s_t1 = document.getElementById('t1-slider');
+ const s_t2 = document.getElementById('t2-slider');
+ const v_t1 = document.getElementById('t1-val');
+ const v_t2 = document.getElementById('t2-val');
+ const die1 = document.getElementById('die1');
+ const die2 = document.getElementById('die2');
+ const d_t1 = document.getElementById('die1-display');
+ const d_t2 = document.getElementById('die2-display');
+ const txt_base = document.getElementById('base-energy-txt');
+ const txt_hot = document.getElementById('hot-energy-txt');
+ const fill_base = document.getElementById('base-fill');
+ const fill_hot = document.getElementById('hot-fill');
+ const box_conc = document.getElementById('conclusion-box');
+
+ // Maps a temperature value to a color between Blue (cool) and Red (hot)
+ // T1 Range: 35-75, T2 Range: 30-70. We'll use 30 to 75 as absolute bounds.
+ function getTempColor(temp) {
+     const minTemp = 30;
+     const maxTemp = 75;
+     let pct = (temp - minTemp) / (maxTemp - minTemp);
+     pct = Math.max(0, Math.min(1, pct));
+     // Hue 240 is blue, 0 is red
+     const hue = 240 - (pct * 240);
+     return `hsl(${hue}, 70%, 50%)`;
+ }
+
+ function updateSimulation() {
+     const t1 = parseFloat(s_t1.value);
+     const t2 = parseFloat(s_t2.value);
+
+     // Update Labels
+     v_t1.textContent = t1 + " °C";
+     v_t2.textContent = t2 + " °C";
+     d_t1.textContent = t1;
+     d_t2.textContent = t2;
+
+     // Update Die Colors
+     die1.style.backgroundColor = getTempColor(t1);
+     die2.style.backgroundColor = getTempColor(t2);
+
+     // Calculate Baseline Energy
+     const e_base = coef.base_int + 
+                        (t1 * coef.t1) + 
+                        (t2 * coef.t2) + 
+                        (t1 * t1 * coef.t1_sq) + 
+                        (t2 * t2 * coef.t2_sq) + 
+                        (t1 * t2 * coef.t1_t2) + 
+                        (t1 * t1 * t2 * t2 * coef.t1sq_t2sq);
+
+     // Calculate Hot-First Energy
+     const e_hot = e_base + 
+                   coef.hot_main + 
+                       (t1 * coef.hot_t1) + 
+                       (t2 * coef.hot_t2) + 
+                       (t1 * t2 * coef.hot_t1_t2);
+
+     // Update Chart Text
+     txt_base.textContent = e_base.toFixed(1) + " J";
+     txt_hot.textContent = e_hot.toFixed(1) + " J";
+
+     // Update Chart Bars (Normalize to Max Value for display scaling)
+     const maxE = Math.max(e_base, e_hot, 500); // 500 as an arbitrary visual ceiling minimum
+     const pct_base = Math.max(0, (e_base / maxE) * 100);
+     const pct_hot = Math.max(0, (e_hot / maxE) * 100);
+     
+     fill_base.style.width = pct_base + "%";
+     fill_hot.style.width = pct_hot + "%";
+
+     // Update Conclusion Logic
+     const diff = Math.abs(e_base - e_hot).toFixed(1);
+     
+     box_conc.classList.remove('baseline-wins', 'hotfirst-wins');
+     
+     if (e_hot < e_base) {
+         box_conc.textContent = `✓ Hot-First is more efficient (Saves ${diff} J)`;
+         box_conc.classList.add('hotfirst-wins');
+     } else if (e_base < e_hot) {
+         box_conc.textContent = `⚠ Baseline is more efficient (Saves ${diff} J)`;
+         box_conc.classList.add('baseline-wins');
+     } else {
+         box_conc.textContent = "Both strategies yield identical energy.";
+     }
+ }
+
+ // Set presets via buttons
+ function applyPreset(t1, t2) {
+     s_t1.value = t1;
+     s_t2.value = t2;
+     updateSimulation();
+ }
+
+ // Event Listeners
+ s_t1.addEventListener('input', updateSimulation);
+ s_t2.addEventListener('input', updateSimulation);
+
+ // Initial Run
+ updateSimulation();
+</script>
+
+</body>
+</html>
