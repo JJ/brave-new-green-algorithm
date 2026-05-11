@@ -71,7 +71,7 @@ The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We utilize
 All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/hidd/en}
 %\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
-<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.pos="h!tb">>=
+<<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.pos="h!tb", fig.height=4>>=
 load("data/joint_base_taskset_with_die2.rds")
 library(ggplot2)
 library(scales)
@@ -320,7 +320,7 @@ As far as we can tell, this is the first attempt to heuristically model the beha
 
 From the fact that in most models running time is an important, or determinant, factor for energy consumption, we can also conclude that micro-optimizations that make the algorithm implementation faster will be the first target. Other parameters such as population size in the case of population-based optimization algorithms, or even parameters that change the number of iterations until algorithm completion will always have an impact, but in most cases they will count as nano-optimizations or fine-tuning of higher-impact changes. By reducing running time due to operating conditions, this experimental protocol will also help in evaluating these changes with more precision.
 
-% We will not claim that this conclusion is generarizable to all possible processors of all possible brands and all possible operating systems. But, by having these measurements made in a small workload, we do claim that a protocol that tries to put workload and baseline in operating conditions that are as close as possible, as well as a sound, repeated measurement, followed by a modelization of the dependence of energy on operating conditions is a good way to approach the issue of greener algorithm implementations. A methodology should first look to mitigate the impact of operating conditions, and then understand, even so, what affects energy consumption in such a way that it can be optimized under probably operating conditions or under a range of them.
+We will not claim that this conclusion is generarizable to all possible processors of all possible brands and all possible operating systems. However, it has been proved that a protocol that tries to make workload and baseline runs in operating conditions that are as close as possible, as well as a sound, repeated measurement, followed by a modelization of the dependence of energy on operating conditions, is a good way to approach the issue of greener algorithm implementations. A methodology should first look at mitigating the impact of operating conditions, and then understand the impact of different algorithm configurations on energy consumption in such a way that the optimal one, under probable operating conditions, can be chosen.
 
 \section*{Acknowledgements}
 % This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
