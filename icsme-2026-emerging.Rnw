@@ -204,6 +204,7 @@ initial_workload$work <- "baseline"
 
 icsme_combined <- rbind(icsme_hot_workload,initial_workload)
 combined_workload_time_model <- glm( delta_seconds ~  work*initial_temp_1*initial_temp_2+dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
+anova_combined_workload_time_model <- anova(combined_workload_time_model)
 icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
 
 icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work, data=icsme_combined)
@@ -229,9 +230,32 @@ ggplot(icsme_combined, aes(x = initial_temp_2, fill = work)) +
   ) +
   theme_minimal() +
   theme(legend.position = "bottom")
+
+# library(ggExtra)
+#
+# comparison_gg <- ggplot(icsme_combined, aes(x=initial_temp_1,y=delta_seconds,color=work))+geom_point(alpha=0.5)+theme_minimal() +
+#   theme(legend.position = "bottom")
+# ggMarginal(comparison_gg, type="density", groupFill=T, alpha=0.5)
+#
+
+icsme_hot_model_coefficients <- data.frame(
+                                            coefficients=c(coef(icsme_combined_workload_model)['workhot-first'],
+                                                            coef(icsme_combined_workload_model)['workhot-first:initial_temp_1'],
+                                                            coef(icsme_combined_workload_model)['workhot-first:initial_temp_2'],
+                                                            coef(icsme_combined_workload_model)['workhot-first:initial_temp_1:initial_temp_2']
+                                                    )
+                                            )
+
+library(kableExtra)
+icsme_hot_model_coefficients %>%
+  kable( caption = "hot-first coefficients in the energy generalized linear model")
+
+
 @
 
-We create a dataset that combines the initial ("baseline") and hot-first ("hot-first") workload data, and again we
+In order to answer that question we create a combined dataset that includes the initial ("baseline") and hot-first ("hot-first") workload data, and include in the model a variable that represents the dataset. In the two-stage model, we already observe that the dependence of $\Delta R$ on {\sf hot-first} is significant; however, the main coefficient is positive, with negative terms on the interaction between {\sf hot-first} and the two die temperatures, and positive again on the product of the two temperatures; this draws a complex scenario that can be summarized on the new experiments taking more time if $T_1$ is more than around 44º. Although the direction of energy consumption might go against our initial assumption since time has a strong influence on energy consumption, what this certifies is that this new protocol has effectively changed how the experiments behave in one of the components, running time.
+
+Once the $\Delta R$ residuals are extracted and used for model of workload energy consumption depending on system and algorithm variables, what we find is that the coefficient of {\sf hot-first} is \Sexpr{coef(icsme_combined_workload_model)['workhot-first']}
 
 
 
