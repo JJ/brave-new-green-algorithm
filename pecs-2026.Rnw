@@ -308,17 +308,17 @@ joint_base_with_die2_summary <- joint_base_with_die2 %>%
     iqr_temperature = IQR(initial_temp)
   )
 library(kableExtra)
-kable(joint_base_with_die2_summary,
-      digits = 2,
-      col.names=c("Experiment","Mean", "Trim mean", "IQR",
-                 "Mean", "Trim mean", "IQR",
-                 "Mean", "Trim mean", "IQR"),
-      caption = "Summary statistics for energy, time and temperature for the baseline experiment with and without taskset on die 2.") %>% add_header_above(c(" " = 1, "Energy (J)" = 3, "Time (s)" = 3, "Temperature (ºC)" = 3)) %>%
-  kable_styling(full_width = FALSE, position = "center")
+# kable(joint_base_with_die2_summary,
+#       digits = 2,
+#       col.names=c("Experiment","Mean", "Trim mean", "IQR",
+#                  "Mean", "Trim mean", "IQR",
+#                  "Mean", "Trim mean", "IQR"),
+#       caption = "Summary statistics for energy, time and temperature for the baseline experiment with and without taskset on die 2.") %>% add_header_above(c(" " = 1, "Energy (J)" = 3, "Time (s)" = 3, "Temperature (ºC)" = 3)) %>%
+#   kable_styling(full_width = FALSE, position = "center")
 @
 %
-However, as shown in Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature. However, we are mostly interested on what happens to the workload runs.
-We plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds, again using color for problem size in Figure \ref{fig:europar.die2}, showing the linear dependence between them. The variability is still high, but there is a clear difference with the initial configuration: less negative values, for instance.
+% However, as shown in Table \ref{tab:europar.die2.table}, energy consumption for these base experiments is slightly more if die 2 is used, although average time is less, the linear term on the temperature possibly overcomes this reduction in time. The interquartile range is virtually the same for energy, smaller for time, but bigger for temperature.
+We are mostly interested on what happens to the workload runs: we plot the difference in energy consumption, Delta PKG, vs. the difference in time, Delta seconds, again using color for problem size in Figure \ref{fig:europar.die2}, showing the linear dependence between them. The variability is still high, but there is a clear difference with the initial configuration: less negative values, for instance.
 %
 <<europar.die2.workload.table, echo=FALSE, message=FALSE,warning=FALSE>>=
 europar_taskset_die2_processed$Experiment <- "Die 2"
