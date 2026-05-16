@@ -16,7 +16,7 @@ save(file="data/europar_poster_datset.rds",europar_poster_dataset)
 
 library(ggplot2)
 library(ggExtra)
-distribution_run <- ggplot(europar_poster_dataset, aes(x=initial_temp_1, y=power, color=run))+geom_point()+ theme_minimal()
+distribution_run <- ggplot(europar_poster_dataset, aes(x=initial_temp_1, y=power, group=run, color=run))+geom_point()+ theme_minimal()
 ggMarginal(distribution_run, type="density", groupFill=T, alpha=0.5)
 
 library(scales)
@@ -29,9 +29,18 @@ ggplot(europar_poster_dataset, aes(x=initial_temp_1, y=power, color=initial_temp
   scale_color_viridis_c(trans=custom_pow) + theme_minimal()
 
 time_model <- glm( seconds ~ initial_temp_1*initial_temp_2 + run, data=europar_poster_dataset)
-europar_poster_dataset$residual_seconds <- residuals(power_time)
+europar_poster_dataset$residual_seconds <- residuals(time_model)
 
-power_model <- glm( power ~ initial_temp_1*initial_temp_2 + run*seconds, data=europar_poster_dataset)
+power_model <- glm( power ~ initial_temp_1*initial_temp_2 + run*dimension*population_size + residual_seconds, data=europar_poster_dataset)
 europar_poster_dataset$residual_power <- residuals(power_model)
 
+anova_power_model <- anova(power_model)
 
+ggplot(europar_poster_dataset, aes(x=residual_seconds, y=power, color=initial_temp_1))+geom_point(alpha=0.5)+
+  scale_color_viridis_c(trans=custom_pow) + theme_minimal()
+
+energy_model <- glm( PKG ~ residual_power+initial_temp_1*initial_temp_2 + run*dimension*population_size + residual_seconds, data=europar_poster_dataset)
+summary(energy_model)
+
+anova_energy_model <- anova(energy_model)
+anova_energy_model
