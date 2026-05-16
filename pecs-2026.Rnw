@@ -110,12 +110,12 @@ This initial experiment is intended as a baseline for comparison. As stated, we 
 <<europar.initial.base.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the baseline measures, initial", fig.height=4>>=
 library(dplyr)
 europar_test_base <- europar_test %>% filter(base == TRUE)
-europar_test_base_model_linear <- glm( PKG ~ + initial_temp*dimension,data = europar_test_base)
+europar_test_base_model_linear <- glm( PKG ~ initial_temp*dimension,data = europar_test_base)
 europar_test_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_base)
 difference_base_models <- anova(europar_test_base_model,europar_test_base_model_linear)
 @
 
-We will try to adjust two different generalized linear models to this data (using R's {\sf glm}), one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system.
+We will try to adjust two different generalized linear models to this data (using R's {\sf glm}), one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system. This confirms the existence of a quadratic term on temperature for energy, as found by  \cite{devogeleer2014modelingtemperaturebiaspower}; however, this term is {\em negative}, which for higher temperatures will have some mitigating effect.
 
 In principle, this variability was expected which is why every workload run is between two baseline runs, expected to eliminate at least part of the variability from the measurement.
 %
