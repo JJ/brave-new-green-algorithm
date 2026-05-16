@@ -1,10 +1,10 @@
+## ----europar.initial, echo=FALSE, fig.cap="Energy spent vs. temperature for the baseline experiment. Different colors indicate the problem dimension.", fig.height=3, fig.pos="h!tb", out.width="100%"----
 load("data/europar_test.rds")
 library(ggplot2)
 europar_test$dimension <- as.factor(europar_test$dimension)
 europar_test$base <- ifelse( startsWith(europar_test$work, "base"), TRUE, FALSE)
 ggplot(europar_test, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "Temperature", y = "Energy Consumption " ) + theme_minimal()
 
-ggplot(europar_test, aes(x=initial_temp_1))+geom_bar(color="red")+geom_bar(aes(x=initial_temp_2),color="blue", position="dodge")+theme_minimal()
 
 ## ----europar.initial.base.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the baseline measures, initial", fig.height=4----
 library(dplyr)
@@ -35,6 +35,8 @@ difference_delta_interaction <- anova(europar_test_delta_evals_interaction_model
 europar_test_delta_seconds_model <- glm( PKG ~ initial_temp*dimension*population_size+evaluations*delta_seconds+I(initial_temp^2),data = europar_test_processed)
 difference_delta_seconds <- anova(europar_test_delta_seconds_model,europar_test_delta_evals_model)
 anova_delta_seconds <- anova(europar_test_delta_seconds_model)
+library(equatiomatic)
+
 
 ## ----europar.initial.model.slopes, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Slopes of the model for the workload experiment.", fig.height=3----
 library(marginaleffects)
@@ -70,90 +72,6 @@ ggplot(europar_taskset_base, aes(x=seconds, y=PKG, color=initial_temp, shape=dim
   scale_color_viridis_c(trans=custom_pow) +
   geom_point()  + labs( x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
 
-ggplot(europar_taskset_base, aes(x=seconds, y=PKG, shape=dimension, color=factor(population_size))) +
-  geom_point()  + labs( x = "Seconds", y = "Energy Consumption " ) + theme_minimal() + xlim(6.75,8)+ylim(250,750)
-
-europar_taskset_base$power <- europar_taskset_base$PKG/europar_taskset_base$seconds
-
-ggplot( europar_taskset_base, aes(x=initial_temp, y=power,color=dimension,shape=population_size))+geom_point()+theme_minimal()
-
-# Fit a basic linear model of Energy vs Time
-base_model <- lm(PKG ~ seconds, data = europar_taskset_base)
-
-# Add the residuals (distance from the trendline) back to your dataset
-europar_taskset_base$residuals <- resid(base_model)
-
-# Plot the density to find the valley
-d <- density(europar_taskset_base$residuals)
-plot(d, main="Density of Residuals")
-
-# 2. Extract the X (residual values) and Y (density/frequency) coordinates
-x_vals <- d$x
-y_vals <- d$y
-
-# 3. Find where the slope changes from negative (going down the peak)
-# to positive (going up the next peak).
-# diff() calculates the difference between consecutive points.
-# sign() converts those differences to +1 (increasing) or -1 (decreasing).
-# diff(sign()) equals 2 exactly at the bottom of a valley (-1 to +1).
-valley_indices <- which(diff(sign(diff(y_vals))) == 2) + 1
-
-# 4. Create a data frame of all the local valleys found
-valleys <- data.frame(residual_value = x_vals[valley_indices],
-                      density = y_vals[valley_indices])
-
-# 5. If there's minor noise, there might be multiple tiny valleys.
-# We want the main, deepest one (lowest density). We use the last one, after the "flat" initial surface
-exact_cutoff <- valleys$residual_value[5]
-
-# Apply the exact mathematical cutoff to separate the streaks
-europar_taskset_base$streak_group <- as.factor(ifelse(europar_taskset_base$residuals > exact_cutoff, "Upper_Streak", "Lower_Streak"))
-
-streak_glm <- glm(streak_group ~ initial_temp_1*initial_temp_2 + population_size*dimension + seconds,
-                  data = europar_taskset_base, # Using the subset where the split happens
-                  family = binomial)
-
-ggplot(europar_taskset_base, aes(x = initial_temp_1, y = initial_temp_2, color = streak_group)) +
-  geom_point(size = 2, alpha = 0.7) +
-  # Using distinct, contrasting colors to make the boundary pop
-  scale_color_manual(values = c("Lower_Streak" = "#43aa8b", "Upper_Streak" = "#f94144")) +
-  labs(title = "The True Cause of the Energy Split",
-       subtitle = "Interaction between Initial Temp 1 and Initial Temp 2",
-       x = "Initial Temperature 1",
-       y = "Initial Temperature 2",
-       color = "Energy Baseline") +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        plot.title = element_text(face = "bold", size = 14))
-
-europar_taskset_base$delta_temp <- europar_taskset_base$initial_temp_1 - europar_taskset_base$initial_temp_2
-
-ggplot(europar_taskset_base, aes(x=initial_temp_1, y=power,color=streak_group))+geom_point()+theme_minimal()
-
-# Trying to find why they overlap
-#
-
-
-# install.packages("plotly")
-library(plotly)
-
-plot_ly(europar_taskset_base,
-        x = ~initial_temp_1,
-        y = ~power,
-        z = ~initial_temp_2,
-        color = ~streak_group,
-        colors = c("#f94144", "#43aa8b"),
-        type = "scatter3d",
-        mode = "markers",
-        marker = list(size = 3, opacity = 0.8)) %>%
-  layout(title = "Unmasking the Overlap in 3D")
-
-power_model <- glm( power ~ initial_temp_2 * initial_temp_1, data=europar_taskset_base)
-summary(power_model)
-
-ggplot( europar_taskset_base, aes(x=initial_temp_2,y=power,color=initial_temp_2)) + scale_color_viridis_c(trans=custom_pow) + geom_point()+geom_smooth(formula=y~x, method="lm")+ theme_minimal()
-
-anova_power <- anova(power_model)
 
 ## ----europar.model.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline measurements with and without taskset.", fig.height=3, fig.pos="h!tb", out.width="100%"----
 library(philentropy) # For KL function
@@ -189,6 +107,7 @@ europar_taskset_processed$dimension <- as.factor(europar_taskset_processed$dimen
 europar_taskset_processed$population_size <- as.factor(europar_taskset_processed$population_size)
 
 europar_die1_workload <- rbind( europar_taskset_processed, europar_test_processed)
+save(europar_die1_workload, file="data/europar_die1_workload.rds")
 
 
 ## ----europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload, taskset on die 2.", fig.height=2.5,fig.pos="h!tb", out.width="100%"----
@@ -204,6 +123,7 @@ taskset_die2_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension
 taskset_joint_time_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size+seconds,data =  joint_base_taskset)
 
 joint_base_taskset_with_die2 <- rbind(joint_base_taskset, taskset_die2_base)
+save(joint_base_taskset_with_die2, file="data/joint_base_taskset_with_die2.rds")
 predict_with_die2 <- predict(taskset_die2_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 predict_with_joint <- predict(taskset_joint_time_model, newdata=joint_base_taskset_with_die2, type = "response")
 
@@ -253,6 +173,7 @@ kable(joint_base_with_die2_summary,
 
 ## ----europar.die2.workload, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Workload energy vs. time, die-2 experiment.", fig.height=2.5, fit.pos="h!", out.width="100%"----
 europar_taskset_die2_processed <- process_deltas( europar_taskset_die2 )
+save(europar_taskset_die2_processed, file="data/europar_taskset_die2_processed.rds")
 europar_taskset_die2_processed$dimension <- as.factor(europar_taskset_die2_processed$dimension)
 europar_taskset_die2_processed$population_size <- as.factor(europar_taskset_die2_processed$population_size)
 ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
