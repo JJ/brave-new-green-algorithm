@@ -114,6 +114,7 @@ europar_test_base <- europar_test %>% filter(base == TRUE)
 europar_test_base_model_linear <- glm( PKG ~ initial_temp*dimension,data = europar_test_base)
 europar_test_base_model <- glm( PKG ~ I(initial_temp^2) + initial_temp*dimension*population_size,data = europar_test_base)
 difference_base_models <- anova(europar_test_base_model,europar_test_base_model_linear)
+
 @
 
 We will try to adjust two different generalized linear models to this data (using R's {\sf glm}), one linear on the initial temperature and other that includes also a quadratic term; in both cases we will also include the problem dimension (a problem parameter) and the population size (an algorithm parameter). Using ANOVA to evaluate the difference between the models, the quadratic model is significantly better with a residual deviation of \Sexpr{round(difference_base_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_base_models$`Resid. Dev`[2],2)} for the linear model. This model has a positive coefficient for the initial temperature, but a negative for the quadratic term of a much lower magnitude, indicating that the dependence of energy consumption with temperature increases more slowly as it rises, probably due to throttling measures by the system. This confirms the existence of a quadratic term on temperature for energy, as found by  \cite{devogeleer2014modelingtemperaturebiaspower}; however, this term is {\em negative}, which for higher temperatures will have some mitigating effect.
@@ -145,7 +146,7 @@ library(equatiomatic)
 IQR_europar_test_processed_delta_PKG <- IQR(europar_test_processed$delta_PKG)
 @
 %
-However, what we observe after processing to extract workload values is that variability is still quite high; the interquartile range for $\Delta E$ is \Sexpr{IQR_europar_test_processed_delta_PKG}. Again, we try to model this dependence using a generalized linear model, using a term quadratic on the temperature or not, and including population size, the dimension as factor and the number of evaluations, which should change every run as a result of the stochastic algorithm. Again, model quadratic in the temperature that includes the number of evaluations is better with \Sexpr{round(difference_delta_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_delta_models$`Resid. Dev`[2],2)}.
+However, what we observe after processing to extract workload values is that variability is still quite high; the interquartile range for $\Delta E$ is \Sexpr{IQR_europar_test_processed_delta_PKG}. Again, we try to model this dependence using a generalized linear model, using a term quadratic on the temperature or not, and including population size, the dimension as factor and the number of evaluations, which should change every run as a result of the stochastic algorithm. Again, the model quadratic in the temperature that includes the number of evaluations is better with residual deviation \Sexpr{round(difference_delta_models$`Resid. Dev`[1],2)} compared to \Sexpr{round(difference_delta_models$`Resid. Dev`[2],2)}.
 The model includes significant dependence on the initial temperature, population size the problem dimension, with evaluations being also significant. Dimension 10 (which is run at the beginning of every experiment) does not have any significant influence either by itself or in combination with any other. Again, the value of the quadratic term \Sexpr{round(coef(europar_test_delta_model)["I(initial_temp^2)"],4)} is negative and of a much lower magnitude than the linear term \Sexpr{round(coef(europar_test_delta_model)["initial_temp"],4)}.
 
 We can, however, test in this case an additional model that includes $\Delta$ seconds, the difference in seconds between the workload running time and the average of the baselines, as well as the number of evaluations. The model will express $\Delta E$, the workload energy consumption, as a combination on $T^2$ (T is the temperature), the interaction of $T, D, P$ (problem dimension and population size) and the interaction of $\Delta R$ and $F$, the number of fitness evaluations. An ANOVA comparison of both models shows this one explains better the variance of the model, leaving a residual of \Sexpr{round(difference_delta_seconds$`Resid. Dev`[1],2)}. The full model is shown in Equation \ref{eq: eq1}; please note that the coefficient for F (number of evaluations) is actually \Sexpr{round(coef(europar_test_delta_seconds_model)["evaluations"],5)}; in this case, the fitness function that we are using, the well known Sphere \cite{hansen2010comparing} is the most lightweight of the BBOB benchmark functions, which explains the low impact on energy consumption.
@@ -222,9 +223,17 @@ probability_taskset <- predict_with_taskset / sum(predict_with_taskset)
 probability_base <- predict_with_base / sum(predict_with_base)
 
 kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
+kl_formatted <- sprintf("%.2e", kl_divergence[[1]])
+
+# Replace "e" with LaTeX math formatting
+# We use "\\times" so R outputs a single "\" to LaTeX
+kl_latex <- paste0(gsub("e", " \\\\times 10^{", kl_formatted), "}")
 @
 
-However, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
+However, computing the Kullback-Leibler divergence between the two models, which is equal to
+$\Sexpr{kl_latex}$
+%\Sexpr{sprintf("%.2e", kl_divergence[[1]])}
+, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
 %
 <<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.height=5, fig.show="hold", out.width="30%">>=
 europar_taskset_base$Experiment <- "Taskset"
@@ -276,9 +285,15 @@ ggplot(europar_taskset_die2_processed, aes(x = delta_seconds, y = delta_PKG)) +
     x = "Delta seconds",
     y = "Delta PKG"
   ) + theme_minimal()
+
+kl_formatted <- sprintf("%.2e", kl_divergence_die2[[1]])
+
+# Replace "e" with LaTeX math formatting
+# We use "\\times" so R outputs a single "\" to LaTeX
+kl_latex <- paste0(gsub("e", " \\\\times 10^{", kl_formatted), "}")
 @
 
-Figure \ref{fig:europar.die2} shows the energy consumption vs. mean temperature of the two dies, which is the one we have assigned the task to; system operation and consumption will depend on this temperature, not only the die our process is running in. Compare this Figure with \ref{fig:europar.initial} both temperature and energy consumption ranges are different. However, the model it follows is still the same, as certified by a very low Kullback-Leibler divergence of \Sexpr{kl_divergence_die2[[1]]}. It is very likely that the model depends on the system and general features of the implementation, and experimental design and parametrization are able to alter only the operational conditions. Let us see if that is the case with this experiment by looking at how energy, time and temperature behave.
+Figure \ref{fig:europar.die2} (left) shows the energy consumption vs. mean temperature of the two dies; core frequencies and eventually energy consumption will depend on this temperature. Compare this Figure with Figure \ref{fig:europar.initial}: both temperature and energy consumption ranges are different. However, the model it follows is the same, as certified by a very low Kullback-Leibler divergence of $\Sexpr{kl_latex}$. It is very likely that the model depends on the system and general features of the implementation, and experimental design and parametrization are able to alter only the operational conditions. Let us see if that is the case with this experiment by looking at how energy, running time and temperature behave.
 
 <<europar.die2.comparison, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.", fig.height=4, fig.show="hold", out.width="30%">>=
 taskset_die2_base$Experiment <- "Taskset Die 2"
