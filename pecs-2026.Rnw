@@ -18,13 +18,18 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
-\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
-\and
-Instituto Tecnológico Nacional de México, Tijuana, México
-}
+\author{A. N. Onymous \inst{1}}
+\institute{Hidden}
 %
-\authorrunning{Merelo et al.}
+\authorrunning{N/A}
+
+% \author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+% \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+% \and
+% Instituto Tecnológico Nacional de México, Tijuana, México
+% }
+%
+%\authorrunning{Merelo et al.}
 %
 \maketitle              % typeset the header of the contribution
 %
@@ -34,9 +39,7 @@ There is growing interest in making algorithms more energy-efficient, but progre
 To address this, we tested new measurement methods that separate and model the baseline (including framework overhead) system energy and the algorithm workload energy. Using a modern multi-die processor, we found that the system's operational context accounts for most of the variation in energy use. Furthermore, we found that altering core scheduling policies offers no clear advantage in mitigating this context. Ultimately, because running time remains the dominant factor in energy consumption according to these models, optimizing for performance is currently the most viable strategy for reducing the energy consumed by algorithm implementations, especially population-based optimization algorithms.
 \keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
-%
-%
-%
+
 \section{Introduction and state of the art}
 
 Concerns about the energy costs of computing infrastructure are not new \cite{kurp2008green}, but its importance and urgency have certainly increased in recent years with the introduction of metaheuristic and hyperheuristic algorithms as well as deep learning and large language models \cite{rodriguez2024evaluatingenergyconsumptionmachine}. With these, the concerns about {\em greener} algorithm implementations have also grown. This kind of energy optimization involves designing an experimental framework in which different configurations of the algorithm are compared by measuring the energy consumed  in a given environment and applying statistical techniques to determine, for the workload under study, which configuration consumes the least energy.
@@ -80,10 +83,14 @@ All measures have been taken on the same system, a desktop system with an AMD Ry
 % There are no alternatives in software, and hardware devices have even more problems... and are costly.
 % R #3 also asks: In Figure 2, what is Delta PKG? How does this relate to the energy consumption?
 % I think it is the Delta of PKG energy, mentioned below: - M
-Since this is an AMD system, only PKG (package) energy can be measured, without distinguishing between different processor planes or energy spent by DRAM. This is enough, however, to understand the interdependence between temperature and energy spent by our implementation of the algorithm. Finally, the {\sf sensors} command is used to read the temperature from the sensors; a specific sensor, {\sf k10temp-pci-00c3}, yields three measurements, one for maximum allowed temperature and one for each die: {\sf Tccd1} and {\sf Tccd2}. Each run, is executed in superuser mode from a Perl script, that also processes the energy and temperature readings and outputs a CSV file. All data files are available in a public GitHub repository \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}. Experiments are started at random moments from booting the system. In general, experiments will be separated by several hours, but no specific {\em cool down} period is enforced. The intention is, as stated, to perform the experiment in the usual conditions. Experiments are repeated at least four times under these conditions; that is, the whole run of 31$B$+31$W$ for every combination is repeated 4 times; that is, the workload run for a specific combination of parameters is repeated 30 x 4 times (in some cases, 5); we have thus at least 120 measurements of energy consumption (with batches of 30 taken at different moments and after reboots) for every parameter combination.
+Since this is an AMD system, only PKG (package) energy can be measured, without distinguishing between different processor planes or energy spent by DRAM. This is enough, however, to understand the interdependence between temperature and energy spent by our implementation of the algorithm. Finally, the {\sf sensors} command is used to read the temperature from the sensors; a specific sensor, {\sf k10temp-pci-00c3}, yields three measurements, one for maximum allowed temperature and one for each die: {\sf Tccd1} and {\sf Tccd2}. Each run, is executed in superuser mode from a Perl script, that also processes the energy and temperature readings and outputs a CSV file. All data files are available in a public GitHub repository
+%\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
+\url{https://github.com/hidd/en}
+Experiments are started at random moments from booting the system. In general, experiments will be separated by several hours, but no specific {\em cool down} period is enforced. The intention is, as stated, to perform the experiment in the usual conditions. Experiments are repeated at least four times under these conditions; that is, the whole run of 31$B$+31$W$ for every combination is repeated 4 times; that is, the workload run for a specific combination of parameters is repeated 30 x 4 times (in some cases, 5); we have thus at least 120 measurements of energy consumption (with batches of 30 taken at different moments and after reboots) for every parameter combination.
 
-The whole experimental datasets used here are freely available and can be downloaded from \url{https://github.com/JJ/brave-new-green-algorithm.}
-
+The whole experimental datasets used here are freely available and can be downloaded from
+%\url{https://github.com/JJ/brave-new-green-algorithm.}
+\url{https://github.com/hidd/en-too.}
 %
 <<europar.initial, echo=FALSE, fig.cap="Energy spent vs. temperature for the baseline experiment. Workload and baseline runs (base) are represented with different colors, problem dimension is represented with different shapes.", fig.height=3, fig.pos="h!tb", out.width="100%">>=
 load("data/europar_test.rds")
@@ -375,7 +382,9 @@ Future work will therefore need to focus on this experimental design first and f
 \begin{credits}
 \subsubsection{\ackname}
 
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+Supported by a grant\\
+taking this much space
 
 \end{credits}
 
