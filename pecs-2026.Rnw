@@ -184,7 +184,7 @@ Assigning a process to a lower-frequency core might reduce energy consumption; h
 
 Since we cannot simply lower the temperature of the system, we need to try different approaches and measure how they influence this PKG vs. temperature model; in principle, we intend the following proposals as a measurement methodology, but it can later be applied to an actual methodology for energy optimization of metaheuristics. We will try to reduce the uncertainty of the model by executing both baseline and workload runs in a single die by using the {\sf taskset} command, that allocates processes to core sets. By keeping it in the {\em performance} core, we should be able to reduce running time, as well as leave the operating context work on the temperature optimization of this single die.
 
-<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload experiment with taskset; (left) vs. T, (right) vs. time", fig.pos="h!tb", fig.height=4, fig.show="hold", out.width="50%">>=
+<<europar.taskset, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption for the workload experiment with taskset on die 1; (left) vs. (average) T, (right) vs. time", fig.pos="h!tb", fig.height=4, fig.show="hold", out.width="50%">>=
 load("data/europar_taskset.rds")
 europar_taskset$dimension <- as.factor(europar_taskset$dimension)
 europar_taskset$population_size <- as.factor(europar_taskset$population_size)
@@ -226,7 +226,7 @@ kl_divergence <- KL(rbind(probability_taskset, probability_base), unit = "log")
 
 However, computing the Kullback-Leibler divergence between the two models, which is equal to \Sexpr{round(kl_divergence[[1]],2)}, we see that the models are essentially the same. The experimental set up does not change the model, it changes the parameters that affect the model; we need then evaluate what is the influence on the two main operational context variables we can observe, temperature and time.
 %
-<<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset for different temperatures.", fig.height=5, fig.show="hold", out.width="30%">>=
+<<europar.temperature.time, echo=FALSE, message=FALSE,warning=FALSE, fig.height=5, fig.show="hold", out.width="30%">>=
 europar_taskset_base$Experiment <- "Taskset"
 europar_test_base$Experiment <- "Base"
 
@@ -241,7 +241,7 @@ wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_e
 %
 An additional Wilcox test that compares energy consumption, temperature and time between the two experiments shows that they are not significantly different. For a system such as the one under study, this probably means that if no die is assigned to the process, in most cases the system is going to assign the first die anyway, since it is unlikely that all 8 cores of this die are busy. We should expect the same results for the workload, so we will skip the comparison in this case. We need to try a different strategy in this case. Since the lower-index cores placed on die 2 are considered "efficiency" cores, we will adapt the processes to be run in that specific die.
 
-<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. Temperature for the workload (left), and Delta E vs. Delta R (right), taskset on die 2.", fig.height=3,fig.pos="h!tb", out.width="100%", fig.show="hold", out.width="50%">>=
+<<europar.die2, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Energy consumption vs. T for the workload (left), and workload-only energy consumption (Delta PKG) vs. Delta R (right), with color representing problem dimension, taskset on die 2.", fig.height=3,fig.pos="h!tb", out.width="100%", fig.show="hold", out.width="50%">>=
 load("data/europar_taskset_die2.rds")
 europar_taskset_die2$dimension <- as.factor(europar_taskset_die2$dimension)
 europar_taskset_die2$population_size <- as.factor(europar_taskset_die2$population_size)
@@ -339,7 +339,7 @@ summary_joint_workload_with_die2 <- joint_workload_with_die2 %>%
 kable(summary_joint_workload_with_die2,
       digits = 2,
       col.names=c("Dimension", "Population Size", "Experiment", "Delta Energy (J): mean", "Trim mean", "IQR"),
-      caption = "Summary statistics for delta energy for the workload experiment with and without taskset on die 2.") %>%
+      caption = "Summary statistics for workload-only (delta) PKG energy for the workload experiment with and without taskset on die 2.") %>%
   kable_styling(latex_options = "hold_position")
 
 die2_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Experiment == "Die 2", ]$delta_PKG)
@@ -348,7 +348,7 @@ nodie_iqr <- IQR(joint_workload_with_die2[ summary_joint_workload_with_die2$Expe
 
 We have represented in Table \ref{tab:europar.die2.workload.table} the average values of energy  as well as the temperature and time needed for the workload runs for the different values of the parameters. In general, working with the second die will spend more energy for a specific combination of the parameters. However, we should remember that the experimental methodology is designed to obtain a measurement with the highest available precision of the quantity we are interested in; and in order to do this we need to look at another measurement, the inter-quartile range (IQR); a small range will represent a variable with less variation. However, there is no clear different for one or the other, and the general IQR is almost the same for the two experiment sets: \Sexpr{round(die2_iqr,2)} for the die 2 runs and \Sexpr{round(nodie_iqr,2)} for the runs without die assignment.
 %
-<<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the workload experiment with taskset on die 2.">>=
+<<europar.die2.workload.model, echo=FALSE, message=FALSE,warning=FALSE>>=
 die2_workload_model <- glm( delta_PKG ~ initial_temp*dimension*population_size+delta_seconds*evaluations+I(initial_temp^2),data = europar_taskset_die2_processed)
 anova_die2_workload_model <- anova(die2_workload_model)
 @
