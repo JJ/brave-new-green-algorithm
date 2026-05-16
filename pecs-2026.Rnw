@@ -62,6 +62,7 @@ Despite this known influence of system state on energy measurements, empirical r
 % Reviewer #3 Asks: "quadratic relationship " What is the quadratic relationship? Can you give an example? - R3
 % I think it is clear that in that range, power consumption grows faster than linearly, and when it is exponential, it grows super fast. So we can leave it like it is. - M
 % But know I ask, why up to 80 degrees, what happens at 100? is 80 a threshold? - Mario.
+% It's a reference, it might be for that specific processor - JJ
 This is beyond the critical threshold of most systems nowadays, so the quadratic model is probably closer to current reality. A more recent experimental analysis \cite{PENG2025104837} also reports an exponential relationship between power consumption and temperature, introducing a new core layout algorithm that reduces power consumption. On one hand, it is proof that energy-consumption concerns are being tackled at all levels, including processor design; on the other, it is quite clear that this cannot be leveraged by a scientist to lower energy consumption in the algorithms they work with and their implementations.
 
 This calls for more extensive experimentation on the general relationship between temperature and energy measurements, and on the extent to which these are a result of the CPU package's temperature, rather than the parametrization or implementation of the workload itself.
@@ -84,7 +85,8 @@ These whole set of experiments is then repeated several times at several points 
 % JJ, Reviewer #3 asks about 'two distinct dice' dice? we know that dice is the plural of die, but I found this:
 % In semiconductor engineering, the plural of the silicon "die" is typically dies - (Daily writning tips)
 % I think we should leave it like that or add a footnote - M
-All measures have been taken on the same system, a desktop system with an AMD Ryzen 9 9950X 16-Core Processor. This is a two-die processor, that has the cores distributed in two distinct dice, each one with its own temperature sensor. We will take into account this fact in the analysis and the experimental design. This machine is running Ubuntu with kernel {\tt 6.17.0-14-generic}. We are using Julia version 1.11.9, initially with the test version and then the stable one, although in this paper we will not be comparing hardware versions. We are using {\sf pinpoint}, a command line tool that reads energy measurements from the RAPL API \cite{rapl}.
+% Done
+All measures have been taken on the same system, a desktop system with an AMD Ryzen 9 9950X 16-Core Processor. This is a two-die processor, that has the cores distributed in two distinct dies, each one with its own temperature sensor. We will take into account this fact in the analysis and the experimental design. This machine is running Ubuntu with kernel {\tt 6.17.0-14-generic}. We are using Julia version 1.11.9, initially with the test version and then the stable one, although in this paper we will not be comparing hardware versions. We are using {\sf pinpoint}, a command line tool that reads energy measurements from the RAPL API \cite{rapl}.
 % Is RAPL really very accurate? RAPL's measurements are purely based on a model of the instruction counts. - R #3
 % If we found more space maybe we could clarify this. - M
 % R #3 also asks: In Figure 2, what is Delta PKG? How does this relate to the energy consumption?
