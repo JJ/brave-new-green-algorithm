@@ -43,11 +43,17 @@ It has been increasingly evident that measured performance, including energy exp
 
 We are specifically interested in population-based optimization algorithms, and we have been using the Brave New Algorithm \cite{bna25} as a benchmark for measurement, modelization and eventual optimization. The BNA divides the population in fitness-dependent {\em castes} which then generate the offspring using crossover and mutation (upper castes), only mutation (lower castes) and hillclimbing (lowest caste). This division and how it is carried out helps balance exploration and exploitation. Our long-term objective is to understand how implementation and algorithm parametrization interact with each other, and how we can act on both to minimize the energy spent by the particular implementation that uses the Julia programming language.
 
-
-
-
-
 \section{Experiments and results}\label{sec:exp}
+
+For the purposes of this paper, we are going to run different experiments using different parametrizations (population and problem sizes). The relevant part is that runs can be of two different types: $B$ or baseline (does not run the algorithm, it just generates the initial population), and $W$ or workload (runs the algorithm).
+%
+<<europar-poster.setup, echo=F, message=F>>=
+europar_poster_data <- read.csv("data/europar_poster_dataset.csv")
+europar_base_count <- nrow( europar_poster_data[ startsWith(europar_poster_data$work,"base"),])
+europar_workload_count <- nrow( europar_poster_data[ !startsWith(europar_poster_data$work,"base"),])
+@
+%
+We repeat at least 30 times every combination of algorithm parameters with its corresponding baseline in a $B-W-B-W...$ configuration. The whole experiment for all parameter configurations is then repeated at least 4 times. Experiments run on an AMD Ryzen 9 9950x with 16 cores. The key fact about this processor is that it is a two-die architecture, with cores distributed in these dies according to their performance in decreasing frequency (and voltage) order; the first die would howt the high-powered {\em performance} cores, while {\em efficiency} cores are placed on the second die. We repeat the above batch of experiments three times on this processor, either allocating process to core using the OS-default policy, or using the first (P) or second (E) die using the Linux command {\sf taskset}. This way we can evaluate the influence of the operating context by controlling the die it is actually run. The W and B runs take several seconds each, and they act simply as different workloads, B lighter and taking around half what the other takes. The dataset, which is freely available from \url{https://github.com/JJ/brave-new-green-algorithm}, contains \Sexpr{europar_base_count} $B$ and \Sexpr{europar_workload_count} $B$ runs. For every run we use on-chip sensors to measure the initial temperature of every die and RAPL \cite{rapl} counters to measure energy consumed. Running time is taken from the system, and processed from the {\sf pinpoint} command-line tool \cite{pinpoint}. It should be noted that {\sf pinpoint} is able to capture energy spent by the package (PKG), including processor and memory, {\em while the process is running}; this is one of the issues with energy optimization: it is impossible to isolate the energy needed by a single process.
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
