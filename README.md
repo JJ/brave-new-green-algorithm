@@ -49,7 +49,6 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
   proceedings](https://vb.svako.lt/object/elaba:291738676/291738676.pdf#page=188)
 
 
-
 ## Bibliography
 
 Please reference [one of these papers](references.bib) when re-using the content of this
@@ -74,8 +73,8 @@ author = {Merelo Guervos, Juan Julián and Merelo-Molina, Cecilia},
 
 This is open science. A bit of orientation
 
-- [`data`](data/) contains the results of the different experiments
+- [`data`](https://github.com/JJ/brave-new-green-algorithm/data/) contains the results of the different experiments
 
 ## License
 
-(c) Authors, 2025, released under the Affero GPL Please read [`LICENSE`](LICENSE/)
+(c) Authors, 2025, released under the Affero GPL Please read the [`LICENSE`](LICENSE/)
