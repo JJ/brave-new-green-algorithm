@@ -20,6 +20,8 @@ CITIC, UGR, Spain
 \and
 Zenzorrito, Granada, Spain}
 
+\maketitle
+
 \begin{abstract}
 Although developing energy-aware software has been
 a research topic for more than a decade, there are still no established
@@ -43,8 +45,6 @@ population-based metaheuristics.
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics \and Software Engineering.}
 \end{abstract}
-
-\maketitle
 
 \section{Introduction}
 
