@@ -1,0 +1,61 @@
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{color}
+\usepackage{amsmath}
+
+
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+\urlstyle{rm}
+%
+\begin{document}
+%
+\title{}
+%
+\titlerunning{}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+\and
+Instituto Tecnológico Nacional de México, Tijuana, México
+}
+%
+\authorrunning{Merelo et al.}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+
+
+
+\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
+\end{abstract}
+%
+%
+%
+\section{Introduction and state of the art}
+
+
+\section{Experiments and results}\label{sec:exp}
+
+
+\section{Discussion and conclusions}\label{sec:conclusions}
+
+
+
+\begin{credits}
+\subsubsection{\ackname}
+
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+
+\end{credits}
+
+\bibliographystyle{splncs04}
+\bibliography{energy,ga-energy,GAs,ours}
+
+\end{document}
+
