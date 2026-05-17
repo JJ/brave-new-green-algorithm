@@ -210,15 +210,37 @@ header .date {
   margin: 0;
 }
 
-@media (min-width: 980px) {
+/* 1. Medium to Large Screens (980px - 1449px) */
+/* Keeps the TOC inside the card but fixes text-wrapping and overlapping */
+@media (min-width: 980px) and (max-width: 1449px) {
   #TOC, nav#TOC {
     float: left;
     width: min(20rem, 36%);
-    margin: 0 0 1.25rem 1.25rem;
+    /* Adjusted margin: Moved the 1.25rem to the right side so text wraps cleanly away from the TOC */
+    margin: 0 1.5rem 1.25rem 0; 
     position: sticky;
-    top: 1rem;
+    top: var(--scroll-offset);
     max-height: calc(100vh - 2rem);
     overflow: auto;
+    /* FIX: Ensure the TOC sits higher than the sticky h2 headers (which are z-index: 5) */
+    z-index: 10; 
+  }
+}
+
+/* 2. Extra Large Screens (1450px and wider) */
+/* Pulls the TOC out into a true, independent sidebar on the left */
+@media (min-width: 1450px) {
+  #TOC, nav#TOC {
+    float: left;
+    width: 16rem;
+    /* Pulls the TOC entirely outside the left edge of the main content container */
+    margin: 0 0 0 -19.5rem;
+    position: sticky;
+    top: var(--scroll-offset);
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    /* FIX: Keep it above headers */
+    z-index: 10; 
   }
 }
 
