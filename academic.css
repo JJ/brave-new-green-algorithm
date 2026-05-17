@@ -16,6 +16,8 @@
   --accent-tint: rgba(17, 75, 139, 0.08);
   --blockquote-bg: rgba(31, 111, 178, 0.05);
   --target-highlight: rgba(31, 111, 178, 0.2);
+  --z-sticky-header: 5;
+  /* Extra room so anchor jumps do not hide content under sticky section headings. */
   --scroll-offset: 5.8rem;
 }
 
@@ -75,7 +77,7 @@ h2 {
   scroll-margin-top: var(--scroll-offset);
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: var(--z-sticky-header);
   background-color: var(--card-bg);
 }
 
@@ -240,6 +242,6 @@ h2:target, h3:target {
   h2 {
     position: static;
     z-index: auto;
-    background: var(--accent-tint);
+    background: linear-gradient(90deg, var(--accent-tint), transparent 55%);
   }
 }
