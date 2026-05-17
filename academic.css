@@ -210,37 +210,42 @@ header .date {
   margin: 0;
 }
 
-/* 1. Medium to Large Screens (980px - 1449px) */
+/* 1. Medium Screens (980px - 1399px) */
 /* Keeps the TOC inside the card but fixes text-wrapping and overlapping */
-@media (min-width: 980px) and (max-width: 1449px) {
+@media (min-width: 980px) and (max-width: 1399px) {
   #TOC, nav#TOC {
     float: left;
     width: min(20rem, 36%);
-    /* Adjusted margin: Moved the 1.25rem to the right side so text wraps cleanly away from the TOC */
     margin: 0 1.5rem 1.25rem 0; 
     position: sticky;
     top: var(--scroll-offset);
     max-height: calc(100vh - 2rem);
     overflow: auto;
-    /* FIX: Ensure the TOC sits higher than the sticky h2 headers (which are z-index: 5) */
-    z-index: 10; 
+    /* Massive z-index to guarantee it beats the h2 headers */
+    z-index: 999; 
   }
 }
 
-/* 2. Extra Large Screens (1450px and wider) */
-/* Pulls the TOC out into a true, independent sidebar on the left */
-@media (min-width: 1450px) {
+/* 2. Large Screens (1400px and wider) */
+/* Detaches the TOC completely and pins it to the screen as a fixed sidebar */
+@media (min-width: 1400px) {
   #TOC, nav#TOC {
-    float: left;
-    width: 16rem;
-    /* Pulls the TOC entirely outside the left edge of the main content container */
-    margin: 0 0 0 -19.5rem;
-    position: sticky;
+    position: fixed;
     top: var(--scroll-offset);
-    max-height: calc(100vh - 2rem);
-    overflow: auto;
-    /* FIX: Keep it above headers */
-    z-index: 10; 
+    
+    /* Dynamically calculates position to stay exactly to the left of the centered main content */
+    /* 26rem (half of content) + 2rem (gap) + 15rem (TOC width) = 43rem */
+    left: calc(50% - 43rem); 
+    
+    width: 15rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    
+    /* Massive z-index prevents ANY headers from sliding over it */
+    z-index: 999; 
+    
+    /* Overrides the previous margin rules so it doesn't push itself off-screen */
+    margin: 0; 
   }
 }
 
