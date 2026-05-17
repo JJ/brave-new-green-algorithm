@@ -210,44 +210,45 @@ header .date {
   margin: 0;
 }
 
-/* 1. Medium Screens (980px - 1399px) */
-/* Keeps the TOC inside the card but fixes text-wrapping and overlapping */
-@media (min-width: 980px) and (max-width: 1399px) {
+/* --- True Sidebar Layout (Desktop) --- */
+@media (min-width: 1024px) {
+  /* 1. Turn the main container into a two-column grid */
+  #content, article, main {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    gap: 3rem;
+    max-width: 75rem; /* Widened from 52rem so your text isn't squeezed */
+    align-items: start; 
+  }
+
+  /* 2. Make the main Pandoc title block span across the very top */
+  #content > header, article > header, main > header {
+    grid-column: 1 / -1;
+  }
+
+  /* 3. Trap the TOC entirely in the left column */
   #TOC, nav#TOC {
-    float: left;
-    width: min(20rem, 36%);
-    margin: 0 1.5rem 1.25rem 0; 
+    grid-column: 1 / 2;
+    grid-row: 2 / 9999; /* Start below the header and stretch downward */
     position: sticky;
     top: var(--scroll-offset);
-    max-height: calc(100vh - 2rem);
-    overflow: auto;
-    /* Massive z-index to guarantee it beats the h2 headers */
-    z-index: 999; 
+    margin: 0;
+    float: none; /* Kill the awful float behavior */
+    width: 100%;
+    max-height: calc(100vh - var(--scroll-offset) - 2rem);
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  /* 4. Shove ALL other content (paragraphs, code, headers) into the right column */
+  #content > *:not(#TOC):not(nav#TOC):not(header),
+  article > *:not(#TOC):not(nav#TOC):not(header),
+  main > *:not(#TOC):not(nav#TOC):not(header) {
+    grid-column: 2 / 3;
   }
 }
 
-/* 2. Large Screens (1400px and wider) */
-/* Detaches the TOC completely and pins it to the screen as a fixed sidebar */
-@media (min-width: 1400px) {
-  #TOC, nav#TOC {
-    position: fixed;
-    top: var(--scroll-offset);
-    
-    /* Dynamically calculates position to stay exactly to the left of the centered main content */
-    /* 26rem (half of content) + 2rem (gap) + 15rem (TOC width) = 43rem */
-    left: calc(50% - 43rem); 
-    
-    width: 15rem;
-    max-height: calc(100vh - 4rem);
-    overflow-y: auto;
-    
-    /* Massive z-index prevents ANY headers from sliding over it */
-    z-index: 999; 
-    
-    /* Overrides the previous margin rules so it doesn't push itself off-screen */
-    margin: 0; 
-  }
-}
+
 
 h2:target, h3:target {
   animation: section-highlight 1.3s ease-out;
