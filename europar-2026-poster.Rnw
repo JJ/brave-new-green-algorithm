@@ -12,7 +12,7 @@
 %
 \begin{document}
 %
-\title{}
+\title{Understanding the operational context in a metaheuristic energy optimization experimental framework}
 %
 \titlerunning{}
 % If the paper title is too long for the running head, you can set
@@ -30,7 +30,7 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 %
 \begin{abstract}
 
-
+The performance of algorithm implementations will, either speed or energy spent, will depend to a large extent on the operational context, that is, the external and internal physical state of the processor package the implementation is running, governed by processes outside the control of the scientist. In this poster we will try to understand how this state behaves, and how it influences the measurements of the energy spent by processes. In a two-die processor, we find that there are two different thermal regimes and describe how this influences said measurements.
 
 \keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
