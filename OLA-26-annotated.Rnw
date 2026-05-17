@@ -231,7 +231,7 @@ initial_baseline_table %>% mutate( p_value = ifelse( as.numeric(p_value) < 0.05,
 library(kableExtra)
 
 kable(initial_baseline_table, "latex",
-      col.names = c("Population size","Dimension","Baseline PKG (J)","Sampling = 100s", "Significant"),
+      col.names = c("Population size","Dimension","Baseline PKG (J)","Sampling = 100ms", "Significant"),
       caption = "Baseline energy consumption for different sampling frequencies",
       escape=FALSE) %>%
   kable_styling( full_width = F)
