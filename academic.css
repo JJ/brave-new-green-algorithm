@@ -22,6 +22,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
 }
 
 body {
@@ -71,7 +72,7 @@ h2 {
   position: sticky;
   top: 0;
   z-index: 5;
-  backdrop-filter: blur(1px);
+  background-color: rgba(255, 255, 255, 0.96);
 }
 
 h3 {
@@ -121,6 +122,11 @@ h1 + p a {
   border-radius: 999px;
   background: rgba(17, 75, 139, 0.08);
   text-decoration: none;
+}
+
+h1 + p a:hover,
+h1 + p a:focus-visible {
+  text-decoration: underline;
 }
 
 ul, ol {
