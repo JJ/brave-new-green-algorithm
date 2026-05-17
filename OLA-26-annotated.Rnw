@@ -27,6 +27,7 @@
 \colorlet{clrCode}{blue!18}       % code–result links
 \colorlet{clrMethod}{orange!22}   % methodology steps
 \colorlet{clrImportant}{red!18}   % important caveats / warnings
+\colorlet{clrReference}{yellow!18}   % Reference/citation
 
 % Convenience commands: all notes appear in the right margin by default.
 % \sffamily improves readability of \scriptsize annotations (serif looks poor
@@ -39,6 +40,8 @@
   \todo[color=clrMethod, size=\scriptsize]{\sffamily\textbf{Methodology:} #1}}
 \newcommand{\important}[1]{%
   \todo[color=clrImportant, size=\scriptsize]{\sffamily\textbf{Note:} #1}}
+\newcommand{\reference}[1]{%
+  \todo[color=clrReference]{\sffamily\textbf{Reference:} #1}}
 % ============================================================
 
 \begin{document}
@@ -86,6 +89,9 @@ population-based metaheuristics.
 (1) raise RAPL sampling period to 100\,ms;
 (2) interleave baseline and workload runs to make operating conditions closer;
 (3) filter zero-energy readings for reproducibility.}
+\reference{JJ Merelo, Cecilia Merelo Molina {\em Best practices in measuring energy
+consumption in population-based metaheuristics}, in Proceedings OLA'26
+International Conference on Optimization and Learning, pp 183-194.}
 
 \section{Introduction}
 
