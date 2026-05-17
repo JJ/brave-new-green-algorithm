@@ -11,13 +11,15 @@
 
 % Widen the right margin so todonotes has room for side notes.
 % The LNCS class fixes \textwidth / \textheight; geometry overrides them.
+% Larger right margin (6.5cm) gives wider note boxes -> fewer lines per note.
+% Larger bottom margin (3.5cm) keeps text higher so stacked notes don't overflow.
 \usepackage[a4paper,
-            left=2cm, right=5.5cm,
-            top=2.5cm,  bottom=2.5cm,
-            marginparwidth=4.5cm, marginparsep=4mm]{geometry}
+            left=2.5cm, right=6.5cm,
+            top=2.5cm,  bottom=3.5cm,
+            marginparwidth=5.5cm, marginparsep=4mm]{geometry}
 
 % Main annotation package
-\usepackage[colorinlistoftodos, textwidth=4.5cm]{todonotes}
+\usepackage[colorinlistoftodos, textwidth=5.5cm]{todonotes}
 
 % Semantic colour aliases
 \colorlet{clrKey}{green!25}       % key findings / conclusions
@@ -25,15 +27,17 @@
 \colorlet{clrMethod}{orange!22}   % methodology steps
 \colorlet{clrImportant}{red!18}   % important caveats / warnings
 
-% Convenience commands: all notes appear in the right margin by default
+% Convenience commands: all notes appear in the right margin by default.
+% \sffamily improves readability of \scriptsize annotations (serif looks poor
+% at that size).
 \newcommand{\keyfinding}[1]{%
-  \todo[color=clrKey, size=\tiny]{\textbf{Key finding:} #1}}
+  \todo[color=clrKey, size=\scriptsize]{\sffamily\textbf{Key finding:} #1}}
 \newcommand{\codelink}[1]{%
-  \todo[color=clrCode, size=\tiny]{\textbf{Code:} #1}}
+  \todo[color=clrCode, size=\scriptsize]{\sffamily\textbf{Code:} #1}}
 \newcommand{\methodstep}[1]{%
-  \todo[color=clrMethod, size=\tiny]{\textbf{Methodology:} #1}}
+  \todo[color=clrMethod, size=\scriptsize]{\sffamily\textbf{Methodology:} #1}}
 \newcommand{\important}[1]{%
-  \todo[color=clrImportant, size=\tiny]{\textbf{Note:} #1}}
+  \todo[color=clrImportant, size=\scriptsize]{\sffamily\textbf{Note:} #1}}
 % ============================================================
 
 \begin{document}
