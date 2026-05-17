@@ -41,7 +41,7 @@ jobs:
       - name: Generate index.html from README.md
         run: |
           pandoc README.md \
-            --standalone \
+            --toc --standalone \
             --metadata title="Brave New Green Algorithm papers and presentations" \
             --css academic.css \
             --highlight-style tango \
