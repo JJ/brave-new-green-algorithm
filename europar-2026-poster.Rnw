@@ -39,7 +39,11 @@ The performance of algorithm implementations will, either speed or energy spent,
 %
 \section{Introduction and state of the art}
 
-It has been increasingly evident that measured performance, including energy expenses, depend to a large extent on the state of the system; since modern computer systems actively manage CPU package temperature, voltage and frequency, the measures taken will depend, to a large extent, on external factors, from external room temperature to the other programs the operating system is running; of course, the experimental framework will also have an influence on system state, creating an hysteretic effect where the operating context after measurement will be returning to a different state \cite{cotta25}.
+It has been increasingly evident that measured performance, including energy expenses, depend to a large extent on the state of the system; since modern computer systems actively manage CPU package temperature, voltage and frequency, the measures taken will depend, to a large extent, on external factors, from external room temperature to the other programs the operating system is running; of course, the experimental framework will also have an influence on system state, creating an hysteretic effect where the operating context after measurement will be returning to a different state \cite{cotta25}. This is why it is essential to understand how this operating context works, and how it can interact with measurements, with the eventual objective of creating a measurement methodology and framework that helps the scientist to take informed decisions on energy-thrifty implementations of the algorithms they are interested in.
+
+We are specifically interested in population-based optimization algorithms, and we have been using the Brave New Algorithm \cite{bna25} as a benchmark for measurement, modelization and eventual optimization. The BNA divides the population in fitness-dependent {\em castes} which then generate the offspring using crossover and mutation (upper castes), only mutation (lower castes) and hillclimbing (lowest caste). This division and how it is carried out helps balance exploration and exploitation. Our long-term objective is to understand how implementation and algorithm parametrization interact with each other, and how we can act on both to minimize the energy spent by the particular implementation that uses the Julia programming language.
+
+
 
 
 
