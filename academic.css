@@ -13,7 +13,10 @@
   --h1-accent: #0f4c81;
   --h2-accent: #1f6fb2;
   --h3-accent: #547da1;
-  --sticky-offset: 5.8rem;
+  --accent-tint: rgba(17, 75, 139, 0.08);
+  --blockquote-bg: rgba(31, 111, 178, 0.05);
+  --target-highlight: rgba(31, 111, 178, 0.2);
+  --scroll-offset: 5.8rem;
 }
 
 *, *::before, *::after {
@@ -23,7 +26,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  scroll-padding-top: var(--sticky-offset);
+  scroll-padding-top: var(--scroll-offset);
 }
 
 body {
@@ -67,9 +70,9 @@ h2 {
   font-size: 1.5rem;
   border-left: 6px solid var(--h2-accent);
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(90deg, rgba(17, 75, 139, 0.08), transparent 55%);
+  background: linear-gradient(90deg, var(--accent-tint), transparent 55%);
   padding: 0.35rem 0.5rem 0.35rem 0.8rem;
-  scroll-margin-top: var(--sticky-offset);
+  scroll-margin-top: var(--scroll-offset);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -80,7 +83,7 @@ h3 {
   font-size: 1.2rem;
   border-left: 4px solid var(--h3-accent);
   padding-left: 0.55rem;
-  scroll-margin-top: var(--sticky-offset);
+  scroll-margin-top: var(--scroll-offset);
 }
 
 p {
@@ -120,7 +123,7 @@ h1 + p a {
   margin: 0.15rem 0.35rem 0.15rem 0;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: rgba(17, 75, 139, 0.08);
+  background: var(--accent-tint);
   text-decoration: none;
 }
 
@@ -172,7 +175,7 @@ blockquote {
   border-left: 4px solid var(--border-color);
   color: var(--muted-text);
   font-style: italic;
-  background: rgba(31, 111, 178, 0.05);
+  background: var(--blockquote-bg);
 }
 
 hr {
@@ -211,7 +214,7 @@ h2:target, h3:target {
 
 @keyframes section-highlight {
   from {
-    box-shadow: 0 0 0 0.25rem rgba(31, 111, 178, 0.2);
+    box-shadow: 0 0 0 0.25rem var(--target-highlight);
   }
   to {
     box-shadow: none;
@@ -237,6 +240,6 @@ h2:target, h3:target {
   h2 {
     position: static;
     z-index: auto;
-    background: rgba(17, 75, 139, 0.08);
+    background: var(--accent-tint);
   }
 }
