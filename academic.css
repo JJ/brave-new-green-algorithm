@@ -237,7 +237,6 @@ h2:target, h3:target {
   h2 {
     position: static;
     z-index: auto;
-    background-color: transparent;
     background: rgba(17, 75, 139, 0.08);
   }
 }
