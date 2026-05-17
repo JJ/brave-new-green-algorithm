@@ -210,6 +210,18 @@ header .date {
   margin: 0;
 }
 
+@media (min-width: 980px) {
+  #TOC, nav#TOC {
+    float: right;
+    width: min(20rem, 36%);
+    margin: 0 0 1.25rem 1.25rem;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+  }
+}
+
 h2:target, h3:target {
   animation: section-highlight 1.3s ease-out;
 }
