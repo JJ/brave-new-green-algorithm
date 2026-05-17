@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{color}
+\usepackage{hyperref}
 
 % ============================================================
 %  ANNOTATION SETUP  (added for OLA-26-annotated.Rnw only)
@@ -83,7 +84,7 @@ population-based metaheuristics.
 
 \important{Three core contributions:
 (1) raise RAPL sampling period to 100\,ms;
-(2) interleave baseline and workload runs to eliminate hysteresis;
+(2) interleave baseline and workload runs to make operating conditions closer;
 (3) filter zero-energy readings for reproducibility.}
 
 \section{Introduction}
@@ -132,7 +133,7 @@ These are mainstream choices in evolutionary algorithms; for the time being our 
 Castes are, however, the main differentiation feature of this algorithm, with the percentage allotted to every caste being our main control parameter; these have some restrictions in, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste \cite{bna25}. This is why we will use the percentage of population in the $\alpha$ caste as the main lever, as it can be used to generate the rest if we keep $\%\delta$ and $\%\epsilon$ fixed to a low value. In practice, then, after setting $\%\alpha$, we will set $\%\beta = 2 * \%\alpha$ and $\%\gamma = 100\% - (\%\alpha + \%\beta + \%\delta + \%\epsilon)$.
 
 The implementation of the algorithm, as well as all the parameters used, are available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
-\codelink{Julia package: \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}. All experimental CSV files in \texttt{data/} are produced by running this package.}
+\codelink{Julia package: \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}. All experimental CSV files in \texttt{data/} are produced by running scripts in this repo. {\em Chunk} refers to code fragments embedded in the \href{https://github.com/JJ/brave-new-green-algorithm/blob/main/OLA-26-annotated.Rnw}{source code of this paper}}
 
 \section{Experimental methodology and results}\label{sec:results}
 
