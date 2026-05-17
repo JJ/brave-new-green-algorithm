@@ -227,10 +227,8 @@ kable(initial_baseline_table, "latex",
 
 @
 \codelink{Chunk \texttt{ola.base.frequency}: reads \texttt{data/evoapps-1.11.7-baseline-*.csv} (50\,ms) and \texttt{data/ola-base-*.csv} (100\,ms), runs Wilcoxon tests, and renders Table\,\ref{tab:ola.base.frequency}.
-
 \vspace{2pt}
 \texttt{wilcox.test(work1\_data, work2\_data)}
-
 \vspace{2pt}
 Significance marker \texttt{+}/\texttt{-} via \texttt{p\_value < 0.05}.}
 
@@ -291,10 +289,8 @@ ggplot(workload_data, aes(x=delta_seconds, y=delta_PKG, color=as.factor(work))) 
   labs(color="Measurement frequency") + guides(color=guide_legend(title="Experiment"))
 @
 \codelink{Chunk \texttt{ola.deltas}: defines helper \texttt{compute\_deltas()} that subtracts the per-\{dimension, pop\_size\} median baseline PKG from each workload row.
-
 \vspace{2pt}
 Key line: \texttt{delta\_PKG <- workload\$PKG - rep(baseline\_summary\$median\_energy, n)}
-
 \vspace{2pt}
 Data: \texttt{evoapps-1.11.7-fix-rand-*.csv} and \texttt{ola-1.11.7-ola-*.csv}.}
 
@@ -346,7 +342,6 @@ kable(initial_vs_v2_baseline_table, "latex",
   kable_styling( full_width = F)
 @
 \codelink{Chunk \texttt{ola.micro}: compares baseline PKG between v1 (\texttt{ola-base-*.csv}) and memory-optimised v2 (\texttt{ola-1.11.7-v2-baseline-*.csv}) implementations.
-
 \vspace{2pt}
 Same \texttt{wilcoxon\_tests()} helper reused here.}
 
@@ -435,10 +430,8 @@ ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
   ylab("Package energy (Joules)") + labs(color="Experiment")
 @
 \codelink{Chunk \texttt{ola.mixed}: uses \texttt{data/ola-1.11.7-mixed-*.csv} where baseline and workload rows are interleaved. Delta is computed row-by-row:
-
 \vspace{2pt}
 \texttt{delta\_PKG[i] <- PKG[i] - PKG[i-1]}
-
 \vspace{2pt}
 rather than subtracting a global mean, ensuring both measurements share the same thermal state.}
 
