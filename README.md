@@ -56,7 +56,7 @@ Please reference [one of these papers](references.bib) when re-using the content
 repository, code or data
 
 ```bibtex
-@misc{10481/107864,
+@misc{bna25,
 year = {2025},
 month = {11},
 url = {https://hdl.handle.net/10481/107864},
