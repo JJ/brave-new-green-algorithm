@@ -39,6 +39,9 @@ The performance of algorithm implementations will, either speed or energy spent,
 %
 \section{Introduction and state of the art}
 
+It has been increasingly evident that measured performance, including energy expenses, depend to a large extent on the state of the system; since modern computer systems actively manage CPU package temperature, voltage and frequency, the measures taken will depend, to a large extent, on external factors, from external room temperature to the other programs the operating system is running; of course, the experimental framework will also have an influence on system state, creating an hysteretic effect where the operating context after measurement will be returning to a different state \cite{cotta25}.
+
+
 
 \section{Experiments and results}\label{sec:exp}
 
