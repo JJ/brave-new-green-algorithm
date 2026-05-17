@@ -17,7 +17,7 @@
             marginparwidth=4.5cm, marginparsep=4mm]{geometry}
 
 % Main annotation package
-\usepackage[colorinlistoftodos, textwidth=4.5cm, shadow]{todonotes}
+\usepackage[colorinlistoftodos, textwidth=4.5cm]{todonotes}
 
 % Semantic colour aliases
 \colorlet{clrKey}{green!25}       % key findings / conclusions
@@ -27,21 +27,16 @@
 
 % Convenience commands: all notes appear in the right margin by default
 \newcommand{\keyfinding}[1]{%
-  \todo[color=clrKey, size=\scriptsize]{\textbf{Key finding:} #1}}
+  \todo[color=clrKey, size=\tiny]{\textbf{Key finding:} #1}}
 \newcommand{\codelink}[1]{%
-  \todo[color=clrCode, size=\scriptsize]{\textbf{Code:} #1}}
+  \todo[color=clrCode, size=\tiny]{\textbf{Code:} #1}}
 \newcommand{\methodstep}[1]{%
-  \todo[color=clrMethod, size=\scriptsize]{\textbf{Methodology:} #1}}
+  \todo[color=clrMethod, size=\tiny]{\textbf{Methodology:} #1}}
 \newcommand{\important}[1]{%
-  \todo[color=clrImportant, size=\scriptsize]{\textbf{Note:} #1}}
+  \todo[color=clrImportant, size=\tiny]{\textbf{Note:} #1}}
 % ============================================================
 
 \begin{document}
-
-% ---- Overview of all annotations ----
-\listoftodos[Annotation index]
-\newpage
-% -------------------------------------
 
 \title{Best practices in measuring energy consumption in population-based metaheuristics}
 %
