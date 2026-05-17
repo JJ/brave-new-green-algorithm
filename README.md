@@ -46,7 +46,11 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
   file](ola-26-extended.Rmd).
 
 - The paper is [published in the OLA'26
-  proceedings](https://vb.svako.lt/object/elaba:291738676/291738676.pdf#page=188)
+  proceedings](https://vb.svako.lt/object/elaba:291738676/291738676.pdf#page=188),
+  but there's also [an anotated
+  version](https://github.com/JJ/brave-new-green-algorithm/releases/download/v1.0OLA/OLA-26-annotated.pdf)
+  that can help you navigate through the main findings and how data is
+  processed. 
 
 
 ## Bibliography
