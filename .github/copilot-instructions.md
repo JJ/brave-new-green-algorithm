@@ -101,3 +101,9 @@ The `.Rnw` pipeline is: `knitr::knit` → `pdflatex` → `bibtex` → `pdflatex`
 5. **Hysteresis**: Hardware thermal state (temperature) affects measurements. Mitigation strategies (mixed/interleaved runs, filtering zero-energy rows) are intentional — do not remove them.
 6. **`null_baseline_columns`**: A recurring R pattern that drops irrelevant columns from baseline data before merging. Keep it consistent across analyses.
 7. **Julia example**: `example.jl` is illustrative only; the actual experiments are run externally via the `BraveNewAlgorithm.jl` package and produce the CSV/RDS files in `data/`.
+
+## Template for annotated versions of papers
+
+Use the conventions in the [`OLA-26-annotated.Rnw`](OLA-26-annotated.Rnw),
+including package and templates for anotations included there, as a template for
+any other "annotated version of a paper" that's requested.
