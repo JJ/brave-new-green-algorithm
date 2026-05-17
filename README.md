@@ -73,7 +73,7 @@ author = {Merelo Guervos, Juan Julián and Merelo-Molina, Cecilia},
 
 This is open science. A bit of orientation
 
-- [`data`](https://github.com/JJ/brave-new-green-algorithm/data/) contains the results of the different experiments
+- [`data`](https://github.com/JJ/brave-new-green-algorithm/tree/main/data) contains the results of the different experiments
 
 ## License
 
