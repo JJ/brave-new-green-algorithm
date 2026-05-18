@@ -107,3 +107,26 @@ The `.Rnw` pipeline is: `knitr::knit` → `pdflatex` → `bibtex` → `pdflatex`
 Use the conventions in the [`OLA-26-annotated.Rnw`](OLA-26-annotated.Rnw),
 including package and templates for anotations included there, as a template for
 any other "annotated version of a paper" that's requested.
+
+## `energyR` R Package
+
+The `energyR/` subdirectory contains a standalone R package that extracts reusable
+analysis patterns from all BNA papers.
+
+- **One function per file**: every exported function lives in `energyR/R/<function-name>.R`.
+- **CRAN-compliance**: use `stats::` / `utils::` prefixes for base-R functions; suppress
+  ggplot2 NSE globals via `utils::globalVariables()` in `energyR/R/energyR-package.R`.
+- **No non-ASCII characters** anywhere in `energyR/R/*.R`, `energyR/tests/`, or
+  `energyR/vignettes/`. This includes both literal UTF-8 bytes (e.g. `o` with accent,
+  multiplication sign, plus-minus, em-dash) **and** `\uXXXX` escape sequences
+  (e.g. `\u2081`, `\u0394`). The vignette rendering engine (knitr/pandoc) and the
+  R CMD check example runner both fail when they encounter non-ASCII in strings or
+  comments — this is not a CI-environment issue but a fundamental R toolchain
+  limitation. Use plain ASCII equivalents: `Lopez` not `Lopez-with-accent`,
+  `x` for multiplication, `+/-` not `+-symbol`, `delta` not the Greek letter,
+  `log10` not `log\u2081\u2080`.
+- **man/ files**: not committed; generated at check time by `roxygen2::roxygenise('.')` in the
+  CI step before `R CMD check`.
+- **CI**: `.github/workflows/R-CMD-check.yml` runs on ubuntu (release + devel) and macOS only
+  (Windows removed). `r-lib/actions/setup-r-dependencies@v2` handles R package caching
+  automatically.
