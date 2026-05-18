@@ -262,3 +262,84 @@ combined <- rbind(
 )
 wilcoxon_tests(combined, "PKG")
 ```
+
+## 11. Data preparation helpers
+
+```{r data-prep}
+# Build a small synthetic workload frame to demonstrate helpers
+demo_wl <- data.frame(
+  PKG          = c(0, 110, 0, 125, 105, 118),
+  seconds      = rep(1.2, 6),
+  diff_fitness = c(0.001, 0.001, 0.01, 0.01, 0.1, 0.1),
+  dimension    = 3,
+  population_size = 200,
+  work         = "workload"
+)
+
+# 1. Remove zero-energy readings ("no0" strategy from OLA-2026)
+demo_clean <- filter_zero_energy(demo_wl)
+cat("Rows before / after zero filter:", nrow(demo_wl), "/", nrow(demo_clean), "\n")
+
+# 2. Add cumulative time (required for timeline plots)
+demo_clean <- add_cumulative_time(demo_clean)
+cat("First cum_seconds:", head(demo_clean$cum_seconds, 3), "\n")
+
+# 3. Add log10(diff_fitness) column (used in energy-vs-fitness plots)
+demo_clean <- add_log_diff(demo_clean)
+cat("log_diff values:", round(demo_clean$log_diff, 2), "\n")
+```
+
+## 12. Adjacent-pair (mixed) delta computation
+
+When baseline and workload rows are recorded in simple adjacent pairs (not
+symmetric triplets), use `compute_adjacent_deltas()`:
+
+```{r adjacent-deltas}
+mixed_df <- data.frame(
+  PKG     = c(100, 115, 102, 118, 99, 114),
+  seconds = c(1.0, 1.1, 1.0, 1.1, 1.0, 1.1),
+  work    = c("base", "workload", "base", "workload", "base", "workload")
+)
+mixed_df <- compute_adjacent_deltas(mixed_df, "workload")
+mixed_df[mixed_df$work == "workload", c("PKG", "delta_PKG", "delta_seconds")]
+```
+
+## 13. ANOVA top-terms table
+
+`top_anova_terms()` distils any `anova()` result down to the N most
+significant predictors and their relative contributions:
+
+```{r anova-top}
+model <- lm(mpg ~ cyl * hp + wt + disp, data = mtcars)
+top_terms <- top_anova_terms(anova(model), n = 5)
+knitr::kable(top_terms[, c("term", "percentage_variance")],
+             digits = 2,
+             caption = "Top ANOVA terms (% variance explained)")
+```
+
+## 14. Comparison tables with `pivot_comparison_table()`
+
+```{r pivot-table}
+# Build a summary with formatted strings
+wl_lbl <- create_summary(workload_with_deltas)
+wl_lbl$work <- ifelse(wl_lbl$dimension == 3, "dim3", "dim5")
+wl_lbl$pkg_mean_sd <- format_mean_sd_latex(
+  wl_lbl$mean_delta_PKG, wl_lbl$sd_delta_PKG
+)
+```
+
+## 15. Energy effort by fitness level
+
+```{r fitness-effort}
+set.seed(42)
+fitness_df <- data.frame(
+  diff_fitness = 10^(-runif(120, 1, 6)),
+  PKG          = rnorm(120, 150, 25),
+  group        = rep(c("v1", "v2"), each = 60)
+)
+effort_tbl <- energy_effort_by_fitness(fitness_df, fitness_levels = -1:-4)
+knitr::kable(effort_tbl[, c("group", "fitness_level",
+                              "median_effort", "n_samples")],
+             digits = 1,
+             caption = "Energy effort by fitness level")
+```

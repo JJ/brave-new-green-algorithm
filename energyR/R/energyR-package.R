@@ -13,14 +13,31 @@
 #' @section Typical workflow:
 #' \enumerate{
 #'   \item Load raw CSV data with \code{\link{load_bna_csv}}.
+#'   \item Optionally add derived columns:
+#'     \code{\link{add_cumulative_time}},
+#'     \code{\link{add_log_diff}},
+#'     \code{\link{add_pop_dim_label}}.
+#'   \item Remove zero-energy artefacts with \code{\link{filter_zero_energy}}.
 #'   \item Summarise baseline runs with \code{\link{summarize_baseline}}.
-#'   \item Compute workload energy deltas with \code{\link{compute_deltas}}
-#'         (separated-run design) or \code{\link{process_deltas}} (interleaved
-#'         design).
+#'   \item Compute workload energy deltas:
+#'     \code{\link{compute_deltas}} (separated-run design),
+#'     \code{\link{process_deltas}} (interleaved design), or
+#'     \code{\link{compute_adjacent_deltas}} (adjacent-pair design).
+#'   \item Optionally add covariate columns with \code{\link{process_covariates}}.
 #'   \item Summarise workload results with \code{\link{create_summary}}.
 #'   \item Run statistical tests with \code{\link{wilcoxon_tests}}.
+#'   \item Extract ANOVA insights with \code{\link{top_anova_terms}}.
+#'   \item Format for tables:
+#'     \code{\link{format_mean_sd}},
+#'     \code{\link{format_mean_sd_latex}},
+#'     \code{\link{pivot_comparison_table}},
+#'     \code{\link{energy_effort_by_fitness}}.
 #'   \item Visualise with \code{\link{plot_energy_timeline}},
-#'         \code{\link{plot_delta_energy}}, or \code{\link{plot_temperature}}.
+#'     \code{\link{plot_delta_energy}},
+#'     \code{\link{plot_energy_vs_fitness}},
+#'     \code{\link{plot_workload_vs_baseline}},
+#'     \code{\link{plot_ridgeline_delta}}, or
+#'     \code{\link{plot_temperature}}.
 #' }
 #'
 #' @keywords internal
