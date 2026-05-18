@@ -49,3 +49,5 @@ auto/
 
 # Generated static page
 index.html
+
+cache/
