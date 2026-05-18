@@ -33,7 +33,7 @@
 #'
 #' @export
 load_bna_csv <- function(file_path, drop_baseline_cols = TRUE) {
-  data <- read.csv(file_path, stringsAsFactors = FALSE)
+  data <- utils::read.csv(file_path, stringsAsFactors = FALSE)
   if (drop_baseline_cols) {
     drop_cols <- c("alpha", "max_gens", "different_seeds",
                    "diff_fitness", "generations", "evaluations")

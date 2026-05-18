@@ -50,7 +50,7 @@ energy_effort_by_fitness <- function(data,
     cbind(
       configs[i, , drop = FALSE],
       data.frame(
-        median_effort = median(vals, na.rm = TRUE),
+        median_effort = stats::median(vals, na.rm = TRUE),
         mean_effort   = mean(vals,   na.rm = TRUE),
         min_effort    = min(vals,    na.rm = TRUE),
         n_samples     = sum(!is.na(vals)),

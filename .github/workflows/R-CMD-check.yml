@@ -61,6 +61,7 @@ jobs:
           working-directory: energyR
           extra-packages: |
             any::rcmdcheck
+            any::roxygen2
             any::testthat
             any::knitr
             any::rmarkdown
@@ -68,9 +69,14 @@ jobs:
             any::reshape2
             any::ggridges
 
+      - name: Generate documentation (roxygen2 → man/)
+        working-directory: energyR
+        run: Rscript -e "roxygen2::roxygenise('.')"
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: energyR
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
           args: 'c("--no-manual", "--as-cran")'
+
