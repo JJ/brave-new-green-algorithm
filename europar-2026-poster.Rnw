@@ -180,9 +180,11 @@ ggplot(segments_df, aes(x = power_label, y = total_var, fill = power_label)) +
   labs(title = "Total Thermal Volatility", x = "", y = "Var(T1) + Var(T2)") +
   theme(legend.position = "none")
 @
+%
+We show in Figure \ref{fig:europar-poster.cluster} the projection of the cluster centers into the initial temperature plane; the high-power cluster clearly corresponds to higher temperatures, but the interesting thing is that where in the low-power cluster there seems to be a two-temperatures regime where the temperatures for both dies seem more or less correlated, that disappears in the high-power cluster. This more or less reflects the marginal distribution we see in Figure \ref{fig:europar-poster.init}, but what is interesting is that the high-power cluster not only corresponds to higher temperature, but to higher variability in these temperatures. We show in the left of \ref{fig:europar-poster.cluster} a boxplot of the sums of the variances for $T_1$ and $T_2$ for all runs in a low and high-power segment. There is a significant difference between them, with median variance of around 25º for the former, more than 30º for the latter. The transition to a low- to high-power region seems to be around 37º for $T_1$ and around 34º for $T_2$.
 
 
-\section{Discussion and conclusions}\label{sec:conclusions}
+
 
 
 
