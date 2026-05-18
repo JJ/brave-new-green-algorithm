@@ -167,7 +167,9 @@ knitr::kable(wt, digits = 4,
 ### 8.1 Energy timeline
 
 ```{r timeline-plot}
-timeline_data <- rbind(synthetic_baseline, synthetic_workload)
+common_cols   <- intersect(names(synthetic_baseline), names(synthetic_workload))
+timeline_data <- rbind(synthetic_baseline[, common_cols],
+                       synthetic_workload[, common_cols])
 timeline_data$cum_seconds <- cumsum(timeline_data$seconds)
 
 plot_energy_timeline(timeline_data,
