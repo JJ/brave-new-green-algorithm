@@ -1,0 +1,264 @@
+---
+title: "Getting Started with energyR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with energyR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 7,
+  fig.height = 4
+)
+```
+
+## Introduction
+
+The **energyR** package provides reusable utilities for loading, processing,
+and visualising energy-consumption data produced by population-based
+metaheuristics measured via Intel/AMD RAPL counters.  All helper functions were
+distilled from the R code embedded in the papers of the
+[Brave New Green Algorithm](https://github.com/JJ/brave-new-green-algorithm)
+project; they are general enough to be used in any experiment that follows
+the same interleaved-baseline measurement protocol.
+
+This vignette demonstrates the end-to-end workflow using publicly available
+data hosted in the project repository.
+
+```{r setup}
+library(energyR)
+library(ggplot2)
+library(dplyr)
+```
+
+## 1. Downloading data from the GitHub repository
+
+The package does **not** bundle any data, because the experimental CSV and RDS
+files are large.  Instead, we download them on the fly from the GitHub
+repository.
+
+```{r download-data}
+# Helper: download a file from the project repo if not already cached locally
+repo_raw <- "https://raw.githubusercontent.com/JJ/brave-new-green-algorithm/main/data/"
+
+download_bna <- function(filename, destdir = tempdir()) {
+  dest <- file.path(destdir, filename)
+  if (!file.exists(dest)) {
+    url <- paste0(repo_raw, filename)
+    tryCatch(
+      utils::download.file(url, destfile = dest, quiet = TRUE),
+      error = function(e) {
+        warning("Could not download ", filename, ": ", conditionMessage(e))
+        return(NULL)
+      }
+    )
+  }
+  return(dest)
+}
+```
+
+## 2. Loading baseline data
+
+We use one of the OLA-2026 baseline CSV files as an example.
+
+```{r load-baseline, eval = FALSE}
+baseline_file <- download_bna("ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_data <- load_bna_csv(baseline_file)   # drops algorithm-parameter cols
+head(baseline_data)
+```
+
+For the purpose of this vignette we create a small synthetic dataset that
+mirrors the structure of the real files so the code runs without network access.
+
+```{r synthetic-baseline}
+set.seed(2025)
+n_configs <- 4   # 2 dimensions × 2 population sizes
+n_reps    <- 30
+
+synthetic_baseline <- do.call(rbind, lapply(seq_len(n_configs), function(i) {
+  dim  <- c(3, 3, 5, 5)[i]
+  pop  <- c(200, 400, 200, 400)[i]
+  data.frame(
+    PKG             = rnorm(n_reps, mean = 100 + dim * 2 + pop * 0.05, sd = 5),
+    seconds         = rnorm(n_reps, mean = 1.0 + dim * 0.01, sd = 0.05),
+    dimension       = dim,
+    population_size = pop,
+    work            = "BNA-baseline"
+  )
+}))
+
+head(synthetic_baseline)
+```
+
+## 3. Summarising the baseline
+
+```{r summarize-baseline}
+baseline_summary <- summarize_baseline(synthetic_baseline)
+knitr::kable(baseline_summary, digits = 2,
+             caption = "Baseline summary statistics (synthetic data)")
+```
+
+## 4. Processing interleaved workload data
+
+When baseline and workload runs are *interleaved* in the same CSV file (one
+baseline row, one workload row, one baseline row, ..., grouped in blocks of
+61 rows), use `process_deltas()`.
+
+```{r build-interleaved}
+# Build a synthetic interleaved data frame (1 block of 61 rows)
+block <- data.frame(
+  PKG     = rep(NA_real_, 61),
+  seconds = rep(NA_real_, 61)
+)
+# Row 1 = leading baseline
+block$PKG[1]     <- rnorm(1, 100, 5)
+block$seconds[1] <- rnorm(1, 1.0, 0.05)
+
+for (i in seq(2, 60, by = 2)) {
+  # even-index = workload
+  block$PKG[i]     <- rnorm(1, 115, 5)
+  block$seconds[i] <- rnorm(1, 1.1, 0.05)
+  # odd-index = baseline
+  block$PKG[i + 1]     <- rnorm(1, 100, 5)
+  block$seconds[i + 1] <- rnorm(1, 1.0, 0.05)
+}
+
+# Add required grouping columns
+block$dimension       <- 3
+block$population_size <- 200
+block$work            <- ifelse(seq_len(61) %% 2 == 0, "workload", "baseline")
+
+interleaved <- process_deltas(block)
+head(interleaved[, c("PKG", "seconds", "delta_PKG", "delta_seconds")])
+```
+
+## 5. Computing deltas for a separated-run design
+
+When baseline and workload runs are collected separately, use
+`compute_deltas()` together with `summarize_baseline()`.
+
+```{r compute-deltas}
+synthetic_workload <- do.call(rbind, lapply(seq_len(n_configs), function(i) {
+  dim  <- c(3, 3, 5, 5)[i]
+  pop  <- c(200, 400, 200, 400)[i]
+  data.frame(
+    PKG             = rnorm(n_reps, mean = 115 + dim * 2 + pop * 0.05, sd = 6),
+    seconds         = rnorm(n_reps, mean = 1.15 + dim * 0.01, sd = 0.06),
+    dimension       = dim,
+    population_size = pop,
+    max_gens        = 25,
+    evaluations     = sample(500:3000, n_reps),
+    work            = "BNA-workload"
+  )
+}))
+
+workload_with_deltas <- compute_deltas(baseline_summary, synthetic_workload)
+head(workload_with_deltas[, c("dimension", "population_size",
+                               "PKG", "delta_PKG",
+                               "seconds", "delta_seconds")])
+```
+
+## 6. Summarising workload results
+
+```{r workload-summary}
+wl_summary <- create_summary(workload_with_deltas)
+knitr::kable(wl_summary, digits = 2,
+             caption = "Workload delta-energy summary (synthetic data)")
+```
+
+## 7. Statistical tests
+
+`wilcoxon_tests()` compares two work groups for each (dimension,
+population_size) combination.
+
+```{r wilcoxon}
+combined <- rbind(
+  synthetic_baseline[, c("PKG", "seconds", "dimension", "population_size", "work")],
+  synthetic_workload[, c("PKG", "seconds", "dimension", "population_size", "work")]
+)
+
+wt <- wilcoxon_tests(combined, column_name = "PKG")
+knitr::kable(wt, digits = 4,
+             caption = "Wilcoxon rank-sum test results (PKG energy)")
+```
+
+## 8. Visualisations
+
+### 8.1 Energy timeline
+
+```{r timeline-plot}
+timeline_data <- rbind(synthetic_baseline, synthetic_workload)
+timeline_data$cum_seconds <- cumsum(timeline_data$seconds)
+
+plot_energy_timeline(timeline_data,
+                     title = "Energy Consumption Over Time (synthetic data)")
+```
+
+### 8.2 Delta PKG violin plot
+
+```{r delta-violin}
+workload_with_deltas <- add_pop_dim_label(workload_with_deltas)
+
+plot_delta_energy(workload_with_deltas,
+                  geom      = "violin",
+                  facet_col = "population_dimension",
+                  title     = "Delta PKG Energy by Configuration (synthetic data)")
+```
+
+### 8.3 Delta PKG boxplot
+
+```{r delta-boxplot}
+plot_delta_energy(workload_with_deltas,
+                  geom      = "boxplot",
+                  facet_col = "population_dimension",
+                  title     = "Delta PKG Energy by Configuration (synthetic data)")
+```
+
+## 9. LaTeX table formatting helpers
+
+When preparing camera-ready papers, `format_mean_sd_latex()` produces the
+familiar $\mu \pm \sigma$ notation in a form that can be passed directly to
+`kableExtra::kable()` with `escape = FALSE`.
+
+```{r latex-format}
+wl_summary$pkg_latex <- format_mean_sd_latex(
+  wl_summary$mean_delta_PKG,
+  wl_summary$sd_delta_PKG
+)
+knitr::kable(wl_summary[, c("dimension", "population_size", "pkg_latex")],
+             col.names = c("Dimension", "Population size", "Mean ± SD (J)"),
+             caption   = "Delta PKG energy formatted for LaTeX output")
+```
+
+## 10. Working with real data
+
+The vignette below outlines how the same workflow applies to the real
+experimental data from the OLA-2026 paper.
+
+```{r real-data, eval = FALSE}
+# Download and load baseline data
+baseline_file  <- download_bna("ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_data  <- load_bna_csv(baseline_file)      # drops algorithm cols
+baseline_summary <- summarize_baseline(baseline_data)
+
+# Download and load workload data
+workload_file   <- download_bna("ola-1.11.7-ola-14-Dec-13-02-30.csv")
+workload_data   <- load_bna_csv(workload_file, drop_baseline_cols = FALSE)
+workload_data   <- compute_deltas(baseline_summary, workload_data)
+
+# Visualise
+workload_data <- add_pop_dim_label(workload_data)
+plot_delta_energy(workload_data, geom = "violin",
+                  facet_col = "population_dimension")
+
+# Statistical test
+combined <- rbind(
+  transform(baseline_data, work = "baseline"),
+  workload_data
+)
+wilcoxon_tests(combined, "PKG")
+```

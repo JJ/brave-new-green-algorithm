@@ -1,0 +1,43 @@
+Package: energyR
+Type: Package
+Title: Tools for Energy Consumption Analysis of Population-Based Metaheuristics
+Version: 0.1.0
+Authors@R: c(
+    person("Juan Julian", "Merelo", email = "jmerelo@ugr.es",
+           role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1385-9741")),
+    person("Cecilia", "Merelo Molina", email = "cecilia@zenzorrito.com",
+           role = "aut", comment = c(ORCID = "0000-0002-5902-0159")),
+    person("Mario", "Garcia-Valdez", role = "aut",
+           comment = c(ORCID = "0000-0002-2593-1619")),
+    person("Carlos", "Cotta", role = "aut",
+           comment = c(ORCID = "0000-0001-8478-7549")))
+Description: Provides reusable functions for loading, processing, and
+    visualizing energy consumption data produced by population-based
+    metaheuristics measured via Intel/AMD RAPL (Running Average Power Limit)
+    counters, as accessed through tools such as 'pinpoint'. Typical workflows
+    include computing energy deltas relative to a baseline, summarizing results
+    across algorithmic parameter combinations, running Wilcoxon rank-sum
+    statistical tests, and producing publication-quality 'ggplot2' visualizations.
+    The package was originally developed to support the research papers in the
+    Brave New Green Algorithm project
+    (<https://github.com/JJ/brave-new-green-algorithm>).
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: false
+Depends:
+    R (>= 4.1.0)
+Imports:
+    ggplot2 (>= 3.4.0)
+Suggests:
+    dplyr (>= 1.0.0),
+    rlang (>= 1.0.0),
+    knitr,
+    rmarkdown,
+    kableExtra,
+    reshape2,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+RoxygenNote: 7.3.2
+URL: https://github.com/JJ/brave-new-green-algorithm
+BugReports: https://github.com/JJ/brave-new-green-algorithm/issues
