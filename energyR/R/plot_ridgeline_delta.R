@@ -1,4 +1,4 @@
-#' Ridgeline density plot of Δ PKG energy
+#' Ridgeline density plot of delta PKG energy
 #'
 #' Produces a ridgeline density plot of \code{delta_PKG} values, one ridge
 #' per unique value of \code{group_col}, with quantile lines and a vertical
@@ -29,7 +29,7 @@
 #' @export
 plot_ridgeline_delta <- function(data,
                                   group_col = "param_combo",
-                                  title     = "Ridgeline density of \u0394 PKG") {
+                                  title     = "Ridgeline density of delta PKG") {
   if (!requireNamespace("ggridges", quietly = TRUE)) {
     message("Package 'ggridges' is required for plot_ridgeline_delta(). ",
             "Install it with: install.packages('ggridges')")
@@ -50,8 +50,8 @@ plot_ridgeline_delta <- function(data,
     ggridges::theme_ridges() +
     theme(legend.position = "none") +
     labs(title    = title,
-         subtitle = "Quantile lines at Q1, median, Q3 \u00b7 Red dashed line at zero",
-         x        = "\u0394 PKG energy (J)",
+         subtitle = "Quantile lines at Q1, median, Q3 | Red dashed line at zero",
+         x        = "delta PKG energy (J)",
          y        = NULL)
   print(p)
   return(invisible(p))

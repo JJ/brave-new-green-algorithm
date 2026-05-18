@@ -1,6 +1,6 @@
 #' Compute energy and time deltas relative to a summarised baseline
 #'
-#' Subtracts the per-configuration (dimension × population size) baseline
+#' Subtracts the per-configuration (dimension x population size) baseline
 #' median energy and time from each workload row, producing \code{delta_PKG}
 #' and \code{delta_seconds} columns.  This is an alternative to
 #' \code{\link{process_deltas}} for experimental designs where baseline and

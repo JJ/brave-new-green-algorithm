@@ -24,7 +24,7 @@
 #'   effect).
 #'
 #' @references
-#' Merelo-Guervos, Juan J. and Romero-López, Gustavo and Garcia-Valdez, Mario
+#' Merelo-Guervos, Juan J. and Romero-Lopez, Gustavo and Garcia-Valdez, Mario
 #' (2025). "Measuring Energy Consumption of BBOB Fitness Functions." In
 #' \emph{Applications of Evolutionary Computation (EvoApplications 2025)},
 #' Lecture Notes in Computer Science, vol. 15613, pp. 240--254. Springer.
@@ -60,7 +60,7 @@ plot_energy_vs_fitness <- function(data, x_col = "delta_PKG",
   p <- ggplot(data, aes(x = x_vals, y = y_vals)) +
     labs(title = title,
          x     = paste0(x_col, " (J)"),
-         y     = "log\u2081\u2080(diff fitness)",
+         y     = "log10(diff fitness)",
          color = color_col) +
     theme_minimal()
   if (!is.null(color_vals)) {

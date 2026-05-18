@@ -1,4 +1,4 @@
-#' Add a population-size × dimension label column
+#' Add a population-size x dimension label column
 #'
 #' Adds a new column \code{population_dimension} (or the name specified by
 #' \code{label_col}) to \code{data} containing a human-readable string of

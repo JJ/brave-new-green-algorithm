@@ -1,4 +1,4 @@
-#' Format mean ± SD as a LaTeX math string
+#' Format mean +/- SD as a LaTeX math string
 #'
 #' Produces a character vector of the form \code{"$mean \\\\pm sd$"} suitable
 #' for direct inclusion in LaTeX tables (e.g., via \pkg{kableExtra}).  Each

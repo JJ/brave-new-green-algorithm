@@ -52,7 +52,7 @@ mirrors the structure of the real files so the code runs without network access.
 
 ```{r synthetic-baseline}
 set.seed(2025)
-n_configs <- 4   # 2 dimensions × 2 population sizes
+n_configs <- 4   # 2 dimensions x 2 population sizes
 n_reps    <- 30
 
 synthetic_baseline <- do.call(rbind, lapply(seq_len(n_configs), function(i) {
@@ -208,7 +208,7 @@ wl_summary$pkg_latex <- format_mean_sd_latex(
   wl_summary$sd_delta_PKG
 )
 knitr::kable(wl_summary[, c("dimension", "population_size", "pkg_latex")],
-             col.names = c("Dimension", "Population size", "Mean ± SD (J)"),
+             col.names = c("Dimension", "Population size", "Mean +/- SD (J)"),
              caption   = "Delta PKG energy formatted for LaTeX output")
 ```
 

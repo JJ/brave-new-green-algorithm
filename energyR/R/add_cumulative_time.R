@@ -2,7 +2,7 @@
 #'
 #' Adds a column containing the cumulative sum of \code{seconds} to a data
 #' frame.  This is the most common preprocessing step in BNA experiment
-#' scripts — nearly every timeline and energy-vs-time plot requires a
+#' scripts -- nearly every timeline and energy-vs-time plot requires a
 #' monotonically increasing time axis.
 #'
 #' @param data A data frame containing a \code{seconds} column.
@@ -16,7 +16,7 @@
 #' energy consumption in population-based metaheuristics." In \emph{Proceedings
 #' OLA'26 International Conference on Optimization and Learning}, pp. 183--194.
 #'
-#' Merelo-Guervos, Juan J. and Romero-López, Gustavo and Garcia-Valdez, Mario
+#' Merelo-Guervos, Juan J. and Romero-Lopez, Gustavo and Garcia-Valdez, Mario
 #' (2025). "Time-related effects in the measurement of energy consumption in
 #' evolutionary algorithms." In \emph{Europar 2025: Parallel Processing
 #' Workshops}.

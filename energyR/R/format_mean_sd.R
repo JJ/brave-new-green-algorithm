@@ -1,4 +1,4 @@
-#' Format mean ± SD as "mean (sd)"
+#' Format mean +/- SD as "mean (sd)"
 #'
 #' Produces a compact \code{"mean (sd)"} string suitable for plain-text
 #' tables or \code{kable} columns.  For LaTeX output, see

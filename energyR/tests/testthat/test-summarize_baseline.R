@@ -1,4 +1,4 @@
-test_that("summarize_baseline returns one row per dimension×population combo", {
+test_that("summarize_baseline returns one row per dimension x population combo", {
   df <- data.frame(
     PKG             = c(rnorm(30, 100, 5), rnorm(30, 110, 5)),
     seconds         = c(rnorm(30, 1.0, 0.05), rnorm(30, 1.1, 0.05)),

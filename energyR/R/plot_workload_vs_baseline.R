@@ -6,7 +6,7 @@
 #' \itemize{
 #'   \item a dashed orange horizontal line at the per-combination trimmed-mean
 #'     baseline;
-#'   \item a shaded ±1 SD band around the baseline;
+#'   \item a shaded +/-1 SD band around the baseline;
 #'   \item colour-coded vertical segments from each point to the baseline line
 #'     (green above, pink below).
 #' }
@@ -70,8 +70,8 @@ plot_workload_vs_baseline <- function(workload,
     ) +
     scale_colour_manual(
       values = pal_sign,
-      labels = c("TRUE"  = "Above baseline (\u0394 PKG > 0)",
-                 "FALSE" = "Below baseline (\u0394 PKG < 0)"),
+      labels = c("TRUE"  = "Above baseline (delta PKG > 0)",
+                 "FALSE" = "Below baseline (delta PKG < 0)"),
       name = NULL
     ) +
     facet_wrap(stats::as.formula(paste("~", facet_col)), ncol = 2) +

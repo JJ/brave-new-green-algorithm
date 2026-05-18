@@ -25,7 +25,7 @@ test_that("wilcoxon_tests handles multiple parameter combinations", {
     }))
   }))
   result <- wilcoxon_tests(df)
-  expect_equal(nrow(result), 4)  # 2 dims × 2 pop sizes
+  expect_equal(nrow(result), 4)  # 2 dims x 2 pop sizes
 })
 
 test_that("wilcoxon_tests skips combinations with != 2 work groups", {

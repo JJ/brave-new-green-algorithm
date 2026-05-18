@@ -10,7 +10,7 @@
 #' @return The \code{\link[ggplot2]{ggplot}} object (printed as a side effect).
 #'
 #' @references
-#' Merelo-Guervos, Juan J. and Romero-López, Gustavo and Garcia-Valdez, Mario
+#' Merelo-Guervos, Juan J. and Romero-Lopez, Gustavo and Garcia-Valdez, Mario
 #' (2025). "Time-related effects in the measurement of energy consumption in
 #' evolutionary algorithms." In \emph{Europar 2025: Parallel Processing
 #' Workshops}.

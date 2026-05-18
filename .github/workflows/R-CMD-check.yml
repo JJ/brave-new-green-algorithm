@@ -69,7 +69,7 @@ jobs:
             any::reshape2
             any::ggridges
 
-      - name: Generate documentation (roxygen2 → man/)
+      - name: Generate documentation (roxygen2 to man/)
         working-directory: energyR
         run: Rscript -e "roxygen2::roxygenise('.')"
 

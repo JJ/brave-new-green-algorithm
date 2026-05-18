@@ -14,7 +14,7 @@ test_that("create_summary returns expected columns", {
   expect_true("median_delta_PKG" %in% names(result))
   expect_true("trimmed_mean_delta_PKG" %in% names(result))
   expect_true("sd_delta_PKG" %in% names(result))
-  expect_equal(nrow(result), 2)  # 2 dimensions × 1 pop × 1 max_gens
+  expect_equal(nrow(result), 2)  # 2 dimensions x 1 pop x 1 max_gens
 })
 
 test_that("create_summary works without evaluations column", {

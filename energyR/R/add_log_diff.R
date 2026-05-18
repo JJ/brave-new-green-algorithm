@@ -15,7 +15,7 @@
 #' @return The input data frame with one additional numeric column.
 #'
 #' @references
-#' Merelo-Guervos, Juan J. and Romero-López, Gustavo and Garcia-Valdez, Mario
+#' Merelo-Guervos, Juan J. and Romero-Lopez, Gustavo and Garcia-Valdez, Mario
 #' (2025). "Measuring Energy Consumption of BBOB Fitness Functions." In
 #' \emph{Applications of Evolutionary Computation (EvoApplications 2025)},
 #' Lecture Notes in Computer Science, vol. 15613, pp. 240--254. Springer.
