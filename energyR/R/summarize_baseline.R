@@ -42,11 +42,11 @@ summarize_baseline <- function(data, trim = 0.2) {
     data.frame(
       dimension            = d,
       population_size      = pop,
-      median_energy        = median(sub$PKG),
-      sd_energy            = sd(sub$PKG),
+      median_energy        = stats::median(sub$PKG),
+      sd_energy            = stats::sd(sub$PKG),
       trimmed_mean_energy  = mean(sub$PKG, trim = trim),
-      median_time          = median(sub$seconds),
-      sd_time              = sd(sub$seconds),
+      median_time          = stats::median(sub$seconds),
+      sd_time              = stats::sd(sub$seconds),
       trimmed_mean_time    = mean(sub$seconds, trim = trim),
       stringsAsFactors     = FALSE
     )

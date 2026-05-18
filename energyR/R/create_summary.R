@@ -49,10 +49,10 @@ create_summary <- function(data) {
       population_size                    = pop,
       max_gens                           = mg,
       mean_delta_PKG                     = mean(sub$delta_PKG),
-      median_delta_PKG                   = median(sub$delta_PKG),
+      median_delta_PKG                   = stats::median(sub$delta_PKG),
       trimmed_mean_delta_PKG             = mean(sub$delta_PKG, trim = 0.2),
-      sd_delta_PKG                       = sd(sub$delta_PKG),
-      iqr_delta_PKG                      = IQR(sub$delta_PKG),
+      sd_delta_PKG                       = stats::sd(sub$delta_PKG),
+      iqr_delta_PKG                      = stats::IQR(sub$delta_PKG),
       trimmed_mean_energy_per_evaluation = mean(sub$energy_per_evaluation,
                                                 trim = 0.2, na.rm = TRUE),
       stringsAsFactors = FALSE

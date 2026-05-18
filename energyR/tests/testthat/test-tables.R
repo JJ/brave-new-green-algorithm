@@ -37,7 +37,7 @@ test_that("energy_effort_by_fitness works with custom fitness levels", {
 test_that("pivot_comparison_table produces wide format", {
   skip_if_not_installed("reshape2")
   summary_df <- data.frame(
-    population_size = rep(c(200, 400), each = 2),
+    population_size = rep(200, 4),
     dimension       = rep(c(3, 5), 2),
     work            = c("v1", "v1", "v2", "v2"),
     pkg_label       = c("100 (5)", "110 (6)", "105 (4)", "115 (7)")

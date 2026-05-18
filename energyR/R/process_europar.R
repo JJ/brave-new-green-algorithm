@@ -23,7 +23,7 @@
 #'   scale_color_viridis_c scale_size_manual
 #' @export
 process_europar <- function(file_name, work_name) {
-  df <- read.csv(file_name, stringsAsFactors = FALSE)
+  df <- utils::read.csv(file_name, stringsAsFactors = FALSE)
   df$initial_temp <- (df$initial_temp_1 + df$initial_temp_2) / 2
   df$color  <- ifelse(df$work == work_name, "red", "blue")
   df$base   <- ifelse(df$work == work_name, FALSE, TRUE)

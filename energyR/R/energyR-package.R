@@ -42,3 +42,21 @@
 #'
 #' @keywords internal
 "_PACKAGE"
+
+## Suppress R CMD check NOTEs for bare column names used in ggplot2 aes() calls.
+## These are data-frame column names that are intentionally passed as unquoted
+## symbols to aes(); they are not variables in the R global environment.
+utils::globalVariables(c(
+  ".data",            # rlang pronoun used in plot_ridgeline_delta
+  "cum_seconds",      # plot_energy_timeline, plot_temperature, process_europar
+  "PKG",              # plot_energy_timeline, plot_workload_vs_baseline, process_europar
+  "delta_PKG",        # plot_delta_energy, plot_ridgeline_delta
+  "work",             # plot_delta_energy, process_europar
+  "initial_temp_1",   # plot_temperature
+  "initial_temp_2",   # plot_temperature
+  "initial_temp",     # process_europar
+  "shape",            # process_europar
+  "run_index",        # plot_workload_vs_baseline
+  "trimmed_mean_PKG", # plot_workload_vs_baseline
+  "sd_PKG"            # plot_workload_vs_baseline
+))

@@ -44,7 +44,7 @@ top_anova_terms <- function(anova_result, n = 10, alpha = 0.05,
   tbl    <- tbl[mask, , drop = FALSE]
   if (nrow(tbl) == 0) return(tbl)
   tbl    <- tbl[order(-tbl[[f_col]]), , drop = FALSE]
-  tbl    <- head(tbl, n)
+  tbl    <- utils::head(tbl, n)
   tbl$percentage_variance <- tbl[[f_col]] / sum(tbl[[f_col]], na.rm = TRUE) * 100
   rownames(tbl) <- NULL
   tbl[, c("term", "percentage_variance",
