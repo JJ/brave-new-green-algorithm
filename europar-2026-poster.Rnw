@@ -29,10 +29,7 @@ Instituto Tecnológico Nacional de México, Tijuana, México
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-
 The performance of algorithm implementations will, either speed or energy spent, will depend to a large extent on the operational context, that is, the external and internal physical state of the processor package the implementation is running, governed by processes outside the control of the scientist. In this poster we will try to understand how this state behaves, and how it influences the measurements of the energy spent by processes. In a two-die processor, we find that there are two different thermal regimes and describe how this influences said measurements.
-
-\keywords{Green computing  \and Energy profiling \and Metaheuristics.}
 \end{abstract}
 %
 %
@@ -56,7 +53,7 @@ The W and B runs take several seconds each, and they act simply as different wor
 
 The information we have about each run includes initial temperature for each die, running time and finally energy spent, together with the kind of run and algorithm parameters. From this data we compute the power dividing energy by time; power is independent of running time and thus theoretically independent of the workload, which will allow us to have a more precise vision of the operating context; the system uses power as the main lever to reduce temperature and boost performance or energy savings and also throttle it to avoid overheating; it can also be changed by die and even by core. This is why we will use it as the main variable under study in this paper.
 %
-<<europar-poster.initial, echo=F, message=F, fig.cap="Power vs. average initial temperature, with statistical distribution shown at the margin.", fig.height=3,out.width="100%", fig.pos="h!tbp">>=
+<<europar-poster.initial, echo=F, message=F, fig.cap="Power vs. average initial temperature, with statistical distribution shown at the margin.", fig.height=2.5,out.width="100%", fig.pos="h!tbp">>=
 europar_poster_data$power <- europar_poster_data$PKG/europar_poster_data$seconds
 library(ggplot2)
 library(ggExtra)
