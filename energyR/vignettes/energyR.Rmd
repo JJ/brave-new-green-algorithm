@@ -39,33 +39,9 @@ library(dplyr)
 
 The package does **not** bundle any data, because the experimental CSV and RDS
 files are large.  Instead, we download them on the fly from the GitHub
-repository.
+repository using the `download_bna()` helper included in **energyR**.
 
-```{r download-data}
-# Helper: download a file from the project repo if not already cached locally
-repo_raw <- "https://raw.githubusercontent.com/JJ/brave-new-green-algorithm/main/data/"
-
-download_bna <- function(filename, destdir = tempdir()) {
-  dest <- file.path(destdir, filename)
-  if (!file.exists(dest)) {
-    url <- paste0(repo_raw, filename)
-    tryCatch(
-      utils::download.file(url, destfile = dest, quiet = TRUE),
-      error = function(e) {
-        warning("Could not download ", filename, ": ", conditionMessage(e))
-        return(NULL)
-      }
-    )
-  }
-  return(dest)
-}
-```
-
-## 2. Loading baseline data
-
-We use one of the OLA-2026 baseline CSV files as an example.
-
-```{r load-baseline, eval = FALSE}
+```{r download-data, eval = FALSE}
 baseline_file <- download_bna("ola-base-ola-baseline-14-Dec-12-06-42.csv")
 baseline_data <- load_bna_csv(baseline_file)   # drops algorithm-parameter cols
 head(baseline_data)

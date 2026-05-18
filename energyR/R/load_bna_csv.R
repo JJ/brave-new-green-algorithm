@@ -12,6 +12,16 @@
 #'
 #' @return A data frame.
 #'
+#' @references
+#' Merelo, JJ and Merelo Molina, Cecilia (2026). "Best practices in measuring
+#' energy consumption in population-based metaheuristics." In \emph{Proceedings
+#' OLA'26 International Conference on Optimization and Learning}, pp. 183--194.
+#'
+#' Merelo Guervos, Juan Julian and Merelo-Molina, Cecilia (2025). "Analyzing
+#' how the exploration/exploitation trade off in biologically-inspired
+#' algorithms affects energy consumption." University of Granada.
+#' \url{https://hdl.handle.net/10481/107864}
+#'
 #' @examples
 #' \dontrun{
 #' # Load a baseline CSV (drops algorithm-parameter columns)
@@ -31,16 +41,3 @@ load_bna_csv <- function(file_path, drop_baseline_cols = TRUE) {
   }
   return(data)
 }
-
-#' Standard baseline column names
-#'
-#' A character vector of column names that are typically present only in
-#' workload (not baseline) CSV files produced by BNA experiments.  Useful
-#' for dropping irrelevant columns when working with baseline data.
-#'
-#' @format A character vector of length 6.
-#' @export
-null_baseline_columns <- c(
-  "alpha", "max_gens", "different_seeds",
-  "diff_fitness", "generations", "evaluations"
-)

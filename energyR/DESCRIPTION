@@ -18,9 +18,13 @@ Description: Provides reusable functions for loading, processing, and
     include computing energy deltas relative to a baseline, summarizing results
     across algorithmic parameter combinations, running Wilcoxon rank-sum
     statistical tests, and producing publication-quality 'ggplot2' visualizations.
-    The package was originally developed to support the research papers in the
+    The package was originally developed to support the research papers of the
     Brave New Green Algorithm project
-    (<https://github.com/JJ/brave-new-green-algorithm>).
+    (<https://github.com/JJ/brave-new-green-algorithm>), including
+    Merelo and Merelo Molina (2026) <https://ojs.ub.uni-konstanz.de/formosus/index.php/ola/article/view/48>,
+    Merelo-Guervos et al. (2025) <doi:10.1007/978-3-031-90065-5_15>, and
+    Merelo-Guervos et al. (2025) "Time-related effects in the measurement of
+    energy consumption in evolutionary algorithms".
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: false
