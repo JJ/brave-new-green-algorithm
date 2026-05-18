@@ -11,11 +11,9 @@ europar_poster_dataset$alpha <- NULL
 europar_poster_dataset$power <- europar_poster_dataset$PKG/europar_poster_dataset$seconds
 summary(europar_poster_dataset$power)
 
-write.csv(europar_poster_dataset, file="data/europar_poster_dataset.csv")
-
 library(ggplot2)
 library(ggExtra)
-distribution_run <- ggplot(europar_poster_dataset, aes(x=initial_temp_1, y=power, group=run, color=run))+geom_point()+ theme_minimal()
+distribution_run <- ggplot(europar_poster_dataset, aes(x=initial_temp, y=power, group=run, color=run))+geom_point()+ theme_minimal()
 ggMarginal(distribution_run, type="density", groupFill=T, alpha=0.5)
 
 library(scales)

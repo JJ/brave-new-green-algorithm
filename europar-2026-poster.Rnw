@@ -37,13 +37,10 @@ The performance of algorithm implementations will, either speed or energy spent,
 %
 %
 %
-\section{Introduction and state of the art}
 
 It has been increasingly evident that measured performance, including energy expenses, depend to a large extent on the state of the system; since modern computer systems actively manage CPU package temperature, voltage and frequency, the measures taken will depend, to a large extent, on external factors, from external room temperature to the other programs the operating system is running; of course, the experimental framework will also have an influence on system state, creating an hysteretic effect where the operating context after measurement will be returning to a different state \cite{cotta25}. This is why it is essential to understand how this operating context works, and how it can interact with measurements, with the eventual objective of creating a measurement methodology and framework that helps the scientist to take informed decisions on energy-thrifty implementations of the algorithms they are interested in.
 
 We are specifically interested in population-based optimization algorithms, and we have been using the Brave New Algorithm \cite{bna25} as a benchmark for measurement, modelization and eventual optimization. The BNA divides the population in fitness-dependent {\em castes} which then generate the offspring using crossover and mutation (upper castes), only mutation (lower castes) and hillclimbing (lowest caste). This division and how it is carried out helps balance exploration and exploitation. Our long-term objective is to understand how implementation and algorithm parametrization interact with each other, and how we can act on both to minimize the energy spent by the particular implementation that uses the Julia programming language.
-
-\section{Experiments and results}\label{sec:exp}
 
 For the purposes of this paper, we are going to run different experiments using different parametrizations (population and problem sizes). The relevant part is that runs can be of two different types: $B$ or baseline (does not run the algorithm, it just generates the initial population), and $W$ or workload (runs the algorithm).
 %
@@ -53,7 +50,136 @@ europar_base_count <- nrow( europar_poster_data[ startsWith(europar_poster_data$
 europar_workload_count <- nrow( europar_poster_data[ !startsWith(europar_poster_data$work,"base"),])
 @
 %
-We repeat at least 30 times every combination of algorithm parameters with its corresponding baseline in a $B-W-B-W...$ configuration. The whole experiment for all parameter configurations is then repeated at least 4 times. Experiments run on an AMD Ryzen 9 9950x with 16 cores. The key fact about this processor is that it is a two-die architecture, with cores distributed in these dies according to their performance in decreasing frequency (and voltage) order; the first die would howt the high-powered {\em performance} cores, while {\em efficiency} cores are placed on the second die. We repeat the above batch of experiments three times on this processor, either allocating process to core using the OS-default policy, or using the first (P) or second (E) die using the Linux command {\sf taskset}. This way we can evaluate the influence of the operating context by controlling the die it is actually run. The W and B runs take several seconds each, and they act simply as different workloads, B lighter and taking around half what the other takes. The dataset, which is freely available from \url{https://github.com/JJ/brave-new-green-algorithm}, contains \Sexpr{europar_base_count} $B$ and \Sexpr{europar_workload_count} $B$ runs. For every run we use on-chip sensors to measure the initial temperature of every die and RAPL \cite{rapl} counters to measure energy consumed. Running time is taken from the system, and processed from the {\sf pinpoint} command-line tool \cite{pinpoint}. It should be noted that {\sf pinpoint} is able to capture energy spent by the package (PKG), including processor and memory, {\em while the process is running}; this is one of the issues with energy optimization: it is impossible to isolate the energy needed by a single process.
+We repeat at least 30 times every combination of algorithm parameters with its corresponding baseline in a $B-W-B-W...$ configuration. The whole experiment for all parameter configurations is then repeated at least 4 times. Experiments run on an AMD Ryzen 9 9950x with 16 cores. The key fact about this processor is that it is a two-die architecture, with cores distributed in these dies according to their performance in decreasing frequency (and voltage) order; the first die would howt the high-powered {\em performance} cores, while {\em efficiency} cores are placed on the second die. We repeat the above batch of experiments three times on this processor, either allocating process to core using the OS-default policy, or using the first (P) or second (E) die using the Linux command {\sf taskset}. This way we can evaluate the influence of the operating context by controlling the die it is actually run.
+
+The W and B runs take several seconds each, and they act simply as different workloads, B lighter and taking around half what the other takes. The dataset, which is freely available from \url{https://github.com/JJ/brave-new-green-algorithm}, contains \Sexpr{europar_base_count} $B$ and \Sexpr{europar_workload_count} $B$ runs. For every run we use on-chip sensors to measure the initial temperature of every die and RAPL \cite{rapl} counters to measure energy consumed. Running time is taken from the system, and processed from the {\sf pinpoint} command-line tool \cite{pinpoint}. It should be noted that {\sf pinpoint} is able to capture energy spent by the package (PKG), including processor and memory, {\em while the process is running}; this is one of the issues with energy optimization: it is impossible to isolate the energy needed by a single process. This is why we need, after experiments that prove the importance of the operating context \cite{merelo26:ola}, to understand this operating context.
+
+The information we have about each run includes initial temperature for each die, running time and finally energy spent, together with the kind of run and algorithm parameters. From this data we compute the power dividing energy by time; power is independent of running time and thus theoretically independent of the workload, which will allow us to have a more precise vision of the operating context; the system uses power as the main lever to reduce temperature and boost performance or energy savings and also throttle it to avoid overheating; it can also be changed by die and even by core. This is why we will use it as the main variable under study in this paper.
+%
+<<europar-poster.initial, echo=F, message=F, fig.cap="Power vs. average initial temperature, with statistical distribution shown at the margin.", fig.height=3,out.width="100%", fig.pos="h!tbp">>=
+europar_poster_data$power <- europar_poster_data$PKG/europar_poster_data$seconds
+library(ggplot2)
+library(ggExtra)
+distribution_run <- ggplot(europar_poster_data, aes(x=initial_temp, y=power, group=run, color=run))+geom_point()+ theme_minimal()+theme(legend.position="bottom")
+ggMarginal(distribution_run, type="density", groupFill=T, alpha=0.5)
+@
+%
+Figure \ref{fig:europar-poster.initial} plots power vs the average initial temperature; the fact that there is no discernible difference between the power drawn for the two kinds of runs proves our statement above. But what we can observe in both distributions at the margins is that there are two {\em clusters} in the initial temperature which translate to clusters in power. Again, as shown in \cite{merelo26:ola} the system state can suddenly change taking the algorithms to draw more power; however, what we see in this chart is that these changes in temperature and in voltage or frequency leading to changes are not continuos, but clustered around some central values. This points to changes of regime during the set of runs that constitute an experiment, so we will apply a multi-point shift-point analysis algorithm to analyze every experiment and then a clustering algorithm to understand the values that define each cluster. We will use the R library {\sf ecp} \cite{ecp-article} and its {\sf e.divisive} multi-variable strategy to segment the time series of every experimental run.
+%
+<<europar-poster.cluster, echo=F, message=F, cache=T, fig.cap="Segment center values projected to the temperature plane (left) and thermal volatility (right) for both clusters, color representing cluster index", out.width="50%", fig.height=3, fig.pos="h!tbp", fig.show="hold">>=
+library(dplyr)
+library(ecp)
+
+# Create a new time series ID every time 'cum_seconds' restarts.
+# We also initialize an empty segment_id to map our change-points later.
+europar_poster_data <- europar_poster_data %>%
+  mutate(
+    restart = ifelse(row_number() == 1, 0, cum_seconds < lag(cum_seconds)),
+    ts_id = cumsum(restart) + 1,
+    segment_id = NA
+  )
+
+segments_list <- list()
+
+# =========================================================================
+# 2. Extract Segments, Compute Metrics & Map Global Indices
+# =========================================================================
+for (id in unique(europar_poster_data$ts_id)) {
+  ts_data <- europar_poster_data %>% filter(ts_id == id)
+
+  # Matrix for e.divisive multivariate analysis
+  ts_matrix <- ts_data %>%
+    select(initial_temp_1, initial_temp_2, power) %>%
+    as.matrix()
+
+  if (nrow(ts_matrix) > 5) {
+    # Perform change-point analysis (NO set.seed() used!)
+    cp_result <- e.divisive(ts_matrix, sig.lvl = 0.05, R = 199)
+    cps <- cp_result$estimates
+
+    for (i in 1:(length(cps) - 1)) {
+      start_idx <- cps[i]
+      end_idx <- cps[i+1] - 1
+      segment_data <- ts_matrix[start_idx:end_idx, , drop = FALSE]
+
+      # Map the segment ID back to the exact rows in the raw dataframe
+      # (Crucial for the decision tree feature engineering later)
+      global_indices <- which(europar_poster_data$ts_id == id)[start_idx:end_idx]
+      europar_poster_data$segment_id[global_indices] <- i
+
+      t1 <- segment_data[, "initial_temp_1"]
+      t2 <- segment_data[, "initial_temp_2"]
+      pwr <- segment_data[, "power"]
+
+      # Safe calculation for correlation (needs >2 points and variance)
+      if (length(t1) > 2 && sd(t1, na.rm = TRUE) > 0 && sd(t2, na.rm = TRUE) > 0) {
+        intra_cor <- cor(t1, t2, use = "complete.obs")
+      } else {
+        intra_cor <- NA
+      }
+
+      # Store both the averages and the new structural calculations
+      segments_list[[length(segments_list) + 1]] <- data.frame(
+        ts_id = id,
+        segment_id = i,
+        start_idx = start_idx,
+        end_idx = end_idx,
+        avg_temp_1 = mean(t1, na.rm = TRUE),
+        avg_temp_2 = mean(t2, na.rm = TRUE),
+        avg_power  = mean(pwr, na.rm = TRUE),
+        var_T1       = var(t1, na.rm = TRUE),
+        var_T2       = var(t2, na.rm = TRUE)
+      )
+    }
+  }
+}
+
+segments_df <- bind_rows(segments_list)
+
+# Compute COMBINED Total Thermal Volatility (Var T1 + Var T2)
+segments_df <- segments_df %>%
+  mutate(total_var = var_T1 + var_T2)
+
+# =========================================================================
+# 3. Cluster USING ONLY AVERAGES
+# =========================================================================
+
+# Select only the 3 original variables for K-means and scale them
+cluster_features <- segments_df %>%
+  select(avg_temp_1, avg_temp_2, avg_power)
+
+scaled_features <- scale(cluster_features)
+
+# Run K-means (NO set.seed() used!)
+km_res <- kmeans(scaled_features, centers = 2)
+segments_df$cluster <- as.factor(km_res$cluster)
+
+# Dynamically assign high-power / low-power labels
+power_means <- aggregate(segments_df$avg_power, by=list(cluster=segments_df$cluster), FUN=mean)
+high_power_idx <- power_means$cluster[which.max(power_means$x)]
+
+segments_df <- segments_df %>%
+  mutate(
+    power_label = ifelse(cluster == high_power_idx, "high-power", "low-power")
+  )
+
+# =========================================================================
+# 4. Visualization: Averages vs Architectural Characteristics
+# =========================================================================
+
+# Plot A: Standard Scatter showing the clustering on averages
+ggplot(segments_df, aes(x = avg_temp_1, y = avg_temp_2, color = power_label)) +
+  geom_point(size = 2.5, alpha = 0.8) +
+  theme_minimal() +
+  labs(title = "Cluster View: Temp 1 vs Temp 2", color = "Power Regime")
+
+# Plot D: Boxplot showing Total Thermal Volatility
+ggplot(segments_df, aes(x = power_label, y = total_var, fill = power_label)) +
+  geom_boxplot(alpha = 0.7, notch = TRUE) +
+  theme_minimal() +
+  labs(title = "Total Thermal Volatility", x = "", y = "Var(T1) + Var(T2)") +
+  theme(legend.position = "none")
+@
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
