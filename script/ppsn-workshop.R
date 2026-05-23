@@ -87,7 +87,7 @@ segments_df <- segments_df %>%
 
 # Select only the 3 original variables for K-means and scale them
 cluster_features <- segments_df %>%
-  select(avg_temp_1, avg_temp_2, avg_power)
+  select(avg_temp_1, avg_temp_2, avg_power, avg_time)
 
 scaled_features <- scale(cluster_features)
 
@@ -110,6 +110,12 @@ segments_df <- segments_df %>%
 
 # Plot A: Standard Scatter showing the clustering on averages
 ggplot(segments_df, aes(x = avg_temp_1, y = avg_temp_2, color = power_label)) +
+  geom_point(size = 2.5, alpha = 0.8) +
+  theme_minimal() +
+  labs(title = "Cluster View: Temp 1 vs Temp 2", color = "Power Regime")
+
+# Plot B: Standard Scatter showing the clustering on averages for time and power
+ggplot(segments_df, aes(x = avg_time, y = avg_power, color = power_label)) +
   geom_point(size = 2.5, alpha = 0.8) +
   theme_minimal() +
   labs(title = "Cluster View: Temp 1 vs Temp 2", color = "Power Regime")
