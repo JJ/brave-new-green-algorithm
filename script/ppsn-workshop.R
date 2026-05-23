@@ -91,17 +91,18 @@ cluster_features <- segments_df %>%
 
 scaled_features <- scale(cluster_features)
 
-# Run K-means (NO set.seed() used!)
-km_res <- kmeans(scaled_features, centers = 2)
+# Run K-means with 3 clusters
+km_res <- kmeans(scaled_features, centers = 3)
 segments_df$cluster <- as.factor(km_res$cluster)
 
 # Dynamically assign high-power / low-power labels
 power_means <- aggregate(segments_df$avg_power, by=list(cluster=segments_df$cluster), FUN=mean)
 high_power_idx <- power_means$cluster[which.max(power_means$x)]
+low_power_idx <- power_means$cluster[which.min(power_means$x)]
 
 segments_df <- segments_df %>%
   mutate(
-    power_label = ifelse(cluster == high_power_idx, "high-power", "low-power")
+    power_label = ifelse(cluster == high_power_idx, "high-power", ifelse(cluster == low_power_idx, "low-power", "mid-power"))
   )
 
 # =========================================================================
