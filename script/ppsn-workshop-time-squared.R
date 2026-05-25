@@ -20,31 +20,16 @@ all_vars_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 +
                                        run*dimension*population_size*max_gens + residual_seconds +
                                        I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
 
-europar_poster_dataset$generations[is.na(europar_poster_dataset$generations)] <- 0
-europar_poster_dataset$evaluations[is.na(europar_poster_dataset$evaluations)] <- 0
+europar_poster_dataset$diff_temp <- europar_poster_dataset$initial_temp_1 - europar_poster_dataset$initial_temp_2
 
-also_workload_vars_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 +
+diff_temp_square_energy_model <- glm( PKG ~ initial_temp_1*diff_temp +
                                        run*dimension*population_size*max_gens + residual_seconds +
-                                         run:evaluations+run:generations+
-                                       I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
-
-
-# 1. Calculate Explained Deviance (Pseudo R-squared)
-# Formula: 1 - (Residual Deviance / Null Deviance)
-pseudo_r2_sq <- 1 - (square_energy_model$deviance / square_energy_model$null.deviance)
-pseudo_r2_dsq <- 1 - (double_square_energy_model$deviance / double_square_energy_model$null.deviance)
-
-cat("Square Model Explained Variance: ", round(pseudo_r2_sq * 100, 2), "%\n")
-cat("Double Square Model Explained Variance: ", round(pseudo_r2_dsq * 100, 2), "%\n")
+                                       I(residual_seconds^2)+ I(initial_temp_1^2)*I(diff_temp^2), data=europar_poster_dataset)
 
 # 2. Direct AIC Comparison
 # Lower is better.
-AIC(square_energy_model, double_square_energy_model)
+AIC(all_vars_square_energy_model, diff_temp_square_energy_model)
 
-# 3. Formal Statistical Comparison (F-test)
-# This tests if the reduction in deviance is statistically significant
-# given the 3 degrees of freedom you lost by adding the new variables.
-anova(square_energy_model, double_square_energy_model, test="F")
 
 # --- 3. EUROPAR POSTER PLOT (STRICTLY OBSERVED RANGE) ---
 library(ggplot2)
