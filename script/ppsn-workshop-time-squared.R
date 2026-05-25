@@ -30,6 +30,16 @@ anova_diff_temp_square_energy_model <- anova(diff_temp_square_energy_model)
 # Lower is better.
 AIC(all_vars_square_energy_model, diff_temp_square_energy_model)
 
+# Look only at the workload
+ppsn_workshop_workload_data <- europar_poster_dataset[ europar_poster_dataset$run == "W", ]
+
+diff_temp_square_workload_energy_model <- glm( PKG ~ initial_temp_1*diff_temp +
+                                                      dimension*population_size*max_gens +
+                                                      generations*evaluations+
+                                                      residual_seconds +
+                                                      I(residual_seconds^2)+ I(initial_temp_1^2)*I(diff_temp^2),
+                                               data=ppsn_workshop_workload_data)
+
 
 # --- 3. EUROPAR POSTER PLOT (STRICTLY OBSERVED RANGE) ---
 library(ggplot2)
