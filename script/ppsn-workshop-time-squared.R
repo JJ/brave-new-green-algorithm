@@ -16,82 +16,18 @@ anova_power_model <- anova(square_energy_model)
 
 double_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 + run*dimension*population_size + residual_seconds + I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
 
-high_interaction_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2*run*dimension*population_size*residual_seconds + I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
+all_vars_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 +
+                                       run*dimension*population_size*max_gens + residual_seconds +
+                                       I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
 
-# Install and load stargazer if you haven't already
-# install.packages("stargazer")
-library(stargazer)
+europar_poster_dataset$generations[is.na(europar_poster_dataset$generations)] <- 0
+europar_poster_dataset$evaluations[is.na(europar_poster_dataset$evaluations)] <- 0
 
-# Generate a clean LaTeX table comparing the two best models
-# You can embed this directly in a Knitr chunk with results='asis'
-stargazer(double_square_energy_model, high_interaction_square_energy_model,
-          type = "latex",
-          title = "Comparison of Energy Modeling Strategies",
-          dep.var.labels = c("Package Energy (Joules)"),
-          covariate.labels = c("Initial Temp 1", "Initial Temp 2", "Workload (W)",
-                               "Dimension", "Population", "Residual Time",
-                               "Residual Time^2", "Temp 1^2", "Temp 2^2"),
-          # This command suppresses all the unreadable 3-way+ interactions from the printout
-          omit = c(".*:.*:.*"),
-          omit.stat = c("f", "ser"), # Omits redundant stats to save poster space
-          no.space = TRUE,
-          star.cutoffs = c(0.05, 0.01, 0.001))
+also_workload_vars_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 +
+                                       run*dimension*population_size*max_gens + residual_seconds +
+                                         run:evaluations+run:generations+
+                                       I(residual_seconds^2)+ I(initial_temp_1^2)*I(initial_temp_2^2), data=europar_poster_dataset)
 
-# Install broom if you don't have it: install.packages("broom")
-library(broom)
-library(dplyr)
-
-# 1. Extract coefficients and 95% confidence intervals for both models
-tidy_poster <- tidy(double_square_energy_model, conf.int = TRUE)
-tidy_poster$model <- "Poster Model (Quadratic)"
-
-tidy_kitchen <- tidy(high_interaction_square_energy_model, conf.int = TRUE)
-tidy_kitchen$model <- "Kitchen Sink Model (Overfitted)"
-
-# 2. Combine the data and filter strictly for the main workload effects
-# We exclude the intercept and temperatures here so the scale doesn't get ruined
-plot_data <- rbind(tidy_poster, tidy_kitchen) %>%
-  filter(term %in% c("runW", "dimension", "population_size", "residual_seconds"))
-
-# Clean up the parameter names for the poster
-plot_data$term <- factor(plot_data$term,
-                         levels = c("residual_seconds", "population_size", "dimension", "runW"),
-                         labels = c("Time (Residuals)", "Population Size", "Dimension", "Workload (runW)"))
-
-# 3. Build the Coefficient Plot
-forest_plot <- ggplot(plot_data, aes(x = estimate, y = term, color = model)) +
-  # Draw the critical "Zero Effect" line
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40", linewidth = 1) +
-
-  # Draw the points and their 95% confidence intervals (error bars)
-  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
-                  position = position_dodge(width = 0.5),
-                  linewidth = 1.2, size = 1) +
-
-  # Format the chart for academic presentation
-  labs(
-    title = "Variance Fracturing: The Danger of Overfitting",
-    subtitle = "Notice how the overfitted model destroys the confidence interval for the Workload parameter",
-    x = "Estimated Coefficient (Impact on Total Energy)",
-    y = "Main Effect Parameters",
-    color = "Model Strategy"
-  ) +
-  scale_color_manual(values = c("Poster Model (Quadratic)" = "#1f77b4",
-                                "Kitchen Sink Model (Overfitted)" = "#d62728")) +
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position = "bottom",
-    plot.title = element_text(face = "bold", size = 16),
-    plot.subtitle = element_text(color = "gray30", margin = margin(b = 15)),
-    panel.grid.minor = element_blank(),
-    axis.text.y = element_text(face = "bold", size = 12)
-  )
-
-# Render the plot
-print(forest_plot)
-
-# Save for the poster
-# ggsave("variance_fracturing_plot.pdf", plot = forest_plot, width = 10, height = 4, dpi = 300)
 
 # 1. Calculate Explained Deviance (Pseudo R-squared)
 # Formula: 1 - (Residual Deviance / Null Deviance)
