@@ -25,7 +25,7 @@ europar_poster_dataset$diff_temp <- europar_poster_dataset$initial_temp_1 - euro
 diff_temp_square_energy_model <- glm( PKG ~ initial_temp_1*diff_temp +
                                        run*dimension*population_size*max_gens + residual_seconds +
                                        I(residual_seconds^2)+ I(initial_temp_1^2)*I(diff_temp^2), data=europar_poster_dataset)
-
+anova_diff_temp_square_energy_model <- anova(diff_temp_square_energy_model)
 # 2. Direct AIC Comparison
 # Lower is better.
 AIC(all_vars_square_energy_model, diff_temp_square_energy_model)
