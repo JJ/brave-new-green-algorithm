@@ -22,6 +22,8 @@ all_vars_square_energy_model <- glm( PKG ~ initial_temp_1*initial_temp_2 +
 
 europar_poster_dataset$diff_temp <- europar_poster_dataset$initial_temp_1 - europar_poster_dataset$initial_temp_2
 
+diff_time_model <- glm( seconds ~ initial_temp_1*diff_temp + run, data=europar_poster_dataset)
+europar_poster_dataset$residual_seconds <- residuals(diff_time_model)
 diff_temp_square_energy_model <- glm( PKG ~ initial_temp_1*diff_temp +
                                        run*dimension*population_size*max_gens + residual_seconds +
                                        I(residual_seconds^2)+ I(initial_temp_1^2)*I(diff_temp^2), data=europar_poster_dataset)
@@ -32,6 +34,12 @@ AIC(all_vars_square_energy_model, diff_temp_square_energy_model)
 
 # Look only at the workload
 ppsn_workshop_workload_data <- europar_poster_dataset[ europar_poster_dataset$run == "W", ]
+
+workload_time_model <- glm( seconds ~ initial_temp_1*diff_temp+
+                              dimension*population_size*max_gens +
+                              generations*evaluations, data=ppsn_workshop_workload_data)
+
+ppsn_workshop_workload_data$residual_seconds <- residuals(workload_time_model)
 
 diff_temp_square_workload_energy_model <- glm( PKG ~ initial_temp_1*diff_temp +
                                                       dimension*population_size*max_gens +
