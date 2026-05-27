@@ -103,8 +103,7 @@ In this work, we address this challenge by proposing a measurement methodology t
 \section{A brave new algorithm} \label{sec:bna}
 
 Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm (EA), by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.  %% comienzo a editar -Carlos
-Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave,bna25}, but we will give a brief description here for the sake of completeness.%% termino de editar -Carlos
-%% Sorting references by number -Carlos
+Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave,bna25}, but we will give a brief description here for the sake of completeness.
 
 What BNA introduces with respect to other EAs is the division of the population into {\em castes} (i.e., strata);
 each receiving a differentiated treatment for reproduction.
