@@ -193,6 +193,6 @@ The table is useful as an at-a-glance ranking, but it should be read as a screen
 
 1. **Context:** "We profiled BNA energy in LION with baseline-corrected measurements, not raw Joules."
 2. **Method:** "Baseline spread is real, so using per-configuration baseline summaries is mandatory."
-3. **Result:** "Lower `max_gens` often reduces energy, but can limit final fitness."
+3. **Result:** "Lower `max_gens` often reduces the amount of energy spent for a certain configuration, but can limit final fitness."
 4. **Trade-off:** "The best setting depends on whether your priority is raw energy savings or better fitness."
 5. **Platform warning:** "Runtime upgrades can shift energy behaviour by themselves; always re-measure after updates."
