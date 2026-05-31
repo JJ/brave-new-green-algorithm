@@ -38,7 +38,7 @@ baseline_summary <- summarize_baseline(baseline_data)
 
 # Subtract baseline from workload measurements
 workload_data <- load_bna_csv("path/to/workload.csv", drop_baseline_cols = FALSE)
-workload_data <- compute_deltas(baseline_summary, workload_data)
+workload_data <- prepare_workload(baseline_summary, workload_data)
 
 # Statistical comparison
 combined <- rbind(
@@ -48,7 +48,6 @@ combined <- rbind(
 wilcoxon_tests(combined, "PKG")
 
 # Visualise
-workload_data <- add_pop_dim_label(workload_data)
 plot_delta_energy(workload_data, geom = "violin")
 ```
 
@@ -75,6 +74,7 @@ alternate in the same file), use `process_deltas()` instead of
 |---|---|
 | `summarize_baseline()` | Descriptive statistics for baseline data by dimension × pop. size |
 | `compute_deltas()` | Subtract summarised baseline from separated workload measurements |
+| `prepare_workload()` | One-step workload prep (delta + log fitness + pop/dim label) |
 | `process_deltas()` | Compute deltas from symmetric interleaved (triplet) data |
 | `compute_adjacent_deltas()` | Compute deltas from adjacent-pair (mixed/inverted) data |
 | `process_covariates()` | Add prev/post baseline covariate columns for regression |

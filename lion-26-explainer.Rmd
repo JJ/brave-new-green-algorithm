@@ -29,26 +29,7 @@ knitr::opts_chunk$set(
 ```{r libraries}
 library(ggplot2)
 library(dplyr)
-
-if (requireNamespace("energyR", quietly = TRUE)) {
-  summarize_baseline <- energyR::summarize_baseline
-  compute_deltas <- energyR::compute_deltas
-  create_summary <- energyR::create_summary
-  add_log_diff <- energyR::add_log_diff
-  add_pop_dim_label <- energyR::add_pop_dim_label
-  plot_delta_energy <- energyR::plot_delta_energy
-  plot_energy_vs_fitness <- energyR::plot_energy_vs_fitness
-  load_bna_csv <- energyR::load_bna_csv
-} else {
-  source("energyR/R/summarize_baseline.R")
-  source("energyR/R/compute_deltas.R")
-  source("energyR/R/create_summary.R")
-  source("energyR/R/add_log_diff.R")
-  source("energyR/R/add_pop_dim_label.R")
-  source("energyR/R/plot_delta_energy.R")
-  source("energyR/R/plot_energy_vs_fitness.R")
-  source("energyR/R/load_bna_csv.R")
-}
+library(energyR)
 ```
 
 ## Why this explainer?
@@ -70,9 +51,7 @@ lion_baseline <- load_bna_csv("data/lion-1.11.8-baseline.csv")
 lion_summary <- summarize_baseline(lion_baseline)
 
 lion_workload <- load_bna_csv("data/lion-1.11.8-bna-fix-rand.csv", drop_baseline_cols = FALSE)
-lion_workload <- compute_deltas(lion_summary, lion_workload)
-lion_workload <- add_log_diff(lion_workload)
-lion_workload <- add_pop_dim_label(lion_workload, label_col = "dim_pop")
+lion_workload <- prepare_workload(lion_summary, lion_workload, label_col = "dim_pop")
 lion_workload$julia <- "1.11.8"
 
 # EvoApps baseline/workload used in the paper as the previous platform (Julia 1.11.7)
@@ -80,9 +59,7 @@ prev_baseline <- load_bna_csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-
 prev_summary <- summarize_baseline(prev_baseline)
 
 prev_workload <- load_bna_csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv", drop_baseline_cols = FALSE)
-prev_workload <- compute_deltas(prev_summary, prev_workload)
-prev_workload <- add_log_diff(prev_workload)
-prev_workload <- add_pop_dim_label(prev_workload, label_col = "dim_pop")
+prev_workload <- prepare_workload(prev_summary, prev_workload, label_col = "dim_pop")
 prev_workload$julia <- "1.11.7"
 ```
 
