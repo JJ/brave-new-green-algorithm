@@ -1,0 +1,195 @@
+---
+title: "LION 2026 in 4 Visuals"
+subtitle: "Energy and fitness trade-offs in the Brave New Algorithm"
+author: "JJ Merelo & Cecilia Merelo-Molina"
+date: "`r format(Sys.Date(), '%B %Y')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    fig_caption: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5,
+  dpi = 150
+)
+```
+
+```{r libraries}
+library(ggplot2)
+library(dplyr)
+
+if (requireNamespace("energyR", quietly = TRUE)) {
+  summarize_baseline <- energyR::summarize_baseline
+  compute_deltas <- energyR::compute_deltas
+  create_summary <- energyR::create_summary
+  add_log_diff <- energyR::add_log_diff
+  add_pop_dim_label <- energyR::add_pop_dim_label
+  plot_delta_energy <- energyR::plot_delta_energy
+  plot_energy_vs_fitness <- energyR::plot_energy_vs_fitness
+  load_bna_csv <- energyR::load_bna_csv
+} else {
+  source("energyR/R/summarize_baseline.R")
+  source("energyR/R/compute_deltas.R")
+  source("energyR/R/create_summary.R")
+  source("energyR/R/add_log_diff.R")
+  source("energyR/R/add_pop_dim_label.R")
+  source("energyR/R/plot_delta_energy.R")
+  source("energyR/R/plot_energy_vs_fitness.R")
+  source("energyR/R/load_bna_csv.R")
+}
+```
+
+## Why this explainer?
+
+The LION paper studies one practical question: can we improve algorithmic fitness without paying too much extra energy?
+
+To make the main findings easier to share in a short blog post or thread, this page condenses the full paper into four visual messages:
+
+1. Baseline energy is noisy and must be discounted carefully.
+2. Within the same Julia version, `max_gens = 10` usually saves energy.
+3. Lower energy and better fitness do not always happen together.
+4. Upgrading Julia can change the entire energy profile, even with the same algorithm.
+
+## Data preparation with `energyR`
+
+```{r data-prep}
+# LION (Julia 1.11.8)
+lion_baseline <- load_bna_csv("data/lion-1.11.8-baseline.csv")
+lion_summary <- summarize_baseline(lion_baseline)
+
+lion_workload <- load_bna_csv("data/lion-1.11.8-bna-fix-rand.csv", drop_baseline_cols = FALSE)
+lion_workload <- compute_deltas(lion_summary, lion_workload)
+lion_workload <- add_log_diff(lion_workload)
+lion_workload <- add_pop_dim_label(lion_workload, label_col = "dim_pop")
+lion_workload$julia <- "1.11.8"
+
+# EvoApps baseline/workload used in the paper as the previous platform (Julia 1.11.7)
+prev_baseline <- load_bna_csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+prev_summary <- summarize_baseline(prev_baseline)
+
+prev_workload <- load_bna_csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv", drop_baseline_cols = FALSE)
+prev_workload <- compute_deltas(prev_summary, prev_workload)
+prev_workload <- add_log_diff(prev_workload)
+prev_workload <- add_pop_dim_label(prev_workload, label_col = "dim_pop")
+prev_workload$julia <- "1.11.7"
+```
+
+## 1) Baseline is variable, so subtraction matters
+
+```{r baseline-variability, fig.cap="Baseline PKG distribution by dimension and population size (LION, Julia 1.11.8)."}
+plot_data <- lion_baseline %>%
+  mutate(
+    dimension = as.factor(dimension),
+    population_size = as.factor(population_size)
+  )
+
+ggplot(plot_data, aes(x = dimension, y = PKG, fill = population_size)) +
+  geom_violin(alpha = 0.6, trim = FALSE) +
+  geom_boxplot(width = 0.15, alpha = 0.8, outlier.alpha = 0.2) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Baseline runs have visible spread",
+    subtitle = "This is why LION computes delta energy against per-configuration baseline summaries",
+    x = "Dimension",
+    y = "PKG energy (J)",
+    fill = "Population"
+  )
+```
+
+## 2) Main LION configuration effect: stopping earlier usually saves energy
+
+```{r lion-energy-by-maxgens, fig.cap="Delta energy in LION workload runs, grouped by max_gens and faceted by parameter combination."}
+lion_for_plot <- lion_workload %>%
+  mutate(
+    work = paste0("max_gens=", max_gens),
+    dim_pop = factor(dim_pop)
+  )
+
+plot_delta_energy(
+  lion_for_plot,
+  geom = "boxplot",
+  facet_col = "dim_pop",
+  title = "Delta energy by stopping criterion (LION / Julia 1.11.8)"
+)
+```
+
+## 3) Energy vs fitness is a trade-off, not a single objective
+
+```{r energy-fitness-tradeoff, fig.cap="Energy-versus-fitness view for LION runs. Lower-left is ideal, but not all settings move there together."}
+lion_tradeoff <- lion_for_plot %>%
+  filter(is.finite(log_diff), diff_fitness > 0) %>%
+  mutate(work = paste0("max_gens=", max_gens))
+
+plot_energy_vs_fitness(
+  lion_tradeoff,
+  x_col = "delta_PKG",
+  y_col = "log_diff",
+  color_col = "work",
+  alpha = 0.55,
+  title = "LION: energy vs fitness difference"
+)
+```
+
+## 4) Platform drift: Julia version alone changes the energy baseline-corrected profile
+
+```{r julia-version-compare, fig.cap="Comparing baseline-corrected workload energy for similar BNA settings across Julia versions used in the paper."}
+version_compare <- bind_rows(
+  prev_workload %>% mutate(source = "EvoApps setup"),
+  lion_workload %>% mutate(source = "LION setup")
+) %>%
+  mutate(
+    population_size = as.factor(population_size),
+    dimension = as.factor(dimension)
+  )
+
+ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
+  geom_boxplot(alpha = 0.8, outlier.alpha = 0.2) +
+  facet_grid(dimension ~ population_size) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Julia version impacts observed energy",
+    subtitle = "Consistent with the LION paper: software platform changes can dominate small tuning effects",
+    x = "Julia version",
+    y = "Delta PKG energy (J)",
+    fill = "Julia"
+  )
+```
+
+## Quick scoreboard for a social-media thread
+
+```{r summary-table}
+lion_summary_table <- create_summary(lion_workload) %>%
+  arrange(trimmed_mean_delta_PKG) %>%
+  mutate(
+    setting = paste0("D=", dimension, ", P=", population_size, ", max_gens=", max_gens),
+    trimmed_mean_delta_PKG = round(trimmed_mean_delta_PKG, 2),
+    trimmed_mean_energy_per_evaluation = signif(trimmed_mean_energy_per_evaluation, 3)
+  ) %>%
+  select(setting, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation)
+
+knitr::kable(
+  lion_summary_table,
+  col.names = c("Setting", "Trimmed mean delta PKG (J)", "Trimmed mean J/evaluation"),
+  caption = "Lower values are better for energy-only efficiency."
+)
+```
+
+## Suggested 5-post thread structure
+
+1. **Context:** "We profiled BNA energy in LION with baseline-corrected measurements, not raw Joules."
+2. **Method:** "Baseline spread is real, so using per-configuration baseline summaries is mandatory."
+3. **Result:** "Lower `max_gens` often reduces energy, but can limit final fitness."
+4. **Trade-off:** "The best setting depends on whether your priority is raw energy savings or better fitness."
+5. **Platform warning:** "Runtime upgrades can shift energy behaviour by themselves; always re-measure after updates."
