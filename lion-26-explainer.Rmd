@@ -34,9 +34,9 @@ library(energyR)
 
 ## Why this explainer?
 
-The LION paper studies one practical question: can we improve algorithmic fitness without paying too much extra energy?
+The LION paper evaluates differential evolution (DE), a population-based black-box optimization algorithm, on BBOB numerical optimization tasks while jointly tracking fitness and energy.
 
-To make the main findings easier to share in a short blog post or thread, this page condenses the full paper into four visual messages:
+In this context, **baseline** refers to the per-configuration reference measurements used to estimate non-workload energy before computing workload deltas. This page condenses the core paper findings into four visual messages:
 
 1. Baseline energy is noisy and must be discounted carefully.
 2. Within the same Julia version, `max_gens = 10` usually saves energy.
@@ -65,7 +65,7 @@ prev_workload$julia <- "1.11.7"
 
 ## 1) Baseline is variable, so subtraction matters
 
-Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows that even "do-almost-nothing" runs have non-negligible dispersion, and that dispersion depends on dimension and population size.
+Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows that baseline measurements have non-negligible dispersion, and that dispersion depends on dimension and population size.
 
 This is one of the main methodological conclusions of the paper: comparing raw Joules between configurations is misleading. Baseline-corrected deltas are not an optional refinement; they are the measurement unit that makes cross-setting comparisons defensible.
 
@@ -133,7 +133,7 @@ plot_energy_vs_fitness(
 
 ## 4) Platform drift: Julia version alone changes the energy baseline-corrected profile
 
-One of the strongest discussion points in the paper is reproducibility under software evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged.
+One of the strongest discussion points in the paper is reproducibility under software platform evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged.
 
 So, any claim of "configuration A is greener than B" should be version-scoped and re-validated after upgrades. In practice, rerunning baseline + workload after runtime changes is part of the protocol, not a nice-to-have.
 
