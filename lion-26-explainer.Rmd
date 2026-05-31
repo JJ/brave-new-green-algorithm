@@ -65,6 +65,10 @@ prev_workload$julia <- "1.11.7"
 
 ## 1) Baseline is variable, so subtraction matters
 
+Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows that even "do-almost-nothing" runs have non-negligible dispersion, and that dispersion depends on dimension and population size.
+
+This is one of the main methodological conclusions of the paper: comparing raw Joules between configurations is misleading. Baseline-corrected deltas are not an optional refinement; they are the measurement unit that makes cross-setting comparisons defensible.
+
 ```{r baseline-variability, fig.cap="Baseline PKG distribution by dimension and population size (LION, Julia 1.11.8)."}
 plot_data <- lion_baseline %>%
   mutate(
@@ -87,6 +91,10 @@ ggplot(plot_data, aes(x = dimension, y = PKG, fill = population_size)) +
 
 ## 2) Main LION configuration effect: stopping earlier usually saves energy
 
+With baseline correction in place, the effect of `max_gens` becomes clearer: in most parameter combinations, `max_gens = 10` shifts the distribution downward relative to larger values.
+
+The practical conclusion is not "always use fewer generations." The paper shows that this setting is an energy-lean default, but it must be interpreted jointly with solution quality and with problem-specific accuracy requirements.
+
 ```{r lion-energy-by-maxgens, fig.cap="Delta energy in LION workload runs, grouped by max_gens and faceted by parameter combination."}
 lion_for_plot <- lion_workload %>%
   mutate(
@@ -104,6 +112,10 @@ plot_delta_energy(
 
 ## 3) Energy vs fitness is a trade-off, not a single objective
 
+This plot makes explicit what the paper discusses in detail: there is no universal setting that simultaneously optimises energy and fitness in every case. Points do not collapse into a single dominant frontier.
+
+Operationally, that means configuration should be policy-driven. If your context prioritises lower energy, choose from the lower-energy clusters; if it prioritises better fitness improvements, accept the additional energy budget and select accordingly.
+
 ```{r energy-fitness-tradeoff, fig.cap="Energy-versus-fitness view for LION runs. Lower-left is ideal, but not all settings move there together."}
 lion_tradeoff <- lion_for_plot %>%
   filter(is.finite(log_diff), diff_fitness > 0) %>%
@@ -120,6 +132,10 @@ plot_energy_vs_fitness(
 ```
 
 ## 4) Platform drift: Julia version alone changes the energy baseline-corrected profile
+
+One of the strongest discussion points in the paper is reproducibility under software evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged.
+
+So, any claim of "configuration A is greener than B" should be version-scoped and re-validated after upgrades. In practice, rerunning baseline + workload after runtime changes is part of the protocol, not a nice-to-have.
 
 ```{r julia-version-compare, fig.cap="Comparing baseline-corrected workload energy for similar BNA settings across Julia versions used in the paper."}
 version_compare <- bind_rows(
@@ -162,6 +178,16 @@ knitr::kable(
   caption = "Lower values are better for energy-only efficiency."
 )
 ```
+
+The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above.
+
+## Discussion highlights from the paper
+
+- **Measurement methodology matters as much as algorithm design:** baseline correction and careful sampling choices directly influence the conclusions you can trust.
+- **Energy is a first-class optimisation objective:** if it is not explicitly included in analysis, tuning decisions can look good on fitness while being unnecessarily expensive energetically.
+- **Results are contextual, not absolute:** hardware state, runtime version, and execution environment can dominate small parameter effects.
+- **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change.
+- **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims.
 
 ## Suggested 5-post thread structure
 
