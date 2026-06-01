@@ -108,6 +108,23 @@ Use the conventions in the [`OLA-26-annotated.Rnw`](OLA-26-annotated.Rnw),
 including package and templates for anotations included there, as a template for
 any other "annotated version of a paper" that's requested.
 
+## Template for divulgative / explainer versions
+
+For short-form explainers (for example `*-explainer.Rmd`), keep the structure simple:
+
+1. Start with 2 short context sentences:
+   - what algorithm/problem family is being studied;
+   - what is jointly measured (fitness and energy).
+2. Define key terms on first use in one line (`baseline`, `delta`, `max_gens`).
+3. Use 3-5 visuals. For each visual, include:
+   - one question line;
+   - one short interpretation tied to the plotted evidence;
+   - one bounded takeaway (use wording like `often`, `in this setup`, `for this runtime`).
+4. Close with practical implications and a reproducibility note (runtime version + baseline protocol).
+
+Prefer publication-ready text. Avoid process narration (for example "in this explainer we do ...").
+Keep claims aligned with the paper source and scoped to measured hardware/runtime context.
+
 ## `energyR` R Package
 
 The `energyR/` subdirectory contains a standalone R package that extracts reusable
