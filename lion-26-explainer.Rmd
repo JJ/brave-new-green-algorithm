@@ -1,0 +1,249 @@
+---
+title: "LION 2026 in 4 Visuals"
+subtitle: "Energy and fitness trade-offs in the Brave New Algorithm"
+author: "JJ Merelo & Cecilia Merelo-Molina"
+date: "`r format(Sys.Date(), '%B %Y')`"
+bibliography:
+  - references.bib
+  - ours.bib
+  - GAs.bib
+  - ga-energy.bib
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    fig_caption: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5,
+  dpi = 150
+)
+```
+
+```{r libraries}
+library(ggplot2)
+library(dplyr)
+
+if (!requireNamespace("energyR", quietly = TRUE)) {
+  if (file.exists("energyR/DESCRIPTION")) {
+    pkg_path <- normalizePath("energyR", mustWork = TRUE)
+    utils::install.packages(pkg_path, repos = NULL, type = "source")
+  } else {
+    stop("Package 'energyR' is required. Install it or render from the repository root.")
+  }
+}
+
+library(energyR)
+```
+
+## Why this explainer?
+
+The LION paper analyzes the Brave New Algorithm (BNA), a caste-stratified population-based stochastic optimization algorithm, measuring fitness and energy jointly [@lion26; @merelo2022brave].
+The optimization task in this study is the BBOB Sphere function [@hansen2010comparing].
+
+In this context, **baseline** refers to runs that stop after generating the initial population (same code path, no evolutionary loop), computed per `(dimension, population)` configuration and subtracted from workload runs [@lion26]. This page condenses the core paper findings into four visual messages:
+
+1. Baseline energy is noisy and must be discounted carefully.
+2. Within the same Julia version, `max_gens = 10` usually saves energy.
+3. Lower energy and better fitness do not always happen together.
+4. Upgrading Julia can change the entire energy profile, even with the same algorithm.
+
+## Data preparation with `energyR`
+
+```{r data-prep}
+# LION (Julia 1.11.8)
+lion_baseline <- load_bna_csv("data/lion-1.11.8-baseline.csv")
+lion_summary <- summarize_baseline(lion_baseline)
+
+lion_workload <- load_bna_csv("data/lion-1.11.8-bna-fix-rand.csv", drop_baseline_cols = FALSE)
+lion_workload <- prepare_workload(lion_summary, lion_workload, label_col = "dim_pop")
+lion_workload$julia <- "1.11.8"
+
+# EvoApps baseline/workload used in the paper as the previous platform (Julia 1.11.7)
+prev_baseline <- load_bna_csv("data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv")
+prev_summary <- summarize_baseline(prev_baseline)
+
+prev_workload <- load_bna_csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv", drop_baseline_cols = FALSE)
+prev_workload <- prepare_workload(prev_summary, prev_workload, label_col = "dim_pop")
+prev_workload$julia <- "1.11.7"
+```
+
+## 1) Baseline is variable, so subtraction matters
+
+Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows non-negligible dispersion, and that dispersion depends on dimension and population size.
+
+This is one of the main methodological conclusions of the paper: comparing raw Joules between configurations is misleading, so baseline-corrected deltas are the defensible unit for comparisons [@lion26; @cotta24].
+
+```{r baseline-variability, fig.cap="Baseline PKG distribution by dimension and population size (LION, Julia 1.11.8)."}
+plot_data <- lion_baseline %>%
+  mutate(
+    dimension = as.factor(dimension),
+    population_size = as.factor(population_size)
+  )
+
+ggplot(plot_data, aes(x = dimension, y = PKG, fill = population_size)) +
+  geom_violin(alpha = 0.6, trim = FALSE) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Baseline runs have visible spread",
+    subtitle = "This is why LION computes delta energy against per-configuration baseline summaries",
+    x = "Dimension",
+    y = "PKG energy (J)",
+    fill = "Population"
+  )
+```
+
+## 2) Main LION configuration effect: stopping earlier usually saves energy
+
+With baseline correction in place, the effect of `max_gens` becomes clearer: in most parameter combinations, `max_gens = 10` shifts the distribution downward relative to larger values.
+
+The practical conclusion is not "always use fewer generations." The paper shows that this setting is an energy-lean default, but it must be interpreted jointly with solution quality and with problem-specific accuracy requirements.
+
+```{r lion-energy-by-maxgens, fig.cap="Delta energy in LION workload runs, grouped by max_gens and faceted by parameter combination."}
+lion_for_plot <- lion_workload %>%
+  mutate(
+    work = paste0("max_gens=", max_gens),
+    dim_pop = factor(dim_pop)
+  )
+
+plot_delta_energy(
+  lion_for_plot,
+  geom = "boxplot",
+  facet_col = "dim_pop",
+  title = "Delta energy by stopping criterion (LION / Julia 1.11.8)"
+)
+```
+
+## 3) Energy vs fitness is a trade-off, not a single objective
+
+This plot makes explicit what the paper discusses in detail: there is no universal setting that simultaneously optimizes energy and fitness in every case. Points do not collapse into a single dominant frontier.
+
+Operationally, that means configuration should be policy-driven. If your context prioritizes lower energy, choose from the lower-energy clusters; if it prioritizes better fitness improvements, accept the additional energy budget and select accordingly [@lion26].
+
+```{r energy-fitness-tradeoff, fig.cap="Energy-versus-fitness view for LION runs, faceted by problem dimension and grouped by max_gens/population."}
+lion_tradeoff <- lion_for_plot %>%
+  filter(is.finite(log_diff), diff_fitness > 0) %>%
+  mutate(
+    work = factor(paste0("max_gens=", max_gens)),
+    dimension = factor(dimension),
+    population_size = factor(population_size)
+  )
+
+ggplot(lion_tradeoff, aes(x = delta_PKG, y = log_diff, color = work, shape = population_size)) +
+  geom_point(alpha = 0.55, size = 2) +
+  facet_wrap(~dimension, nrow = 1, scales = "free_x") +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "LION: energy versus fitness by dimension",
+    subtitle = "Faceting by dimension clarifies the per-configuration max_gens effect",
+    x = "Delta PKG energy (J)",
+    y = "log10 fitness improvement",
+    color = "max_gens",
+    shape = "Population"
+  )
+```
+
+## 4) Platform drift: Julia version alone changes the energy baseline-corrected profile
+
+One of the strongest discussion points in the paper is reproducibility under software platform evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged [@lion26].
+
+So, any claim of "configuration A is greener than B" should be version-scoped and re-validated after upgrades. In practice, rerunning baseline + workload after runtime changes is part of the protocol, not a nice-to-have [@cotta24; @lion26].
+
+```{r julia-version-compare, fig.cap="Comparing baseline-corrected workload energy for similar BNA settings across Julia versions used in the paper."}
+version_compare <- bind_rows(
+  prev_workload %>% mutate(source = "EvoApps setup"),
+  lion_workload %>% mutate(source = "LION setup")
+) %>%
+  mutate(
+    population_size = as.factor(population_size),
+    dimension = as.factor(dimension)
+  )
+
+ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
+  geom_boxplot(alpha = 0.8, outlier.alpha = 0.2) +
+  facet_grid(dimension ~ population_size) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Julia version impacts observed energy",
+    subtitle = "Consistent with the LION paper: software platform changes can dominate small tuning effects",
+    x = "Julia version",
+    y = "Delta PKG energy (J)",
+    fill = "Julia"
+  )
+```
+
+## Compact configuration summary
+
+```{r summary-table}
+wilcoxon_flags <- lion_workload %>%
+  filter(is.finite(delta_PKG)) %>%
+  group_by(dimension, population_size) %>%
+  group_modify(~{
+    gens <- sort(unique(.x$max_gens))
+    if (length(gens) < 2) {
+      return(data.frame(max_gens = numeric(0)))
+    }
+    pair_tests <- utils::combn(gens, 2, simplify = FALSE)
+    sig_rows <- lapply(pair_tests, function(pair) {
+      x <- .x$delta_PKG[.x$max_gens == pair[1]]
+      y <- .x$delta_PKG[.x$max_gens == pair[2]]
+      p_value <- stats::wilcox.test(x, y, exact = FALSE)$p.value
+      if (is.finite(p_value) && p_value < 0.05) {
+        data.frame(max_gens = pair)
+      } else {
+        NULL
+      }
+    })
+    sig_rows <- sig_rows[!vapply(sig_rows, is.null, logical(1))]
+    if (length(sig_rows) == 0) {
+      return(data.frame(max_gens = numeric(0)))
+    }
+    dplyr::bind_rows(sig_rows) %>% distinct(max_gens)
+  }) %>%
+  ungroup() %>%
+  distinct(dimension, population_size, max_gens) %>%
+  mutate(sig_mark = "*")
+
+lion_summary_table <- create_summary(lion_workload) %>%
+  left_join(
+    wilcoxon_flags,
+    by = c("dimension", "population_size", "max_gens")
+  ) %>%
+  arrange(trimmed_mean_delta_PKG) %>%
+  mutate(
+    setting = paste0(
+      "D=", dimension, ", P=", population_size, ", max_gens=", max_gens,
+      ifelse(is.na(sig_mark), "", sig_mark)
+    ),
+    trimmed_mean_delta_PKG = round(trimmed_mean_delta_PKG, 2),
+    trimmed_mean_energy_per_evaluation = signif(trimmed_mean_energy_per_evaluation, 3)
+  ) %>%
+  select(setting, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation)
+
+knitr::kable(
+  lion_summary_table,
+  col.names = c("Setting", "Trimmed mean delta PKG (J)", "Trimmed mean J/evaluation"),
+  caption = "Lower values are better for energy-only efficiency. * marks configurations with Wilcoxon-significant (p < 0.05) delta-PKG differences versus at least one other max_gens in the same (dimension, population) group."
+)
+```
+
+The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above.
+
+## Discussion highlights from the paper
+
+- **Measurement methodology matters as much as algorithm design:** baseline correction and careful sampling choices directly influence the conclusions you can trust [@lion26; @cotta24].
+- **Energy is a first-class optimization objective:** if it is not explicitly included in analysis, tuning decisions can look good on fitness while being unnecessarily expensive energetically [@lion26].
+- **Results are contextual, not absolute:** hardware state, runtime version, and execution environment can dominate small parameter effects [@lion26; @cotta24].
+- **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change [@lion26].
+- **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims [@lion26; @merelo2022brave].

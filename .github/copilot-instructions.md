@@ -108,6 +108,43 @@ Use the conventions in the [`OLA-26-annotated.Rnw`](OLA-26-annotated.Rnw),
 including package and templates for anotations included there, as a template for
 any other "annotated version of a paper" that's requested.
 
+## Template for divulgative / explainer versions
+
+For short-form explainers (for example `*-explainer.Rmd`), keep the structure simple:
+
+1. Start with 2 short context sentences:
+   - what algorithm/problem family is being studied;
+   - what is jointly measured (fitness and energy).
+2. Define key terms on first use in one line (`baseline`, `delta`, `max_gens`).
+3. Use 3-5 visuals. For each visual, include:
+   - one question line;
+   - one short interpretation tied to the plotted evidence;
+   - one bounded takeaway (use wording like `often`, `in this setup`, `for this runtime`).
+4. Close with practical implications and a reproducibility note (runtime version + baseline protocol).
+
+Prefer publication-ready text. Avoid process narration (for example "in this explainer we do ...").
+Keep claims aligned with the paper source and scoped to measured hardware/runtime context.
+Use American spelling in explainer prose.
+When a chart shows unexplained visual bands/clusters, explicitly encode the likely driver (for example facet by `dimension`) instead of adding a second competing plot.
+Include citations inline at the sentence where each claim appears; avoid "offline" or detached reference stanzas.
+
+## Scientific grounding for LION explainers
+
+When preparing explainers from `lion-26.Rnw`, keep the scientific framing tied to the paper and the exact LION datasets:
+
+1. Use paper-accurate terminology:
+   - algorithm: Brave New Algorithm (BNA), a stratified population-based stochastic optimization algorithm;
+   - task: BBOB Sphere benchmark;
+   - metrics: fitness and package energy (PKG, Joules).
+2. Anchor data references to the concrete files used by the explainer:
+   - baseline/control measurements: `data/lion-1.11.8-baseline.csv`;
+   - workload runs: `data/lion-1.11.8-bna-fix-rand.csv`.
+3. Define terms briefly where first used:
+   - baseline: energy measured for the control setup used to calibrate deltas;
+   - delta energy (`delta_PKG`): workload PKG minus matched baseline PKG.
+4. Keep claims traceable to paper evidence (`lion-26.Rnw`/`lion-26.R`) and cite at the sentence where each claim appears.
+5. For publication-grade summary comparisons across `max_gens`, mark statistically significant differences with asterisks (`p < 0.05`) and base the claim on Wilcoxon tests between groups with the same `dimension` and `population_size`.
+
 ## `energyR` R Package
 
 The `energyR/` subdirectory contains a standalone R package that extracts reusable
