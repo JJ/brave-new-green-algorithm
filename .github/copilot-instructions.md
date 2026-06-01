@@ -130,18 +130,16 @@ Include citations inline at the sentence where each claim appears; avoid "offlin
 
 ### Typographic conventions for all `*.Rmd` documents
 
-- **Author field**: list all paper co-authors using ` & ` as separator, matching the
-  corresponding paper's author list (for example, `lion-26-explainer.Rmd` uses the full
-  five-author list from `lion-26.Rnw`; `ola-26-explainer.Rmd` uses the two-author list
-  from `ola-26.Rnw`).
-- **First section heading**: use `## Introduction` or a "Why" question such as
-  `## Why this explainer?` or `## Why does this matter?`.  Avoid narrative headings
-  such as `## The story so far`.
-- **Inline citations**: use `[@key]` or `[@key1; @key2]` at the sentence level where the
-  claim appears; do not collect references in a detached paragraph at section end.
+- **Author field**: use the authors of the paper(s) being explained, joined with ` & `.
+  If the explainer covers multiple papers whose author lists differ, include all authors
+  across those papers in order of first appearance, with no duplicates.
+- **First section heading**: Should start with "Introduction" and include a reference to
+  the title of the paper(s) it's trying to explain, or line of research if it's using
+  several papers.
 - **Bibliography YAML block**: include the four standard `.bib` files
   (`references.bib`, `ours.bib`, `GAs.bib`, `ga-energy.bib`) whenever the document uses
-  `[@…]` citations. It might also include other reference files included in the original .Rnw file, if some reference included in them is detected.
+  `[@…]` citations.  It might also include other reference files included in the original
+  `.Rnw` file, if some reference included in them is detected.
 
 ## Scientific grounding for LION explainers
 
@@ -183,19 +181,18 @@ analysis patterns from all BNA papers.
   (Windows removed). `r-lib/actions/setup-r-dependencies@v2` handles R package caching
   automatically.
 
-## Cross-paper progression documents (`lion-ola-progression.Rmd`)
+## Cross-paper progression documents
 
-When writing or editing documents that trace the research progression from one paper to
-another:
+When writing or editing documents that trace the research progression across papers:
 
 1. **Scope each "fix" to the progression story**: only include methodology changes that
-   address artefacts or observations carried over from the earlier paper (LION-26).
-   Changes introduced purely within the later paper (OLA-26) without a root cause in
-   LION-26 do not belong in the progression narrative.
+   address artefacts or observations carried over from an earlier paper in the series.
+   Changes introduced purely within a later paper without a root cause in earlier work
+   do not belong in the progression narrative.
 
 2. **Never use "invalidation" language**: do not write that any finding was "invalidated"
-   or "disproved."  Instead, frame OLA-26 as providing a **deeper understanding** of how
-   everything works — especially how energy is measured and what it depends on.
+   or "disproved."  Instead, frame later papers as providing a **deeper understanding** of
+   how everything works — especially how energy is measured and what it depends on.
    Validation is always statistical within the framework of the stated research questions.
 
 3. **Positive framing for methodology evolution**: describe methodology changes as
