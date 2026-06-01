@@ -29,6 +29,15 @@ knitr::opts_chunk$set(
 ```{r libraries}
 library(ggplot2)
 library(dplyr)
+
+if (!requireNamespace("energyR", quietly = TRUE)) {
+  if (file.exists("energyR/DESCRIPTION")) {
+    utils::install.packages("energyR", repos = NULL, type = "source")
+  } else {
+    stop("Package 'energyR' is required. Install it or render from the repository root.")
+  }
+}
+
 library(energyR)
 ```
 
