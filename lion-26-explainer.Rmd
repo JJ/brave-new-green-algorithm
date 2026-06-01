@@ -127,7 +127,7 @@ plot_delta_energy(
 
 ## 3) Energy vs fitness is a trade-off, not a single objective
 
-This plot makes explicit what the paper discusses in detail: there is no universal setting that simultaneously optimises energy and fitness in every case. Points do not collapse into a single dominant frontier.
+This plot makes explicit what the paper discusses in detail: there is no universal setting that simultaneously optimizes energy and fitness in every case. Points do not collapse into a single dominant frontier.
 
 Operationally, that means configuration should be policy-driven. If your context prioritises lower energy, choose from the lower-energy clusters; if it prioritises better fitness improvements, accept the additional energy budget and select accordingly.
 
