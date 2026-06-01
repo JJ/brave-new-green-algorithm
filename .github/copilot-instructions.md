@@ -128,6 +128,18 @@ Use American spelling in explainer prose.
 When a chart shows unexplained visual bands/clusters, explicitly encode the likely driver (for example facet by `dimension`) instead of adding a second competing plot.
 Include citations inline at the sentence where each claim appears; avoid "offline" or detached reference stanzas.
 
+### Typographic conventions for all `*.Rmd` documents
+
+- **Author field**: always `"JJ Merelo & Cecilia Merelo-Molina"` (ampersand, no "and").
+- **First section heading**: must be a "Why" question, for example `## Why this explainer?`
+  or `## Why does this matter?` or `## Why this document?`.
+  Never open with a narrative heading such as `## The story so far` or `## Introduction`.
+- **Inline citations**: use `[@key]` or `[@key1; @key2]` at the sentence level where the
+  claim appears; do not collect references in a detached paragraph at section end.
+- **Bibliography YAML block**: include the four standard `.bib` files
+  (`references.bib`, `ours.bib`, `GAs.bib`, `ga-energy.bib`) whenever the document uses
+  `[@…]` citations.
+
 ## Scientific grounding for LION explainers
 
 When preparing explainers from `lion-26.Rnw`, keep the scientific framing tied to the paper and the exact LION datasets:

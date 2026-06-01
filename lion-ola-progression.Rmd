@@ -39,7 +39,7 @@ library(gridExtra)
 
 ---
 
-## The story so far
+## Why this document?
 
 Science seldom advances in straight lines.
 This page documents a crooked one: two papers on the same algorithm, the same hardware, and the
