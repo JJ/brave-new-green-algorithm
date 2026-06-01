@@ -124,6 +124,9 @@ For short-form explainers (for example `*-explainer.Rmd`), keep the structure si
 
 Prefer publication-ready text. Avoid process narration (for example "in this explainer we do ...").
 Keep claims aligned with the paper source and scoped to measured hardware/runtime context.
+Use American spelling in explainer prose.
+When a chart shows unexplained visual bands/clusters, explicitly encode the likely driver (for example facet by `dimension`) instead of adding a second competing plot.
+Include citations inline at the sentence where each claim appears; avoid "offline" or detached reference stanzas.
 
 ## `energyR` R Package
 

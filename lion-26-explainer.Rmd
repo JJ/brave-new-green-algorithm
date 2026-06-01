@@ -129,28 +129,36 @@ plot_delta_energy(
 
 This plot makes explicit what the paper discusses in detail: there is no universal setting that simultaneously optimizes energy and fitness in every case. Points do not collapse into a single dominant frontier.
 
-Operationally, that means configuration should be policy-driven. If your context prioritises lower energy, choose from the lower-energy clusters; if it prioritises better fitness improvements, accept the additional energy budget and select accordingly.
+Operationally, that means configuration should be policy-driven. If your context prioritizes lower energy, choose from the lower-energy clusters; if it prioritizes better fitness improvements, accept the additional energy budget and select accordingly [@lion26].
 
-```{r energy-fitness-tradeoff, fig.cap="Energy-versus-fitness view for LION runs. Lower-left is ideal, but not all settings move there together."}
+```{r energy-fitness-tradeoff, fig.cap="Energy-versus-fitness view for LION runs, faceted by problem dimension and grouped by max_gens/population."}
 lion_tradeoff <- lion_for_plot %>%
   filter(is.finite(log_diff), diff_fitness > 0) %>%
-  mutate(work = paste0("max_gens=", max_gens))
+  mutate(
+    work = factor(paste0("max_gens=", max_gens)),
+    dimension = factor(dimension),
+    population_size = factor(population_size)
+  )
 
-plot_energy_vs_fitness(
-  lion_tradeoff,
-  x_col = "delta_PKG",
-  y_col = "log_diff",
-  color_col = "work",
-  alpha = 0.55,
-  title = "LION: energy vs fitness difference"
-)
+ggplot(lion_tradeoff, aes(x = delta_PKG, y = log_diff, color = work, shape = population_size)) +
+  geom_point(alpha = 0.55, size = 2) +
+  facet_wrap(~dimension, nrow = 1, scales = "free_x") +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "LION: energy versus fitness by dimension",
+    subtitle = "Faceting by dimension clarifies the per-configuration max_gens effect",
+    x = "Delta PKG energy (J)",
+    y = "log10 fitness improvement",
+    color = "max_gens",
+    shape = "Population"
+  )
 ```
 
 ## 4) Platform drift: Julia version alone changes the energy baseline-corrected profile
 
-One of the strongest discussion points in the paper is reproducibility under software platform evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged.
+One of the strongest discussion points in the paper is reproducibility under software platform evolution. The comparison across Julia versions shows that runtime/platform updates can materially shift measured energy, even when the algorithmic procedure is unchanged [@lion26].
 
-So, any claim of "configuration A is greener than B" should be version-scoped and re-validated after upgrades. In practice, rerunning baseline + workload after runtime changes is part of the protocol, not a nice-to-have.
+So, any claim of "configuration A is greener than B" should be version-scoped and re-validated after upgrades. In practice, rerunning baseline + workload after runtime changes is part of the protocol, not a nice-to-have [@cotta24; @lion26].
 
 ```{r julia-version-compare, fig.cap="Comparing baseline-corrected workload energy for similar BNA settings across Julia versions used in the paper."}
 version_compare <- bind_rows(
@@ -198,12 +206,8 @@ The table is useful as an at-a-glance ranking, but it should be read as a screen
 
 ## Discussion highlights from the paper
 
-- **Measurement methodology matters as much as algorithm design:** baseline correction and careful sampling choices directly influence the conclusions you can trust.
-- **Energy is a first-class optimisation objective:** if it is not explicitly included in analysis, tuning decisions can look good on fitness while being unnecessarily expensive energetically.
-- **Results are contextual, not absolute:** hardware state, runtime version, and execution environment can dominate small parameter effects.
-- **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change.
-- **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims.
-
-## References
-
-Key references: LION paper [@lion26], Brave New Algorithm definition [@merelo2022brave], and BBOB benchmark context (including Sphere) [@hansen2010comparing].
+- **Measurement methodology matters as much as algorithm design:** baseline correction and careful sampling choices directly influence the conclusions you can trust [@lion26; @cotta24].
+- **Energy is a first-class optimization objective:** if it is not explicitly included in analysis, tuning decisions can look good on fitness while being unnecessarily expensive energetically [@lion26].
+- **Results are contextual, not absolute:** hardware state, runtime version, and execution environment can dominate small parameter effects [@lion26; @cotta24].
+- **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change [@lion26].
+- **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims [@lion26; @merelo2022brave].
