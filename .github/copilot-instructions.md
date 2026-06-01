@@ -143,6 +143,7 @@ When preparing explainers from `lion-26.Rnw`, keep the scientific framing tied t
    - baseline: energy measured for the control setup used to calibrate deltas;
    - delta energy (`delta_PKG`): workload PKG minus matched baseline PKG.
 4. Keep claims traceable to paper evidence (`lion-26.Rnw`/`lion-26.R`) and cite at the sentence where each claim appears.
+5. For publication-grade summary comparisons across `max_gens`, mark statistically significant differences with asterisks (`p < 0.05`) and base the claim on Wilcoxon tests between groups with the same `dimension` and `population_size`.
 
 ## `energyR` R Package
 
