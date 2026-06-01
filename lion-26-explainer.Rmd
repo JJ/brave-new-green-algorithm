@@ -205,4 +205,6 @@ The table is useful as an at-a-glance ranking, but it should be read as a screen
 - **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change.
 - **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims.
 
+## References
+
 Key references: LION paper [@lion26], Brave New Algorithm definition [@merelo2022brave], and BBOB benchmark context (including Sphere) [@hansen2010comparing].
