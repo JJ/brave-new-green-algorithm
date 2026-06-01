@@ -8,7 +8,7 @@ Authors@R: c(
     person("Cecilia", "Merelo Molina", email = "cecilia@zenzorrito.com",
            role = "aut", comment = c(ORCID = "0000-0002-5902-0159")),
     person("Mario", "Garcia-Valdez", role = "aut",
-           comment = c(ORCID = "0000-0002-2593-1619")),
+           comment = c(ORCID = "0000-0002-2593-1114")),
     person("Carlos", "Cotta", role = "aut",
            comment = c(ORCID = "0000-0001-8478-7549")))
 Description: Provides reusable functions for loading, processing, and
