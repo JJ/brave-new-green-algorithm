@@ -186,10 +186,46 @@ ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
 ## Compact configuration summary
 
 ```{r summary-table}
+wilcoxon_flags <- lion_workload %>%
+  filter(is.finite(delta_PKG)) %>%
+  group_by(dimension, population_size) %>%
+  group_modify(~{
+    gens <- sort(unique(.x$max_gens))
+    if (length(gens) < 2) {
+      return(data.frame(max_gens = numeric(0)))
+    }
+    pair_tests <- utils::combn(gens, 2, simplify = FALSE)
+    sig_rows <- lapply(pair_tests, function(pair) {
+      x <- .x$delta_PKG[.x$max_gens == pair[1]]
+      y <- .x$delta_PKG[.x$max_gens == pair[2]]
+      p_value <- stats::wilcox.test(x, y, exact = FALSE)$p.value
+      if (is.finite(p_value) && p_value < 0.05) {
+        data.frame(max_gens = pair)
+      } else {
+        NULL
+      }
+    })
+    sig_rows <- sig_rows[!vapply(sig_rows, is.null, logical(1))]
+    if (length(sig_rows) == 0) {
+      return(data.frame(max_gens = numeric(0)))
+    }
+    bind_rows(sig_rows) %>% distinct(max_gens)
+  }) %>%
+  ungroup() %>%
+  distinct(dimension, population_size, max_gens) %>%
+  mutate(sig_mark = "*")
+
 lion_summary_table <- create_summary(lion_workload) %>%
+  left_join(
+    wilcoxon_flags,
+    by = c("dimension", "population_size", "max_gens")
+  ) %>%
   arrange(trimmed_mean_delta_PKG) %>%
   mutate(
-    setting = paste0("D=", dimension, ", P=", population_size, ", max_gens=", max_gens),
+    setting = paste0(
+      "D=", dimension, ", P=", population_size, ", max_gens=", max_gens,
+      ifelse(is.na(sig_mark), "", sig_mark)
+    ),
     trimmed_mean_delta_PKG = round(trimmed_mean_delta_PKG, 2),
     trimmed_mean_energy_per_evaluation = signif(trimmed_mean_energy_per_evaluation, 3)
   ) %>%
@@ -198,7 +234,7 @@ lion_summary_table <- create_summary(lion_workload) %>%
 knitr::kable(
   lion_summary_table,
   col.names = c("Setting", "Trimmed mean delta PKG (J)", "Trimmed mean J/evaluation"),
-  caption = "Lower values are better for energy-only efficiency."
+  caption = "Lower values are better for energy-only efficiency. * marks configurations with Wilcoxon-significant (p < 0.05) delta-PKG differences versus at least one other max_gens in the same (dimension, population) group."
 )
 ```
 
