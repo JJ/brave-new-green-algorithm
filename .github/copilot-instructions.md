@@ -130,10 +130,13 @@ Include citations inline at the sentence where each claim appears; avoid "offlin
 
 ### Typographic conventions for all `*.Rmd` documents
 
-- **Author field**: always `"JJ Merelo & Cecilia Merelo-Molina"` (ampersand, no "and").
-- **First section heading**: must be a "Why" question, for example `## Why this explainer?`
-  or `## Why does this matter?` or `## Why this document?`.
-  Never open with a narrative heading such as `## The story so far` or `## Introduction`.
+- **Author field**: list all paper co-authors using ` & ` as separator, matching the
+  corresponding paper's author list (for example, `lion-26-explainer.Rmd` uses the full
+  five-author list from `lion-26.Rnw`; `ola-26-explainer.Rmd` uses the two-author list
+  from `ola-26.Rnw`).
+- **First section heading**: use `## Introduction` or a "Why" question such as
+  `## Why this explainer?` or `## Why does this matter?`.  Avoid narrative headings
+  such as `## The story so far`.
 - **Inline citations**: use `[@key]` or `[@key1; @key2]` at the sentence level where the
   claim appears; do not collect references in a detached paragraph at section end.
 - **Bibliography YAML block**: include the four standard `.bib` files

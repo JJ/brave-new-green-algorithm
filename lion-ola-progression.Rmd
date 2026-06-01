@@ -1,7 +1,7 @@
 ---
 title: "From LION to OLA: How Our Understanding of BNA Energy Evolved"
 subtitle: "A research-progression story — what we found, what puzzled us, and how we made sense of it"
-author: "JJ Merelo & Cecilia Merelo-Molina"
+author: "JJ Merelo & Cecilia Merelo-Molina & Pablo García Sánchez & Mario García Valdez & Juan Luis Jiménez-Laredo"
 date: "`r format(Sys.Date(), '%B %Y')`"
 bibliography:
   - references.bib
@@ -39,7 +39,7 @@ library(gridExtra)
 
 ---
 
-## Why this document?
+## Introduction
 
 Science seldom advances in straight lines.
 This page documents a crooked one: two papers on the same algorithm, the same hardware, and the
