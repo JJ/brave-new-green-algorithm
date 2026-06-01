@@ -94,7 +94,6 @@ plot_data <- lion_baseline %>%
 
 ggplot(plot_data, aes(x = dimension, y = PKG, fill = population_size)) +
   geom_violin(alpha = 0.6, trim = FALSE) +
-  geom_boxplot(width = 0.15, alpha = 0.8, outlier.alpha = 0.2) +
   theme_minimal(base_size = 13) +
   labs(
     title = "Baseline runs have visible spread",
