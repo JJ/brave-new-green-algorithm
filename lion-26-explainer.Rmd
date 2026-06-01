@@ -3,6 +3,11 @@ title: "LION 2026 in 4 Visuals"
 subtitle: "Energy and fitness trade-offs in the Brave New Algorithm"
 author: "JJ Merelo & Cecilia Merelo-Molina"
 date: "`r format(Sys.Date(), '%B %Y')`"
+bibliography:
+  - references.bib
+  - ours.bib
+  - GAs.bib
+  - ga-energy.bib
 output:
   html_document:
     theme: flatly
@@ -44,9 +49,10 @@ library(energyR)
 
 ## Why this explainer?
 
-The LION paper evaluates differential evolution (DE), a population-based black-box optimization algorithm, on BBOB numerical optimization tasks while jointly tracking fitness and energy.
+The LION paper analyzes the Brave New Algorithm (BNA), a caste-stratified population-based stochastic optimization algorithm, measuring fitness and energy jointly [@lion26; @merelo2022brave].
+The optimization task in this study is the BBOB Sphere function [@hansen2010comparing].
 
-In this context, **baseline** refers to the per-configuration reference measurements used to estimate non-workload energy before computing workload deltas. This page condenses the core paper findings into four visual messages:
+In this context, **baseline** refers to runs that stop after generating the initial population (same code path, no evolutionary loop), computed per `(dimension, population)` configuration and subtracted from workload runs [@lion26]. This page condenses the core paper findings into four visual messages:
 
 1. Baseline energy is noisy and must be discounted carefully.
 2. Within the same Julia version, `max_gens = 10` usually saves energy.
@@ -75,9 +81,9 @@ prev_workload$julia <- "1.11.7"
 
 ## 1) Baseline is variable, so subtraction matters
 
-Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows that baseline measurements have non-negligible dispersion, and that dispersion depends on dimension and population size.
+Before looking at algorithmic effects, we need to separate them from runtime and platform overhead. The baseline plot shows non-negligible dispersion, and that dispersion depends on dimension and population size.
 
-This is one of the main methodological conclusions of the paper: comparing raw Joules between configurations is misleading. Baseline-corrected deltas are not an optional refinement; they are the measurement unit that makes cross-setting comparisons defensible.
+This is one of the main methodological conclusions of the paper: comparing raw Joules between configurations is misleading, so baseline-corrected deltas are the defensible unit for comparisons [@lion26; @cotta24].
 
 ```{r baseline-variability, fig.cap="Baseline PKG distribution by dimension and population size (LION, Julia 1.11.8)."}
 plot_data <- lion_baseline %>%
@@ -170,7 +176,7 @@ ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
   )
 ```
 
-## Quick scoreboard for a social-media thread
+## Compact configuration summary
 
 ```{r summary-table}
 lion_summary_table <- create_summary(lion_workload) %>%
@@ -199,10 +205,4 @@ The table is useful as an at-a-glance ranking, but it should be read as a screen
 - **Reproducibility requires protocol, not just code:** to compare studies over time, rerun baseline and workload suites under each relevant software/hardware change.
 - **Actionable takeaway:** report both fitness and energy, and present trade-off-aware recommendations instead of one-number "best setting" claims.
 
-## Suggested 5-post thread structure
-
-1. **Context:** "We profiled BNA energy in LION with baseline-corrected measurements, not raw Joules."
-2. **Method:** "Baseline spread is real, so using per-configuration baseline summaries is mandatory."
-3. **Result:** "Lower `max_gens` often reduces the amount of energy spent for a certain configuration, but can limit final fitness."
-4. **Trade-off:** "The best setting depends on whether your priority is raw energy savings or better fitness."
-5. **Platform warning:** "Runtime upgrades can shift energy behaviour by themselves; always re-measure after updates."
+Key references: LION paper [@lion26], Brave New Algorithm definition [@merelo2022brave], and BBOB benchmark context (including Sphere) [@hansen2010comparing].
