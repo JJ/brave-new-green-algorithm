@@ -60,6 +60,15 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
     - You can render locally with `rmarkdown::render("lion-26-explainer.Rmd")`
       if everything is installed properly.
 
+### Cross-paper research progression
+
+A companion document traces the research arc from LION-26 to OLA-26: what the first
+paper found, which conclusions the second paper revised, and why (with live R plots
+built from both datasets):
+
+- [From LION to OLA: How Our Understanding of BNA Energy Evolved](lion-ola-progression.html)
+    - Render locally with `rmarkdown::render("lion-ola-progression.Rmd")`
+      after cloning the repository.
 
 ## Bibliography
 
