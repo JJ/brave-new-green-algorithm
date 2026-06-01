@@ -56,9 +56,9 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
 
 - Paper source: [`lion-26.Rnw`](lion-26.Rnw) with extracted R code in
   [`lion-26.R`](lion-26.R).
-- Visual explainer for blog/social media:
-  [`lion-26-explainer.Rmd`](lion-26-explainer.Rmd).
-  Render locally with `rmarkdown::render("lion-26-explainer.Rmd")`.
+- A [short summary of the main findings in the paper](lion-26-explainer.html).
+    - You can render locally with `rmarkdown::render("lion-26-explainer.Rmd")`
+      if everything is installed properly.
 
 
 ## Bibliography
