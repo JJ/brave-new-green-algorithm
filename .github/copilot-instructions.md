@@ -128,6 +128,22 @@ Use American spelling in explainer prose.
 When a chart shows unexplained visual bands/clusters, explicitly encode the likely driver (for example facet by `dimension`) instead of adding a second competing plot.
 Include citations inline at the sentence where each claim appears; avoid "offline" or detached reference stanzas.
 
+## Scientific grounding for LION explainers
+
+When preparing explainers from `lion-26.Rnw`, keep the scientific framing tied to the paper and the exact LION datasets:
+
+1. Use paper-accurate terminology:
+   - algorithm: Brave New Algorithm (BNA), a stratified population-based stochastic optimization algorithm;
+   - task: BBOB Sphere benchmark;
+   - metrics: fitness and package energy (PKG, Joules).
+2. Anchor data references to the concrete files used by the explainer:
+   - baseline/control measurements: `data/lion-1.11.8-baseline.csv`;
+   - workload runs: `data/lion-1.11.8-bna-fix-rand.csv`.
+3. Define terms briefly where first used:
+   - baseline: energy measured for the control setup used to calibrate deltas;
+   - delta energy (`delta_PKG`): workload PKG minus matched baseline PKG.
+4. Keep claims traceable to paper evidence (`lion-26.Rnw`/`lion-26.R`) and cite at the sentence where each claim appears.
+
 ## `energyR` R Package
 
 The `energyR/` subdirectory contains a standalone R package that extracts reusable
