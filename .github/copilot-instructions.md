@@ -141,7 +141,7 @@ Include citations inline at the sentence where each claim appears; avoid "offlin
   claim appears; do not collect references in a detached paragraph at section end.
 - **Bibliography YAML block**: include the four standard `.bib` files
   (`references.bib`, `ours.bib`, `GAs.bib`, `ga-energy.bib`) whenever the document uses
-  `[@…]` citations.
+  `[@…]` citations. It might also include other reference files included in the original .Rnw file, if some reference included in them is detected.
 
 ## Scientific grounding for LION explainers
 
