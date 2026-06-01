@@ -488,7 +488,7 @@ within-session thermal evolution visible.
 Applying this technique retroactively to the actual LION-26 baseline data shows exactly what was
 happening.
 
-```{r ola-drift, fig.cap="**Fig. 7** — Applying the OLA visualization technique to the LION-26 baseline data: PKG energy per run vs. cumulative experiment time for the two LION-era baseline sessions (1.11.7 in blue, 1.11.8 in orange). Dashed vertical lines mark the regime-change points detected in the 1.11.7 LOESS curve — the transitions between distinct thermal states that produce the multi-modal shapes in Fig. 1. The 1.11.8 baseline (a separate session) sits at a consistently lower absolute energy level, showing the cross-session thermal variation that OLA's interleaved design was designed to neutralise."}
+```{r ola-drift, fig.cap="**Fig. 7** — Applying the OLA visualization technique to the LION-26 baseline data: PKG energy per run vs. cumulative experiment time for the two LION-era baseline sessions (1.11.7 in blue, 1.11.8 in orange). Dashed vertical lines mark thermal-regime changepoints detected by minimising within-segment RSS: two for the longer 1.11.7 session (blue) and one for the 1.11.8 session (orange). The 1.11.8 baseline sits at a consistently lower absolute energy level, revealing the cross-session thermal variation that OLA's interleaved design was built to neutralise."}
 # Apply the OLA methodology (cumulative-time plot) to the actual LION-26 baseline data.
 # baseline_evoapps is the LION 1.11.7 baseline (50 ms sampling, 480 runs), loaded earlier.
 lion_drift_117 <- baseline_evoapps[, c("PKG", "seconds")]
@@ -511,27 +511,58 @@ drift_data <- bind_rows(
 pal_drift <- c(lbl_117 = "#4E79A7", lbl_118 = "#F28E2B")
 names(pal_drift) <- c(lbl_117, lbl_118)
 
-# Detect regime-change points in the 1.11.7 LOESS curve by finding where the
-# first derivative changes sign (local extrema of the smoothed trend).
-x_grid <- seq(min(lion_drift_117$cumulative_time),
-              max(lion_drift_117$cumulative_time), length.out = 600)
-fit_117 <- loess(PKG ~ cumulative_time, data = lion_drift_117, span = 0.3)
-y_hat   <- predict(fit_117, newdata = data.frame(cumulative_time = x_grid))
-dy      <- diff(y_hat) / diff(x_grid)
-x_mid   <- (x_grid[-1] + x_grid[-length(x_grid)]) / 2
-sign_changes <- which(diff(sign(dy)) != 0)
-regime_x <- x_mid[sign_changes]
+# Changepoint detection: find positions that minimise within-segment RSS.
+# Uses prefix-sum trick for O(1) per-segment evaluation.
+find_changepoints <- function(y, n_cp = 1L) {
+  n   <- length(y)
+  cs  <- c(0, cumsum(y))
+  cs2 <- c(0, cumsum(y^2))
+  seg_rss <- function(a, b) {
+    len <- b - a + 1L
+    cs2[b + 1L] - cs2[a] - (cs[b + 1L] - cs[a])^2 / len
+  }
+  if (n_cp == 1L) {
+    rss <- vapply(seq_len(n - 1L),
+                  function(k) seg_rss(1L, k) + seg_rss(k + 1L, n),
+                  numeric(1))
+    return(which.min(rss))
+  }
+  if (n_cp == 2L) {
+    best <- Inf; pos <- c(NA_integer_, NA_integer_)
+    for (k1 in seq_len(n - 2L)) {
+      r1 <- seg_rss(1L, k1)
+      for (k2 in (k1 + 1L):(n - 1L)) {
+        v <- r1 + seg_rss(k1 + 1L, k2) + seg_rss(k2 + 1L, n)
+        if (v < best) { best <- v; pos <- c(k1, k2) }
+      }
+    }
+    return(pos)
+  }
+}
+
+# 1.11.7: two changepoints (longer session, visible warm-up + plateau + rise)
+cp117_idx <- find_changepoints(lion_drift_117$PKG, n_cp = 2L)
+cp_x117   <- lion_drift_117$cumulative_time[cp117_idx]
+
+# 1.11.8: one changepoint (shorter session, single thermal shift)
+cp118_idx <- find_changepoints(lion_drift_118$PKG, n_cp = 1L)
+cp_x118   <- lion_drift_118$cumulative_time[cp118_idx]
+
+y_top <- max(drift_data$PKG) * 0.97
 
 ggplot(drift_data, aes(x = cumulative_time, y = PKG, colour = Session)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(method = "loess", span = 0.3, se = FALSE, linewidth = 1.2) +
-  geom_vline(xintercept = regime_x, colour = "#E07A5F",
-             linetype = "dashed", linewidth = 0.7) +
-  annotate("text",
-           x = regime_x + diff(range(lion_drift_117$cumulative_time)) * 0.015,
-           y = max(drift_data$PKG) * 0.96,
-           label = paste0("Regime\nchange ", seq_along(regime_x)),
-           hjust = 0, size = 3.2, colour = "#E07A5F") +
+  geom_vline(xintercept = cp_x117, colour = "#4E79A7",
+             linetype = "dashed", linewidth = 0.8) +
+  geom_vline(xintercept = cp_x118, colour = "#F28E2B",
+             linetype = "dashed", linewidth = 0.8) +
+  annotate("text", x = cp_x117, y = y_top,
+           label = c("1.11.7\nshift 1", "1.11.7\nshift 2"),
+           hjust = -0.1, size = 3.0, colour = "#4E79A7") +
+  annotate("text", x = cp_x118, y = y_top,
+           label = "1.11.8\nshift",
+           hjust = -0.1, size = 3.0, colour = "#F28E2B") +
   scale_colour_manual(values = pal_drift) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.title = element_text(face = "bold"),

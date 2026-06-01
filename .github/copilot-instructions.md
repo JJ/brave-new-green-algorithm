@@ -218,3 +218,12 @@ When writing or editing documents that trace the research progression across pap
    per-pair delta) produce structurally different quantities.  Do not describe one as "tighter"
    or "less noisy" than the other without confirming this empirically; instead, explain what
    each delta measures and why the distributions may differ in spread.
+
+7. **Use changepoint detection (not LOESS sign changes) to identify thermal-regime shifts**:
+   when annotating a PKG-vs-cumulative-time chart with regime transitions, find the positions
+   that minimise within-segment RSS (mean-change model) rather than finding sign changes in
+   the LOESS first derivative.  LOESS sign changes are sensitive to smoothing bandwidth and
+   typically produce far too many spurious transitions.  Apply changepoint detection separately
+   to each session and colour-code the resulting dashed vertical lines to match their
+   respective session.  Keep the number of changepoints consistent with what is visually
+   apparent in the data; do not over-segment.
