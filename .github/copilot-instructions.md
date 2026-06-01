@@ -198,3 +198,11 @@ When writing or editing documents that trace the research progression across pap
 3. **Positive framing for methodology evolution**: describe methodology changes as
    revealing more about the measurement process, not as correcting errors or overturning
    conclusions.
+
+4. **Apply new methodologies operationally to earlier data**: a progression document must
+   demonstrate insight by *actually running* the later paper's analytical techniques on the
+   earlier paper's data — not merely presenting the later results alongside the earlier ones
+   and verbally asserting that the new approach is better.
+   For each methodological improvement, show what the improvement reveals when applied to
+   the earlier data.  Juxtaposition of charts with different data and a verbal claim of
+   progress is not sufficient.

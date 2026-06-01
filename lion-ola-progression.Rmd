@@ -409,11 +409,11 @@ ggplot(julia_cmp_lion %>% filter(is.finite(delta_PKG)),
   )
 ```
 
-**What LION-26 concluded:** Julia 1.11.8 consumed *more* energy than 1.11.7, "consistently."
+**What LION-26 found:** Julia 1.11.8 appeared to consume *more* energy than 1.11.7, "consistently."
 The recommendation was to **stay on Julia 1.11.7** rather than upgrade.
 
-This turned out to be wrong — or rather, it was the *methodology* that was wrong.
-We will see exactly why in Part 2.
+Part 2 shows how the measurement methodology was driving this apparent difference — once the
+diagnostic tools from OLA are applied, the picture changes completely.
 
 ---
 
@@ -421,9 +421,9 @@ We will see exactly why in Part 2.
 
 ### Three sources of measurement noise
 
-The OLA paper systematically audited the LION methodology and identified three independent sources
-of error.
-Each is introduced and corrected in turn.
+The OLA paper systematically examined the LION methodology and identified three independent
+measurement effects.
+Each is introduced and the insight it provides is demonstrated in turn.
 
 ---
 
@@ -483,55 +483,63 @@ Switching to 100 ms brings readings back into a physically plausible range.
 
 Even with a better sampling rate, the LION baseline violin (Fig. 1) still showed multi-modal
 shapes.
-OLA investigated by plotting baseline energy against **cumulative experimental time**.
+The OLA insight was to plot baseline energy against **cumulative experimental time** to make any
+within-session thermal evolution visible.
+Applying this technique retroactively to the actual LION-26 baseline data shows exactly what was
+happening.
 
-```{r ola-drift, fig.cap="**Fig. 7** — PKG energy per run vs. cumulative experiment time for two LION-era baseline sessions (v1 in blue, v2 in orange). After approximately 2 000 s, the system enters a different thermal regime — energy per run visibly shifts. This is the hardware hysteresis that creates the 'ridges' in LION's baseline violins."}
-baseline_ola_v1 <- baseline_ola_100s
-baseline_ola_v1$cumulative_time <- cumsum(baseline_ola_v1$seconds)
-baseline_ola_v1$Run <- "Baseline v1 (100 ms)"
+```{r ola-drift, fig.cap="**Fig. 7** — Applying the OLA visualization technique to the LION-26 baseline data: PKG energy per run vs. cumulative experiment time for the two LION-era baseline sessions (1.11.7 in blue, 1.11.8 in orange). The longer 1.11.7 session (~3 200 s, 480 runs) shows a clear upward drift after approximately 2 000 s — the same thermal regime change that produces the multi-modal shapes in Fig. 1. The 1.11.8 baseline (a separate session) sits at a different absolute energy level, showing the cross-session thermal variation that OLA's interleaved design was designed to neutralise."}
+# Apply the OLA methodology (cumulative-time plot) to the actual LION-26 baseline data.
+# baseline_evoapps is the LION 1.11.7 baseline (50 ms sampling, 480 runs), loaded earlier.
+lion_drift_117 <- baseline_evoapps[, c("PKG", "seconds")]
+lion_drift_117$cumulative_time <- cumsum(lion_drift_117$seconds)
+lion_drift_117$Run <- "LION 1.11.7 baseline (50 ms)"
 
-baseline_ola_v2 <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
-baseline_ola_v2[null_cols] <- NULL
-baseline_ola_v2$cumulative_time <- cumsum(baseline_ola_v2$seconds)
-baseline_ola_v2$Run <- "Baseline v2 (100 ms)"
+# LION 1.11.8 baseline — collected in a separate, shorter session
+lion_drift_118 <- lion_baseline_118[, c("PKG", "seconds")]
+lion_drift_118$cumulative_time <- cumsum(lion_drift_118$seconds)
+lion_drift_118$Run <- "LION 1.11.8 baseline (50 ms)"
 
 drift_data <- bind_rows(
-  baseline_ola_v1[, c("cumulative_time", "PKG", "Run")],
-  baseline_ola_v2[, c("cumulative_time", "PKG", "Run")]
+  lion_drift_117[, c("cumulative_time", "PKG", "Run")],
+  lion_drift_118[, c("cumulative_time", "PKG", "Run")]
 )
 
-pal_drift <- c("Baseline v1 (100 ms)" = "#4E79A7", "Baseline v2 (100 ms)" = "#F28E2B")
+pal_drift <- c("LION 1.11.7 baseline (50 ms)" = "#4E79A7",
+               "LION 1.11.8 baseline (50 ms)" = "#F28E2B")
 
 ggplot(drift_data, aes(x = cumulative_time, y = PKG, colour = Run)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(method = "loess", span = 0.3, se = FALSE, linewidth = 1.2) +
   annotate("rect",
-           xmin = 2000, xmax = max(drift_data$cumulative_time),
+           xmin = 2000, xmax = max(lion_drift_117$cumulative_time),
            ymin = -Inf,  ymax = Inf,
            fill = "#E07A5F", alpha = 0.07) +
   annotate("text",
            x = 2100, y = max(drift_data$PKG) * 0.96,
-           label = "Hardware enters\na warmer thermal regime",
+           label = "Within-session\nthermal drift",
            hjust = 0, size = 3.5, colour = "#E07A5F") +
   scale_colour_manual(values = pal_drift) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.title = element_text(face = "bold"),
         plot.subtitle = element_text(colour = "grey40")) +
   labs(
-    title    = "Hardware drift inflates apparent differences between sessions",
-    subtitle = "Same algorithm, same parameters — the energy shift after 2 000 s is purely thermal.",
+    title    = "The OLA diagnostic applied to LION-26 data reveals thermal drift that was always there",
+    subtitle = "The two sessions sit at different absolute energy levels — a cross-session offset invisible without this plot.",
     x        = "Cumulative time (s)",
     y        = "PKG energy per run (J)",
     colour   = NULL
   )
 ```
 
-**What this explains about LION-26:** The "three clusters" in Fig. 1 correspond to baseline runs
-collected at different points in a long session, as the CPU cycled through warm-up, steady-state,
-and possibly a second warm regime.
-When a *separately collected* baseline average is subtracted from workload runs measured on a
-different day or in a different thermal state, the delta absorbs this shift — producing
-both inflated positive deltas and nonsensical negative ones.
+**What the OLA diagnostic reveals about the LION-26 data:** The "three clusters" in Fig. 1
+correspond to baseline runs collected at different points in a long session, as the CPU cycled
+through warm-up and a warmer steady-state regime.
+Without plotting PKG against cumulative time — the technique OLA introduced — this structure was
+invisible: the violin plot summarises all 480 runs together and shows only the aggregate spread.
+When a single baseline average from one session is subtracted from workload runs measured
+in a different session, any thermal offset between the sessions is silently absorbed into the
+delta — producing both inflated positive deltas and the occasional negative one.
 
 The dimension-5 results in LION-26 were systematically affected: the D=5 experiments ran
 *later* in the session, when the chip was warmer, inflating their apparent energy.
@@ -658,13 +666,14 @@ ggplot(version_ola %>% filter(delta_PKG > 0, delta_PKG < 300),
   )
 ```
 
-**What went wrong in LION-26?**
+**What the OLA methodology reveals about the LION-26 measurement context:**
 The LION 1.11.8 baseline and workload were collected in a separate session from the Julia 1.11.7
 data.
-The hardware was in a different thermal state.
+Without the diagnostic tools OLA provides — cumulative-time plots and per-pair deltas — there
+was no way to know the sessions were operating in different thermal states.
 Subtracting an averaged baseline from one session and applying it to workload runs from another
-absorbed the thermal offset as if it were real algorithmic energy.
-The interleaved design of OLA eliminates this confound because every workload run is paired with
+silently absorbed any thermal offset into the delta.
+The interleaved design of OLA addresses this directly: every workload run is paired with
 the baseline run immediately preceding it, taken under identical thermal conditions.
 
 **Practical implication:** Upgrading from Julia 1.11.7 to 1.11.8 is a free, significant
