@@ -209,7 +209,7 @@ wilcoxon_flags <- lion_workload %>%
     if (length(sig_rows) == 0) {
       return(data.frame(max_gens = numeric(0)))
     }
-    bind_rows(sig_rows) %>% distinct(max_gens)
+    dplyr::bind_rows(sig_rows) %>% distinct(max_gens)
   }) %>%
   ungroup() %>%
   distinct(dimension, population_size, max_gens) %>%
