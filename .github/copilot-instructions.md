@@ -206,3 +206,15 @@ When writing or editing documents that trace the research progression across pap
    For each methodological improvement, show what the improvement reveals when applied to
    the earlier data.  Juxtaposition of charts with different data and a verbal claim of
    progress is not sufficient.
+
+5. **Do not include charts from a paper's explainer unless they apply a new method to older data**:
+   a chart that simply reproduces later-paper results (even correctly) adds noise rather than
+   insight if it is already shown in that paper's own explainer document and does not demonstrate
+   any reanalysis of earlier data.  If juxtaposing two results does help illuminate something in
+   one of the explainers, drop a note to create an issue to improve that explainer instead.
+
+6. **When comparing distributional properties across papers, describe precisely what each
+   distribution represents**: different measurement protocols (e.g., batch-averaged baseline vs.
+   per-pair delta) produce structurally different quantities.  Do not describe one as "tighter"
+   or "less noisy" than the other without confirming this empirically; instead, explain what
+   each delta measures and why the distributions may differ in spread.

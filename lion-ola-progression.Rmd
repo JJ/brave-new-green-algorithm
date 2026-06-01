@@ -488,7 +488,7 @@ within-session thermal evolution visible.
 Applying this technique retroactively to the actual LION-26 baseline data shows exactly what was
 happening.
 
-```{r ola-drift, fig.cap="**Fig. 7** — Applying the OLA visualization technique to the LION-26 baseline data: PKG energy per run vs. cumulative experiment time for the two LION-era baseline sessions (1.11.7 in blue, 1.11.8 in orange). The longer 1.11.7 session (~3 200 s, 480 runs) shows a clear upward drift after approximately 2 000 s — the same thermal regime change that produces the multi-modal shapes in Fig. 1. The 1.11.8 baseline (a separate session) sits at a different absolute energy level, showing the cross-session thermal variation that OLA's interleaved design was designed to neutralise."}
+```{r ola-drift, fig.cap="**Fig. 7** — Applying the OLA visualization technique to the LION-26 baseline data: PKG energy per run vs. cumulative experiment time for the two LION-era baseline sessions (1.11.7 in blue, 1.11.8 in orange). Dashed vertical lines mark the regime-change points detected in the 1.11.7 LOESS curve — the transitions between distinct thermal states that produce the multi-modal shapes in Fig. 1. The 1.11.8 baseline (a separate session) sits at a consistently lower absolute energy level, showing the cross-session thermal variation that OLA's interleaved design was designed to neutralise."}
 # Apply the OLA methodology (cumulative-time plot) to the actual LION-26 baseline data.
 # baseline_evoapps is the LION 1.11.7 baseline (50 ms sampling, 480 runs), loaded earlier.
 lion_drift_117 <- baseline_evoapps[, c("PKG", "seconds")]
@@ -511,17 +511,27 @@ drift_data <- bind_rows(
 pal_drift <- c(lbl_117 = "#4E79A7", lbl_118 = "#F28E2B")
 names(pal_drift) <- c(lbl_117, lbl_118)
 
+# Detect regime-change points in the 1.11.7 LOESS curve by finding where the
+# first derivative changes sign (local extrema of the smoothed trend).
+x_grid <- seq(min(lion_drift_117$cumulative_time),
+              max(lion_drift_117$cumulative_time), length.out = 600)
+fit_117 <- loess(PKG ~ cumulative_time, data = lion_drift_117, span = 0.3)
+y_hat   <- predict(fit_117, newdata = data.frame(cumulative_time = x_grid))
+dy      <- diff(y_hat) / diff(x_grid)
+x_mid   <- (x_grid[-1] + x_grid[-length(x_grid)]) / 2
+sign_changes <- which(diff(sign(dy)) != 0)
+regime_x <- x_mid[sign_changes]
+
 ggplot(drift_data, aes(x = cumulative_time, y = PKG, colour = Session)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(method = "loess", span = 0.3, se = FALSE, linewidth = 1.2) +
-  annotate("rect",
-           xmin = 2000, xmax = max(lion_drift_117$cumulative_time),
-           ymin = -Inf,  ymax = Inf,
-           fill = "#E07A5F", alpha = 0.07) +
+  geom_vline(xintercept = regime_x, colour = "#E07A5F",
+             linetype = "dashed", linewidth = 0.7) +
   annotate("text",
-           x = 2100, y = max(drift_data$PKG) * 0.96,
-           label = "Within-session\nthermal drift",
-           hjust = 0, size = 3.5, colour = "#E07A5F") +
+           x = regime_x + diff(range(lion_drift_117$cumulative_time)) * 0.015,
+           y = max(drift_data$PKG) * 0.96,
+           label = paste0("Regime\nchange ", seq_along(regime_x)),
+           hjust = 0, size = 3.2, colour = "#E07A5F") +
   scale_colour_manual(values = pal_drift) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.title = element_text(face = "bold"),
@@ -551,58 +561,14 @@ The dimension-5 results in LION-26 were systematically affected: the D=5 experim
 
 ### Fix 3 — Interleave baseline and workload runs
 
-The elegant fix is to remove the time gap between baseline and workload: run them **back to back**,
-alternating baseline-workload-baseline-workload.
-When the hardware drifts, it drifts for both measurements equally, and the difference is stable.
-
-```{r ola-mixed, fig.cap="**Fig. 8** — Interleaved baseline (coral) and workload (teal) runs over time. Blue bars show the per-pair delta energy. Because both series follow the same thermal trajectory, the delta stays stable even as absolute energy levels drift upward."}
-ola_mixed <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
-ola_mixed$cumulative_time <- cumsum(ola_mixed$seconds)
-
-ola_mixed$delta_PKG     <- NA_real_
-ola_mixed$delta_seconds <- NA_real_
-for (i in 2:nrow(ola_mixed)) {
-  if (ola_mixed$work[i] == "ola-mixed") {
-    ola_mixed$delta_seconds[i] <- ola_mixed$seconds[i] - ola_mixed$seconds[i - 1]
-    ola_mixed$delta_PKG[i]     <- ola_mixed$PKG[i]     - ola_mixed$PKG[i - 1]
-  }
-}
-
-ola_mixed$Type <- dplyr::recode(ola_mixed$work,
-  "base-ola-mixed" = "Baseline",
-  "ola-mixed"      = "Workload"
-)
-
-delta_rows <- ola_mixed[ola_mixed$work == "ola-mixed" & !is.na(ola_mixed$delta_PKG) &
-                          ola_mixed$delta_PKG > 0, ]
-
-pal_mixed <- c("Baseline" = "#E07A5F", "Workload" = "#3D9970")
-
-ggplot(ola_mixed, aes(x = cumulative_time, y = PKG, colour = Type)) +
-  geom_point(alpha = 0.55, size = 1.8) +
-  geom_smooth(aes(group = Type), method = "loess", span = 0.35,
-              se = FALSE, linewidth = 1.1) +
-  geom_bar(data    = delta_rows,
-           mapping = aes(x = cumulative_time, y = delta_PKG),
-           stat    = "identity", inherit.aes = FALSE,
-           fill    = "#4E79A7", alpha = 0.35, width = 30) +
-  scale_colour_manual(values = pal_mixed) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "top", plot.title = element_text(face = "bold"),
-        plot.subtitle = element_text(colour = "grey40")) +
-  labs(
-    title    = "Interleaving neutralises hardware drift",
-    subtitle = "Blue bars = net workload energy (delta). Both series track the same thermal slope.",
-    x        = "Cumulative time (s)",
-    y        = "PKG energy per run (J)",
-    colour   = NULL
-  )
-```
-
-**Why this matters for reproducibility:** With the interleaved approach, the fraction of
-negative-delta runs drops dramatically.
-The delta distribution narrows, making it possible to detect real differences of 10–15 J —
-effects that were invisible under the old methodology.
+The fix to the cross-session thermal drift is to remove the time gap between baseline and workload:
+run them back to back, alternating baseline-workload-baseline-workload.
+When the hardware drifts, both measurements drift together, and their difference remains stable.
+LION-26 used batch-separated sessions; OLA-26 introduced this interleaved design, which eliminates
+the cross-session thermal confound.
+Because the LION-26 data were not collected this way, this design cannot be applied retroactively
+to the LION data — but the cumulative-time plot in Fig. 7 makes visible exactly the cross-session
+energy offset that the interleaved design is designed to prevent.
 
 ---
 
@@ -610,64 +576,14 @@ effects that were invisible under the old methodology.
 
 ### Julia 1.11.8 is actually *better*
 
-With the three fixes in place, OLA-26 re-ran the Julia version comparison.
-The result completely reversed the LION-26 conclusion.
-
-```{r ola-julia-reversal, fig.height=5.5, fig.cap="**Fig. 9** — OLA-26 view of the Julia version effect using the interleaved, 100 ms methodology. Notched boxes that do not overlap indicate statistically significant differences. Julia 1.11.8 (teal) is consistently *lower* than 1.11.7 (coral) — the opposite of what LION-26 found."}
-ola_mixed_v118 <- read.csv(
-  "data/ola-1.11.8-mixed-inverted-ola-mixed-inverted-16-Dec-09-02-52.csv"
-)
-ola_mixed_v118$cumulative_time <- cumsum(ola_mixed_v118$seconds)
-
-ola_mixed_v118$delta_PKG     <- NA_real_
-ola_mixed_v118$delta_seconds <- NA_real_
-for (i in 2:nrow(ola_mixed_v118)) {
-  if (ola_mixed_v118$work[i] == "ola-mixed-inverted") {
-    ola_mixed_v118$delta_seconds[i] <-
-      ola_mixed_v118$seconds[i] - ola_mixed_v118$seconds[i - 1]
-    ola_mixed_v118$delta_PKG[i] <-
-      ola_mixed_v118$PKG[i] - ola_mixed_v118$PKG[i - 1]
-  }
-}
-
-w117 <- ola_mixed[ola_mixed$work == "ola-mixed", ]
-w117$Julia <- "v1.11.7"
-w118 <- ola_mixed_v118[ola_mixed_v118$work == "ola-mixed-inverted", ]
-w118$Julia <- "v1.11.8"
-
-version_ola <- bind_rows(
-  w117 %>% select(Julia, dimension, population_size, max_gens, delta_PKG),
-  w118 %>% select(Julia, dimension, population_size, max_gens, delta_PKG)
-) %>%
-  mutate(
-    dim_pop        = paste0("Pop. ", population_size, " | Dim. ", dimension),
-    max_gens_label = paste("max_gens =", max_gens)
-  )
-
-pal_ola_julia <- c("v1.11.7" = "#E07A5F", "v1.11.8" = "#3D9970")
-
-ggplot(version_ola %>% filter(delta_PKG > 0, delta_PKG < 300),
-       aes(x = dim_pop, y = delta_PKG, fill = Julia)) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8), width = 0.6) +
-  scale_fill_manual(values = pal_ola_julia) +
-  facet_wrap(~ max_gens_label) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "top",
-    axis.text.x     = element_text(angle = 30, hjust = 1),
-    strip.text      = element_text(face = "bold"),
-    plot.title      = element_text(face = "bold"),
-    plot.subtitle   = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "OLA-26: Julia 1.11.8 is genuinely *better* — the earlier result was a measurement artefact",
-    subtitle = "Non-overlapping notches indicate significant differences. Y axis clipped to [0, 300] J.",
-    x        = NULL,
-    y        = "Delta PKG energy (J)",
-    fill     = "Julia version"
-  )
-```
+The cumulative-time plot in Fig. 7 directly explains one of the most surprising LION-26 findings:
+the apparent energy disadvantage of Julia 1.11.8.
+The LION 1.11.8 baseline session (orange in Fig. 7) was collected separately from the 1.11.7
+workload session (blue).
+The two sessions sit at visibly different absolute energy levels — a cross-session thermal offset
+that, without the OLA diagnostic, was invisible.
+When LION-26 subtracted a single average from the 1.11.7 baseline and applied it to the 1.11.8
+workload runs, that thermal gap was silently absorbed into the delta, making 1.11.8 appear worse.
 
 **What the OLA methodology reveals about the LION-26 measurement context:**
 The LION 1.11.8 baseline and workload were collected in a separate session from the Julia 1.11.7
@@ -726,7 +642,17 @@ This reanalysis shows that the findings about algorithmic parameters remain robu
 
 ### The energy-fitness frontier — then and now
 
-```{r tradeoff-comparison, fig.height=4.5, fig.cap="**Fig. 10** — Energy-fitness view across both paper setups. Left panel: LION-26 fix-rand data (50 ms, batch baseline). Right panel: OLA-26 interleaved data (100 ms, per-pair delta). The OLA panel shows tighter, more consistent distributions — the same algorithm behaviours are visible, but with less noise."}
+```{r tradeoff-comparison, fig.height=4.5, fig.cap="**Fig. 8** — Energy-fitness view across both paper setups. Left panel: LION-26 fix-rand data (50 ms, batch baseline). Right panel: OLA-26 interleaved data (100 ms, per-pair delta). The x-axis range differs between panels because the OLA delta is computed per-pair (workload minus immediately-preceding baseline), while the LION delta subtracts a single batch-averaged baseline — a methodologically distinct quantity."}
+# Load the OLA 1.11.7 workload data needed for the tradeoff comparison.
+ola_mixed <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
+ola_mixed$delta_PKG     <- NA_real_
+for (i in 2:nrow(ola_mixed)) {
+  if (ola_mixed$work[i] == "ola-mixed") {
+    ola_mixed$delta_PKG[i] <- ola_mixed$PKG[i] - ola_mixed$PKG[i - 1]
+  }
+}
+w117 <- ola_mixed[ola_mixed$work == "ola-mixed", ]
+
 lion_tradeoff <- wl_fixrand %>%
   filter(is.finite(delta_PKG), is.finite(log_diff), diff_fitness > 0) %>%
   mutate(
@@ -762,8 +688,8 @@ ggplot(both_setups,
     plot.subtitle   = element_text(colour = "grey40")
   ) +
   labs(
-    title    = "Energy-fitness trade-off: same algorithm, better measurements",
-    subtitle = "OLA-26 panel (right) is tighter — less noise, same underlying structure",
+    title    = "Energy-fitness trade-off: same algorithm, two measurement approaches",
+    subtitle = "The panels measure different things: batch-averaged delta (LION) vs. per-pair delta (OLA)",
     x        = "Delta PKG energy (J)",
     y        = "log10 fitness improvement",
     colour   = "max_gens",
@@ -771,11 +697,15 @@ ggplot(both_setups,
   )
 ```
 
-The overall message is unchanged: there is no single setting that simultaneously minimizes
-energy and maximizes fitness for every configuration.
-What OLA-26 adds is the confidence to say this *precisely* — the tighter distributions make
-small differences visible and reduce the risk of declaring a result significant when it is
-really thermal noise.
+The overall structure of the trade-off — no single setting minimizes energy and maximizes fitness
+simultaneously — is consistent across both papers.
+The key difference between the two panels is *what the delta measures*: the LION delta subtracts
+a single batch-averaged baseline from a separate session, so it carries any cross-session thermal
+offset; the OLA per-pair delta subtracts the baseline run that immediately precedes each workload
+run, so it isolates workload-only energy under matched thermal conditions.
+The wider spread visible in the OLA panel is expected: computing a per-pair difference from runs
+that are not perfectly matched on all thermal variables introduces more variability in the delta
+itself, even as the underlying energy signal becomes more precise and less confounded.
 
 ---
 
@@ -847,3 +777,5 @@ if (knitr::is_html_output()) {
 
 *Sources: [@lion26; @merelo26:ola]. Please check [`references.bib`](references.bib) and
 [`ours.bib`](ours.bib) for BibTeX entries.*
+
+## References
