@@ -828,7 +828,7 @@ This document cross-references the LION-26 paper [@lion26] and the OLA-26 paper
 All data and code are available in the
 [GitHub repository](https://github.com/JJ/brave-new-green-algorithm) under an open licence.
 
-Research is supported by the *Ministerio espanol de Economia y Competitividad* under project
+Research is supported by the *Ministerio español de Economía y Competitividad* under project
 PID2023-147409NB-C21.
 
 ---
