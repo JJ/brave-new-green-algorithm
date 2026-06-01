@@ -493,22 +493,25 @@ happening.
 # baseline_evoapps is the LION 1.11.7 baseline (50 ms sampling, 480 runs), loaded earlier.
 lion_drift_117 <- baseline_evoapps[, c("PKG", "seconds")]
 lion_drift_117$cumulative_time <- cumsum(lion_drift_117$seconds)
-lion_drift_117$Run <- "LION 1.11.7 baseline (50 ms)"
+lion_drift_117$Session <- "LION 1.11.7 baseline (50 ms)"
 
 # LION 1.11.8 baseline — collected in a separate, shorter session
 lion_drift_118 <- lion_baseline_118[, c("PKG", "seconds")]
 lion_drift_118$cumulative_time <- cumsum(lion_drift_118$seconds)
-lion_drift_118$Run <- "LION 1.11.8 baseline (50 ms)"
+lion_drift_118$Session <- "LION 1.11.8 baseline (50 ms)"
+
+lbl_117 <- "LION 1.11.7 baseline (50 ms)"
+lbl_118 <- "LION 1.11.8 baseline (50 ms)"
 
 drift_data <- bind_rows(
-  lion_drift_117[, c("cumulative_time", "PKG", "Run")],
-  lion_drift_118[, c("cumulative_time", "PKG", "Run")]
+  lion_drift_117[, c("cumulative_time", "PKG", "Session")],
+  lion_drift_118[, c("cumulative_time", "PKG", "Session")]
 )
 
-pal_drift <- c("LION 1.11.7 baseline (50 ms)" = "#4E79A7",
-               "LION 1.11.8 baseline (50 ms)" = "#F28E2B")
+pal_drift <- c(lbl_117 = "#4E79A7", lbl_118 = "#F28E2B")
+names(pal_drift) <- c(lbl_117, lbl_118)
 
-ggplot(drift_data, aes(x = cumulative_time, y = PKG, colour = Run)) +
+ggplot(drift_data, aes(x = cumulative_time, y = PKG, colour = Session)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(method = "loess", span = 0.3, se = FALSE, linewidth = 1.2) +
   annotate("rect",
