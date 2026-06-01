@@ -32,7 +32,8 @@ library(dplyr)
 
 if (!requireNamespace("energyR", quietly = TRUE)) {
   if (file.exists("energyR/DESCRIPTION")) {
-    utils::install.packages("energyR", repos = NULL, type = "source")
+    pkg_path <- normalizePath("energyR", mustWork = TRUE)
+    utils::install.packages(pkg_path, repos = NULL, type = "source")
   } else {
     stop("Package 'energyR' is required. Install it or render from the repository root.")
   }
