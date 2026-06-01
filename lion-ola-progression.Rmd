@@ -51,7 +51,7 @@ The first paper, presented at **LION 20** [@lion26], established a workflow for 
 ran implementation optimizations, and explored how algorithm parameters affect the
 energy-vs-fitness trade-off.
 The second, published at **OLA 2026** [@merelo26:ola], zoomed in on the measurement process
-itself, identified four sources of noise and bias that had been lurking in the first paper's data,
+itself, identified three sources of noise and bias that had been lurking in the first paper's data,
 and proposed fixes — each validated empirically.
 
 Reading the two papers side by side is instructive, but you have to know where to look.
@@ -419,9 +419,9 @@ We will see exactly why in Part 2.
 
 ## Part 2 — What OLA-26 found (and why it changes Part 1)
 
-### Four sources of measurement noise
+### Three sources of measurement noise
 
-The OLA paper systematically audited the LION methodology and identified four independent sources
+The OLA paper systematically audited the LION methodology and identified three independent sources
 of error.
 Each is introduced and corrected in turn.
 
@@ -595,24 +595,11 @@ effects that were invisible under the old methodology.
 
 ---
 
-### Fix 4 — Discard zero-energy sensor readings
-
-Occasionally, pinpoint returns exactly 0 J.
-These are not genuine measurements — the RAPL register simply did not update in time.
-OLA changed the experiment runner to **repeat any run that yields 0 J**, ensuring every
-data point is real.
-
-The effect is visible as a tightening of box-plot distributions:
-the tails that previously extended toward zero are eliminated, reducing variance and improving
-reproducibility without changing the central tendency.
-
----
-
 ## Part 3 — The reversal: what the improved methodology revealed
 
 ### Julia 1.11.8 is actually *better*
 
-With the four fixes in place, OLA-26 re-ran the Julia version comparison.
+With the three fixes in place, OLA-26 re-ran the Julia version comparison.
 The result completely reversed the LION-26 conclusion.
 
 ```{r ola-julia-reversal, fig.height=5.5, fig.cap="**Fig. 9** — OLA-26 view of the Julia version effect using the interleaved, 100 ms methodology. Notched boxes that do not overlap indicate statistically significant differences. Julia 1.11.8 (teal) is consistently *lower* than 1.11.7 (coral) — the opposite of what LION-26 found."}
@@ -699,14 +686,14 @@ The table below traces each LION-26 observation to its OLA-26 explanation.
 | Multi-modal baseline violin plots | Hardware thermal drift during a long session | Interleave baseline & workload; plot PKG vs. cumulative time |
 | Negative delta-PKG values | Baseline measured in a different thermal state from the workload | Interleave; compute per-pair delta |
 | Cluster of near-zero delta values | 50 ms polling overhead | Use 100 ms RAPL sampling |
-| Occasional exactly-zero readings | RAPL register not updated in time | Repeat any zero-energy run |
 | Julia 1.11.8 appears worse | Cross-session thermal confound absorbed into the delta | Interleaved design eliminates the confound |
 | High variance across D=5 runs | D=5 runs happened later in the session, in a warmer regime | Interleave; randomise parameter order |
 
 ### What the LION findings still stand on
 
-Not every conclusion from LION-26 was invalidated.
-The findings about algorithmic parameters are robust because they were derived from a
+OLA-26 provides a deeper understanding of how everything works — especially of how energy
+is measured and what it depends on.
+This reanalysis shows that the findings about algorithmic parameters remain robust, because they were derived from a
 *within-session, same-platform* comparison:
 
 - **Smaller alpha (less exploitation) is better on both energy and fitness.** This result holds
@@ -812,10 +799,7 @@ really thermal noise.
 7. **Slow down the measurement tool**: 100 ms RAPL sampling reduces polling overhead and
    eliminates a cluster of spurious near-zero readings that 50 ms sampling produced.
 
-8. **Discard zero-energy sensor failures** by repeating any run that reports 0 J.
-   This reduces variance and improves reproducibility.
-
-9. **Platform matters and needs re-validation after changes**: a single energy claim has a
+8. **Platform matters and needs re-validation after changes**: a single energy claim has a
    version number.
    Report Julia version, kernel version, and pinpoint commit alongside every table of results.
 

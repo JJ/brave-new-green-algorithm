@@ -167,3 +167,22 @@ analysis patterns from all BNA papers.
 - **CI**: `.github/workflows/R-CMD-check.yml` runs on ubuntu (release + devel) and macOS only
   (Windows removed). `r-lib/actions/setup-r-dependencies@v2` handles R package caching
   automatically.
+
+## Cross-paper progression documents (`lion-ola-progression.Rmd`)
+
+When writing or editing documents that trace the research progression from one paper to
+another:
+
+1. **Scope each "fix" to the progression story**: only include methodology changes that
+   address artefacts or observations carried over from the earlier paper (LION-26).
+   Changes introduced purely within the later paper (OLA-26) without a root cause in
+   LION-26 do not belong in the progression narrative.
+
+2. **Never use "invalidation" language**: do not write that any finding was "invalidated"
+   or "disproved."  Instead, frame OLA-26 as providing a **deeper understanding** of how
+   everything works — especially how energy is measured and what it depends on.
+   Validation is always statistical within the framework of the stated research questions.
+
+3. **Positive framing for methodology evolution**: describe methodology changes as
+   revealing more about the measurement process, not as correcting errors or overturning
+   conclusions.
