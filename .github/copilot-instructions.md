@@ -128,6 +128,19 @@ Use American spelling in explainer prose.
 When a chart shows unexplained visual bands/clusters, explicitly encode the likely driver (for example facet by `dimension`) instead of adding a second competing plot.
 Include citations inline at the sentence where each claim appears; avoid "offline" or detached reference stanzas.
 
+### Typographic conventions for all `*.Rmd` documents
+
+- **Author field**: use the authors of the paper(s) being explained, joined with ` & `.
+  If the explainer covers multiple papers whose author lists differ, include all authors
+  across those papers in order of first appearance, with no duplicates.
+- **First section heading**: Should start with "Introduction" and include a reference to
+  the title of the paper(s) it's trying to explain, or line of research if it's using
+  several papers.
+- **Bibliography YAML block**: include the four standard `.bib` files
+  (`references.bib`, `ours.bib`, `GAs.bib`, `ga-energy.bib`) whenever the document uses
+  `[@…]` citations.  It might also include other reference files included in the original
+  `.Rnw` file, if some reference included in them is detected.
+
 ## Scientific grounding for LION explainers
 
 When preparing explainers from `lion-26.Rnw`, keep the scientific framing tied to the paper and the exact LION datasets:
@@ -167,3 +180,64 @@ analysis patterns from all BNA papers.
 - **CI**: `.github/workflows/R-CMD-check.yml` runs on ubuntu (release + devel) and macOS only
   (Windows removed). `r-lib/actions/setup-r-dependencies@v2` handles R package caching
   automatically.
+
+## Cross-paper progression documents
+
+When writing or editing documents that trace the research progression across papers:
+
+1. **Scope each "fix" to the progression story**: only include methodology changes that
+   address artefacts or observations carried over from an earlier paper in the series.
+   Changes introduced purely within a later paper without a root cause in earlier work
+   do not belong in the progression narrative.
+
+2. **Never use "invalidation" language**: do not write that any finding was "invalidated"
+   or "disproved."  Instead, frame later papers as providing a **deeper understanding** of
+   how everything works — especially how energy is measured and what it depends on.
+   Validation is always statistical within the framework of the stated research questions.
+
+3. **Positive framing for methodology evolution**: describe methodology changes as
+   revealing more about the measurement process, not as correcting errors or overturning
+   conclusions.
+
+4. **Apply new methodologies operationally to earlier data**: a progression document must
+   demonstrate insight by *actually running* the later paper's analytical techniques on the
+   earlier paper's data — not merely presenting the later results alongside the earlier ones
+   and verbally asserting that the new approach is better.
+   For each methodological improvement, show what the improvement reveals when applied to
+   the earlier data.  Juxtaposition of charts with different data and a verbal claim of
+   progress is not sufficient.
+
+5. **Do not include charts from a paper's explainer unless they apply a new method to older data**:
+   a chart that simply reproduces later-paper results (even correctly) adds noise rather than
+   insight if it is already shown in that paper's own explainer document and does not demonstrate
+   any reanalysis of earlier data.  If juxtaposing two results does help illuminate something in
+   one of the explainers, drop a note to create an issue to improve that explainer instead.
+
+6. **When comparing distributional properties across papers, describe precisely what each
+   distribution represents**: different measurement protocols (e.g., batch-averaged baseline vs.
+   per-pair delta) produce structurally different quantities.  Do not describe one as "tighter"
+   or "less noisy" than the other without confirming this empirically; instead, explain what
+   each delta measures and why the distributions may differ in spread.
+
+7. **Use changepoint detection (not LOESS sign changes) to identify thermal-regime shifts**:
+   when annotating a PKG-vs-cumulative-time chart with regime transitions, find the positions
+   that minimise within-segment RSS (mean-change model) rather than finding sign changes in
+   the LOESS first derivative.  LOESS sign changes are sensitive to smoothing bandwidth and
+   typically produce far too many spurious transitions.  Apply changepoint detection separately
+   to each session and colour-code the resulting dashed vertical lines to match their
+   respective session.  Keep the number of changepoints consistent with what is visually
+   apparent in the data; do not over-segment.
+
+8. **Only include an earlier-paper section in a progression document if there is a direct follow-up
+   in a later paper**: if a section describes experiments whose results are carried forward as-is
+   — with no methodological insight, reanalysis, or altered conclusion from a later paper — remove
+   it entirely.  Content that belongs in the per-paper explainer adds bulk to the progression
+   document without illuminating the research story.  A brief mention of a result in the unified
+   summary or mapping table is sufficient; do not repeat prose or charts that already appear in
+   the earlier paper's explainer.
+
+9. **Use the published venue name in human-readable labels, not the submission-era file prefix**:
+   data files may carry a prefix reflecting an earlier intended venue (e.g., `evoapps-…`) even
+   when the paper was ultimately published at a different conference (e.g., LION).  In chart
+   legends, captions, prose, and code comments, always use the name of the venue where the
+   paper was actually published.  File names and variable names in code need not be renamed.
