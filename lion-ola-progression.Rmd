@@ -162,7 +162,7 @@ energy.
 That is not what the data showed.
 
 ```{r lion-workload-setup}
-# Load EvoApps 50 ms-sampled data (the basis for the LION results section)
+# Load LION-era 50 ms-sampled data (the basis for the LION results section)
 baseline_evoapps <- read.csv(
   "data/evoapps-1.11.7-baseline-bna-baseline-16-Oct-11-08-20.csv"
 )
@@ -214,62 +214,6 @@ variants_combined <- bind_rows(wl_orig, wl_boost, wl_fixrand) %>%
   mutate(
     dim_pop = paste0("D=", dimension, ", P=", population_size),
     variant = factor(variant)
-  )
-```
-
-```{r lion-mutation-energy, fig.height=4.5, fig.cap="**Fig. 2** — Delta PKG energy (baseline-corrected) for the three BNA variants by parameter combination. Despite reducing memory allocations, the perf-boost variant does not consistently save energy. The fix-rand variant achieves comparable or lower energy for the same workload and, crucially, much better fitness."}
-ggplot(variants_combined %>% filter(is.finite(delta_PKG)),
-       aes(x = dim_pop, y = delta_PKG, fill = variant)) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8), width = 0.65) +
-  scale_fill_manual(
-    values = c(
-      "1. Original BNA"      = "#4E79A7",
-      "2. Perf-boost mutation" = "#E07A5F",
-      "3. Fix-rand mutation" = "#3D9970"
-    )
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "bottom",
-    axis.text.x     = element_text(angle = 15, hjust = 1),
-    plot.title      = element_text(face = "bold"),
-    plot.subtitle   = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "LION-26: implementation optimization does not always save energy",
-    subtitle = "Fewer allocations ≠ lower energy; fixing the random generator helps fitness more than it hurts energy",
-    x        = NULL,
-    y        = "Delta PKG energy (J)",
-    fill     = NULL
-  )
-```
-
-```{r lion-mutation-fitness, fig.height=4.5, fig.cap="**Fig. 3** — log10 fitness improvement (lower = closer to the optimum) for the same three variants. The fix-rand mutation unlocks dramatically better solutions, especially for D=3."}
-ggplot(variants_combined %>% filter(is.finite(log_diff), diff_fitness > 0),
-       aes(x = dim_pop, y = log_diff, fill = variant)) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8), width = 0.65) +
-  scale_fill_manual(
-    values = c(
-      "1. Original BNA"      = "#4E79A7",
-      "2. Perf-boost mutation" = "#E07A5F",
-      "3. Fix-rand mutation" = "#3D9970"
-    )
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "bottom",
-    axis.text.x     = element_text(angle = 15, hjust = 1),
-    plot.title      = element_text(face = "bold"),
-    plot.subtitle   = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "Fixing the random generator dramatically improves solution quality",
-    subtitle = "Lower log10 fitness difference = closer to the known optimum",
-    x        = NULL,
-    y        = "log10(fitness difference to target)",
-    fill     = NULL
   )
 ```
 
@@ -363,7 +307,7 @@ gridExtra::grid.arrange(p_energy_alpha, p_fitness_alpha,
 LION-26 repeated the fix-rand experiments under **Julia 1.11.8** (just released at the time) to
 check if platform updates affect the results.
 
-```{r lion-julia-comparison, fig.cap="**Fig. 5** — LION-26 view of the Julia version effect. Workload delta PKG energy under Julia 1.11.7 (EvoApps data, coral) vs. Julia 1.11.8 (LION data, teal), both using the old batch-baseline methodology (50 ms sampling, separate sessions)."}
+```{r lion-julia-comparison, fig.cap="**Fig. 5** — LION-26 view of the Julia version effect. Workload delta PKG energy under Julia 1.11.7 (LION data, coral) vs. Julia 1.11.8 (LION data, teal), both using the old batch-baseline methodology (50 ms sampling, separate sessions)."}
 # LION 1.11.8 data
 lion_baseline_118 <- read.csv("data/lion-1.11.8-baseline.csv")
 lion_baseline_118 %>%
@@ -376,7 +320,7 @@ lion_wl_118 <- subtract_baseline(lion_wl_118, summary_lion_baseline_118)
 lion_wl_118$julia  <- "v1.11.8 (LION)"
 lion_wl_118$log_diff <- log10(lion_wl_118$diff_fitness)
 
-wl_fixrand_labelled <- wl_fixrand %>% mutate(julia = "v1.11.7 (EvoApps)")
+wl_fixrand_labelled <- wl_fixrand %>% mutate(julia = "v1.11.7 (LION)")
 
 julia_cmp_lion <- bind_rows(
   wl_fixrand_labelled %>% select(julia, dimension, population_size, max_gens, delta_PKG),
@@ -384,7 +328,7 @@ julia_cmp_lion <- bind_rows(
 ) %>%
   mutate(dim_pop = paste0("D=", dimension, ", P=", population_size))
 
-pal_lion_julia <- c("v1.11.7 (EvoApps)" = "#E07A5F", "v1.11.8 (LION)" = "#3D9970")
+pal_lion_julia <- c("v1.11.7 (LION)" = "#E07A5F", "v1.11.8 (LION)" = "#3D9970")
 
 ggplot(julia_cmp_lion %>% filter(is.finite(delta_PKG)),
        aes(x = dim_pop, y = delta_PKG, fill = julia)) +
@@ -436,7 +380,7 @@ At 50 ms, the measurement tool itself interrupts the CPU's power accounting more
 a polling overhead and, in some cases, producing suspiciously small readings that pile up just
 below 50 J in the workload data.
 
-```{r ola-sampling-comparison, fig.cap="**Fig. 6** — Delta energy vs. delta time for 50 ms (EvoApps, coral) and 100 ms (OLA, teal) sampling. The cluster of anomalously small energy values visible at the bottom-left in the 50 ms data disappears at 100 ms."}
+```{r ola-sampling-comparison, fig.cap="**Fig. 6** — Delta energy vs. delta time for 50 ms (LION, coral) and 100 ms (OLA, teal) sampling. The cluster of anomalously small energy values visible at the bottom-left in the 50 ms data disappears at 100 ms."}
 baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
 baseline_ola_100s[null_cols] <- NULL
 
@@ -448,14 +392,14 @@ baseline_ola_100s %>%
 wl_ola_100s <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
 wl_ola_100s  <- subtract_baseline(wl_ola_100s, summary_baseline_ola_100s)
 wl_ola_100s$Sampling  <- "100 ms (OLA)"
-wl_fixrand$Sampling   <- "50 ms (EvoApps)"
+wl_fixrand$Sampling   <- "50 ms (LION)"
 
 sampling_cmp <- bind_rows(
   wl_fixrand %>% select(Sampling, delta_PKG, delta_seconds),
   wl_ola_100s %>% select(Sampling, delta_PKG, delta_seconds)
 )
 
-pal_sampling <- c("50 ms (EvoApps)" = "#E07A5F", "100 ms (OLA)" = "#3D9970")
+pal_sampling <- c("50 ms (LION)" = "#E07A5F", "100 ms (OLA)" = "#3D9970")
 
 ggplot(sampling_cmp %>% filter(is.finite(delta_PKG), is.finite(delta_seconds)),
        aes(x = delta_seconds, y = delta_PKG, colour = Sampling)) +

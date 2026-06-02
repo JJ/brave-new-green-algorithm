@@ -227,3 +227,16 @@ When writing or editing documents that trace the research progression across pap
    to each session and colour-code the resulting dashed vertical lines to match their
    respective session.  Keep the number of changepoints consistent with what is visually
    apparent in the data; do not over-segment.
+
+8. **Only include an earlier-paper section in a progression document if there is a direct follow-up
+   in a later paper**: if a section describes historical experiments whose results are carried
+   forward as-is — with no methodological insight, reanalysis, or altered conclusion from a later
+   paper — replace the charts with a brief prose summary and leave only the conclusions as context.
+   Charts that simply present earlier results with no connection to the progression narrative add
+   bulk without illuminating the research story.
+
+9. **Use the published venue name in human-readable labels, not the submission-era file prefix**:
+   data files may carry a prefix reflecting an earlier intended venue (e.g., `evoapps-…`) even
+   when the paper was ultimately published at a different conference (e.g., LION).  In chart
+   legends, captions, prose, and code comments, always use the name of the venue where the
+   paper was actually published.  File names and variable names in code need not be renamed.
