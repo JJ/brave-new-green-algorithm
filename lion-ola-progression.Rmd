@@ -181,7 +181,6 @@ subtract_baseline <- function(workload, bsummary) {
 # Fix-rand mutation (the final LION baseline for further analysis)
 wl_fixrand <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
 wl_fixrand <- subtract_baseline(wl_fixrand, summary_baseline_evoapps)
-wl_fixrand$variant <- "3. Fix-rand mutation"
 wl_fixrand$log_diff <- log10(wl_fixrand$diff_fitness)
 ```
 
