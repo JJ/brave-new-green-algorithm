@@ -34,7 +34,6 @@ knitr::opts_chunk$set(
 ```{r libraries}
 library(ggplot2)
 library(dplyr)
-library(gridExtra)
 ```
 
 ---
