@@ -147,20 +147,6 @@ sensible choice, but one that would later prove insufficient on its own.
 
 ---
 
-### Optimizing the implementation: the mutation puzzle
-
-The LION paper tested three algorithm variants in sequence:
-
-1. **Original BNA** — the algorithm as-is, with default mutation.
-2. **Perf-boost mutation** — a rewrite that pre-computes the positions to mutate, reducing
-   dynamic allocations.
-3. **Fix-rand mutation** — like (2), but with a corrected uniform random generator that samples
-   the full BBOB range [-5, 5].
-
-Intuitively, fewer allocations should mean less work for the garbage collector and thus less
-energy.
-That is not what the data showed.
-
 ```{r lion-workload-setup}
 # Load LION-era 50 ms-sampled data (the basis for the LION results section)
 baseline_evoapps <- read.csv(
@@ -192,113 +178,12 @@ subtract_baseline <- function(workload, bsummary) {
   workload
 }
 
-# Original BNA
-wl_orig <- read.csv("data/sphere-evoapps-1.11.7-full-bna-16-Oct-17-32-01.csv")
-wl_orig <- subtract_baseline(wl_orig, summary_baseline_evoapps)
-wl_orig$variant <- "1. Original BNA"
-wl_orig$log_diff <- log10(wl_orig$diff_fitness)
-
-# Perf-boost mutation
-wl_boost <- read.csv("data/sphere-evoapps-fix-bna-13-Oct-18-54-04.csv")
-wl_boost <- subtract_baseline(wl_boost, summary_baseline_evoapps)
-wl_boost$variant <- "2. Perf-boost mutation"
-wl_boost$log_diff <- log10(wl_boost$diff_fitness)
-
 # Fix-rand mutation (the final LION baseline for further analysis)
 wl_fixrand <- read.csv("data/evoapps-1.11.7-fix-rand-bna-fix-rand-25-Oct-11-06-07.csv")
 wl_fixrand <- subtract_baseline(wl_fixrand, summary_baseline_evoapps)
 wl_fixrand$variant <- "3. Fix-rand mutation"
 wl_fixrand$log_diff <- log10(wl_fixrand$diff_fitness)
-
-variants_combined <- bind_rows(wl_orig, wl_boost, wl_fixrand) %>%
-  mutate(
-    dim_pop = paste0("D=", dimension, ", P=", population_size),
-    variant = factor(variant)
-  )
 ```
-
-**What LION-26 concluded:** Fewer allocations in the mutation operator did *not* translate into
-lower energy at D=3 and D=5.
-But fixing the random number generator (variant 3) produced far better solutions for essentially
-the same energy budget — a favorable trade-off.
-The fix-rand variant became the reference implementation for all subsequent experiments.
-
----
-
-### Exploration, exploitation, and the stopping criterion
-
-With the fix-rand baseline established, LION-26 asked: which algorithm parameters affect energy
-and fitness the most?
-
-```{r lion-params, fig.height=5, fig.cap="**Fig. 4** — Energy (left column) and log10 fitness (right column) for the fix-rand implementation, split by alpha percentage (top row) and max_gens stopping criterion (bottom row). Smaller alpha = less exploitation = better on both objectives. Fewer stagnant generations = slightly lower energy but worse fitness."}
-wl_fr <- wl_fixrand %>%
-  mutate(
-    dim_pop        = paste0("D=", dimension, ", P=", population_size),
-    alpha_label    = paste0("alpha=", alpha, "%"),
-    max_gens_label = paste0("max_gens=", max_gens)
-  )
-
-p_energy_alpha <- ggplot(wl_fr %>% filter(is.finite(delta_PKG)),
-       aes(x = dim_pop, y = delta_PKG, colour = factor(alpha))) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8)) +
-  scale_colour_manual(values = c("10" = "#3D9970", "25" = "#E07A5F")) +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle = 15, hjust = 1),
-        plot.title = element_text(face = "bold")) +
-  labs(title = "Energy by alpha", x = NULL, y = "Delta PKG (J)", colour = "alpha %")
-
-p_fitness_alpha <- ggplot(wl_fr %>% filter(is.finite(log_diff), diff_fitness > 0),
-       aes(x = dim_pop, y = log_diff, colour = factor(alpha))) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8)) +
-  scale_colour_manual(values = c("10" = "#3D9970", "25" = "#E07A5F")) +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle = 15, hjust = 1),
-        plot.title = element_text(face = "bold")) +
-  labs(title = "Fitness by alpha", x = NULL, y = "log10 fitness diff", colour = "alpha %")
-
-p_energy_gens <- ggplot(wl_fr %>% filter(is.finite(delta_PKG)),
-       aes(x = dim_pop, y = delta_PKG, colour = factor(max_gens))) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8)) +
-  scale_colour_manual(values = c("10" = "#4E79A7", "25" = "#F28E2B", "50" = "#B07AA1")) +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle = 15, hjust = 1),
-        plot.title = element_text(face = "bold")) +
-  labs(title = "Energy by max_gens", x = NULL, y = "Delta PKG (J)", colour = "max_gens")
-
-p_fitness_gens <- ggplot(wl_fr %>% filter(is.finite(log_diff), diff_fitness > 0),
-       aes(x = dim_pop, y = log_diff, colour = factor(max_gens))) +
-  geom_boxplot(notch = TRUE, outlier.alpha = 0.3, alpha = 0.8,
-               position = position_dodge(0.8)) +
-  scale_colour_manual(values = c("10" = "#4E79A7", "25" = "#F28E2B", "50" = "#B07AA1")) +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle = 15, hjust = 1),
-        plot.title = element_text(face = "bold")) +
-  labs(title = "Fitness by max_gens", x = NULL, y = "log10 fitness diff", colour = "max_gens")
-
-gridExtra::grid.arrange(p_energy_alpha, p_fitness_alpha,
-                        p_energy_gens,  p_fitness_gens,
-                        ncol = 2)
-```
-
-**What LION-26 concluded:**
-
-- **Alpha (exploitation fraction):** A smaller alpha (10%) means fewer individuals devoted to
-  exploitation.
-  Counterintuitively, this *helps* on both fronts — lower energy and better fitness.
-  The explanation: a highly exploitative population gets stuck in local minima and keeps running
-  until the stopping criterion fires, wasting energy.
-  An exploratory population finds good solutions faster and then stops.
-
-- **max_gens (stagnation budget):** Fewer stagnant generations before stopping means lower
-  energy *and* worse fitness — a genuine trade-off.
-  The relationship is independent of alpha (ANOVA interaction not significant).
-
-- **Population size:** After removing baseline energy (which captures the one-time cost of
-  building the initial population), P has almost no effect on net energy.
-  The algorithmic work per generation scales more with D than with P for these problem sizes.
 
 ---
 

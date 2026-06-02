@@ -229,11 +229,12 @@ When writing or editing documents that trace the research progression across pap
    apparent in the data; do not over-segment.
 
 8. **Only include an earlier-paper section in a progression document if there is a direct follow-up
-   in a later paper**: if a section describes historical experiments whose results are carried
-   forward as-is — with no methodological insight, reanalysis, or altered conclusion from a later
-   paper — replace the charts with a brief prose summary and leave only the conclusions as context.
-   Charts that simply present earlier results with no connection to the progression narrative add
-   bulk without illuminating the research story.
+   in a later paper**: if a section describes experiments whose results are carried forward as-is
+   — with no methodological insight, reanalysis, or altered conclusion from a later paper — remove
+   it entirely.  Content that belongs in the per-paper explainer adds bulk to the progression
+   document without illuminating the research story.  A brief mention of a result in the unified
+   summary or mapping table is sufficient; do not repeat prose or charts that already appear in
+   the earlier paper's explainer.
 
 9. **Use the published venue name in human-readable labels, not the submission-era file prefix**:
    data files may carry a prefix reflecting an earlier intended venue (e.g., `evoapps-…`) even
