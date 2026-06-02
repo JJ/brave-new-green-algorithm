@@ -1,5 +1,5 @@
 ---
-title: "From LION to OLA: How Our Understanding of BNA Energy Evolved"
+title: "From LION to OLA: How Our Understanding of How Energy is Measured Evolved"
 subtitle: "A research-progression story — what we found, what puzzled us, and how we made sense of it"
 author: "JJ Merelo & Cecilia Merelo-Molina & Pablo García Sánchez & Mario García Valdez & Juan Luis Jiménez-Laredo"
 date: "`r format(Sys.Date(), '%B %Y')`"
@@ -66,7 +66,7 @@ population is divided into castes inspired by Aldous Huxley's *Brave New World*.
 Each caste uses a different reproduction strategy, giving fine-grained control over the
 exploration-exploitation balance.
 The BNA was implemented in **Julia** and benchmarked on the BBOB Sphere function
-[@hansen2010comparing] across two chromosome dimensions (D = 3, 5) and two population sizes
+[@hansen2010comparing], initially across two chromosome dimensions (D = 3, 5) and two population sizes
 (P = 200, 400).
 
 All experiments were run on an **AMD Ryzen 9 9950X** with Ubuntu Linux 25.04.
@@ -97,7 +97,7 @@ This is the overhead that must be subtracted from every workload measurement.
 
 ```{r lion-baseline-load}
 # LION-26 used two rounds of 120 baseline runs each,
-# combined and summarised with a 20% trimmed mean.
+# combined and summarized with a 20% trimmed mean.
 lion_baseline_early <- readRDS("data/energy-full-data.rds")
 
 lion_baseline_early %>%
@@ -116,7 +116,7 @@ Even before any workload is run, the spread is striking.
 Standard deviations are in the tens of Joules, and the coefficient of variation exceeds 10% in
 several cells.
 
-```{r lion-baseline-violin, fig.cap="**Fig. 1** — Violin plot of LION-26 baseline PKG energy by dimension and population size (log scale). The multi-modal shapes — especially visible for D=3 — hint at the hardware entering different operating states during the measurement session."}
+```{r lion-baseline-violin, message=FALSE, warning=FALSE, fig.cap="**Fig. 1** — Violin plot of LION-26 baseline PKG energy by dimension and population size (log scale). The multi-modal shapes — especially visible for D=3 — hint at the hardware entering different operating states during the measurement session."}
 lion_baseline_early$combo <- paste0("D=", lion_baseline_early$dimension,
                                      ", P=", lion_baseline_early$population_size)
 ggplot(lion_baseline_early,
@@ -140,7 +140,7 @@ ggplot(lion_baseline_early,
   )
 ```
 
-**What LION-26 said:** The violin plots show "three clusters" and "a big dispersion, especially
+**What we said in the LION-26 paper:** The violin plots show "three clusters" and "a big dispersion, especially
 for D=3, P=200."
 The paper attributed this to "time-dependent effects" and resolved to use a trimmed mean — a
 sensible choice, but one that would later prove insufficient on its own.
@@ -429,7 +429,7 @@ Each is introduced and the insight it provides is demonstrated in turn.
 
 ### Fix 1 — Reduce the RAPL polling rate
 
-The LION experiments used pinpoint's default sampling interval of **50 ms** (20 samples/second).
+The LION experiments used `pinpoint`'s default sampling interval of **50 ms** (20 samples/second).
 OLA switched to **100 ms** (10 samples/second).
 
 At 50 ms, the measurement tool itself interrupts the CPU's power accounting more often, adding
@@ -479,7 +479,7 @@ Switching to 100 ms brings readings back into a physically plausible range.
 
 ---
 
-### Fix 2 — Recognise hardware thermal drift
+### Fix 2 — Recognize hardware thermal drift
 
 Even with a better sampling rate, the LION baseline violin (Fig. 1) still showed multi-modal
 shapes.
