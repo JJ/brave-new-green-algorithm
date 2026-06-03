@@ -271,9 +271,9 @@ results_anova_boost <- aov( lm ( PKG ~ dimension + population_size + max_gens + 
 
 Figure \ref{fig:evoapps.perf.boost} shows how the (theoretically) optimized mutation changes the energy profile of the implemented algorithm. Although it consumes less energy for the same time, it consumes more for the same number of evaluations, with black points representing it taking the upper half of the chart; that is, consuming more energy. This means that essentially the performance boost in time is being done at the cost of more energy being spent  doing the same amount of work, unfortunately. We will examine this in more detail next.
 
-<<evoapps.compare, echo=FALSE, warnings=FALSE, message=F, fig.height=2.5, fig.pos="h!tb", fig.cap="Comparing energy consumption for initial configuration vs. optimized one.">>=
+<<evoapps.compare, echo=FALSE, warnings=FALSE, message=FALSE, fig.height=2.5, fig.pos="h!tb", fig.cap="Comparing energy consumption for initial configuration vs. optimized one.">>=
 all_results$joules_per_evaluation <- all_results$delta_PKG / all_results$evaluations
-ggplot(all_results, aes(x=dim_pop,y=joules_per_evaluation, color=work)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)")
+ggplot(all_results, aes(x=dim_pop,y=joules_per_evaluation, color=work)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Energy (J)")
 @
 
 If we compare the new results against the basic implementation, which is what we do in Figure \ref{fig:evoapps.compare}, where we are doing a boxplot of Joules per evaluation for every combination of dimension and population. Even in this kind of measure, that does not consider the changes in the number of evaluations that might have taken place. What we see is an obvious superiority of the old vs. the new implementation. We can argue that the number of allocations is not so important for $D=3, 5$; however, what we see is that while, as seen above in Figure \ref{fig:evoapps.perf.boost}, the new mutation implementation would consume less energy for the same amount of time, the original one is still faster, and that adds up to a lower overall energy consumption. As is usual in this line of research, even if intuitively we assume that some kind of programming improvement might lead to better energy consumption, we still need to make measurements to check what is the actual improvement observed. We do not even observe an improvement in the dispersion of the results: although the distribution of the original implementation has several "ridges", the new one is longer, indicating a bigger dispersion. The difference seems to diminish with size, however, indicating that it is likely that for bigger sizes, which are also used in BBOB benchmarks, the difference will diminish or even revert. When we are evaluating, however, a whole algorithm, the interesting result is how much energy is spent for a certain fitness level. We show this in Figure \ref{fig:evoapps.fitness.vs.energy.boost}.
@@ -321,16 +321,16 @@ As we can see in Figure \ref{fig:evoapps.uniform.mutation}, we can obtain much b
 %
 <<evoapps.energy.compare, echo=FALSE, warnings=FALSE, message=FALSE, fig.show='hold', fig.height=4, out.width='50%', fig.pos="h!tb", fig.cap="Comparing energy consumption (left) and fitness levels (right) for previous mutation vs. uniform random one.">>=
 ggplot(new_results, aes(x=dim_pop,y=delta_PKG, color=work)) + geom_violin() + theme_minimal() + labs(y="Energy (J)",x='') + theme(legend.position="none")
-ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Logarithm of difference to target")
+ggplot(new_results, aes(x=dim_pop,y=log_diff, color=work)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Logarithm of difference to target")
 @
 %
 We can see in Figure \ref{fig:evoapps.energy.compare} (right) how fitness levels are much better in this case, when a new random generator has been employed ({\tt BNA-fix-rand}). Since we have reached a level that is good enough to be considered in production, we can now turn our sight to how the other parameters, the ones that govern the exploration/exploitation balance, affect the outcomes we are interested in.
 
 <<evoapps.parameters.comparison, echo=FALSE, warnings=FALSE, message=FALSE , fig.show='hold', fig.pos="h!tb", fig.height=2.5, out.width="50%", fig.cap="Comparing energy consumption and fitness reached for the different values of $\\protect\\alpha$ and the maximum number of generations without improving the value.">>=
-ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Alpha value") + theme(legend.position="none")
-ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=log_diff, x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")
-ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
-ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=log_diff,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
+ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Energy (J)", x="Alpha value") + theme(legend.position="none")
+ggplot(evoapps_uniform_results, aes(color=factor(alpha),y=log_diff, x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Log(diff to target)", x="Alpha value")
+ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
+ggplot(evoapps_uniform_results, aes(color=factor(max_gens),y=log_diff,x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
 
 # Non-printed ANOVA analysis
 anova_uniform_pkg <- aov( lm ( delta_PKG ~ dimension * population_size * max_gens * alpha, data=evoapps_uniform_results ) )
@@ -374,8 +374,8 @@ lion_results$dim_pop <- paste0("D:",lion_results$dimension," Pop:",lion_results$
 lion_results$alpha <- as.factor(lion_results$alpha)
 
 lion_results$max_gens <- as.factor(lion_results$max_gens)
-ggplot(lion_results, aes(color=max_gens,y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
-ggplot(lion_results, aes(color=max_gens,y=log_diff,x=dim_pop)) + geom_boxplot(notch=T) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
+ggplot(lion_results, aes(color=max_gens,y=delta_PKG,x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Energy (J)", x="Max_gens") + theme(legend.position="none")
+ggplot(lion_results, aes(color=max_gens,y=log_diff,x=dim_pop)) + geom_boxplot(notch=TRUE) + theme_minimal() + labs(y="Log(diff to target)", x="Max_gens")
 @
 
 In Figure \ref{fig:lion.julia.1.11.8} we have kept fixed the $\alpha$ percentage and varied the maximum number of generations between 10 and 25. As should be expected, the fitness results are very similar, showing a consistent behavior of the algorithm, although in this case it confirms that there is no need to wait for 50 generations to stop the algorithm; 25 are enough. And this saving in generations is rewarded with an improvement in the energy profile (shown at left). While in \ref{fig:evoapps.parameters.comparison} PKG energy consumption for the higher value of {\sf max\_gens} was similar or higher, in this case we consistently find that, except for the dimension = 5 and population = 400, energy consumption is higher the lower are the iterations. However, what we see with this updated version of Julia is that our workload, once the baseline has been eliminated, consumes consistently more than the previous version. So, although these results are valid to confirm the differences in energy consumption for different parametrizations under a different platform, the platform itself will need to be rejected on the grounds of energy consumption, staying in the previous version of Julia without upgrading.
