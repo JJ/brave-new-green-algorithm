@@ -240,6 +240,173 @@ knitr::kable(
 
 The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above.
 
+## Expanded analysis: multi-stage model on the final LION dataset
+
+This section applies the later-paper multi-stage modeling workflow directly to the final LION workload file `data/lion-1.11.8-bna-fix-rand.csv` [@lion26; @cotta24]:
+
+1. model runtime (`seconds`) from algorithm covariates (`dimension`, `population_size`, `generations`, `evaluations`);
+2. residualize runtime;
+3. model energy (`PKG`) on the same covariates plus residualized runtime.
+
+```{r lion-expanded-model-data}
+lion_model_data <- read.csv("data/lion-1.11.8-bna-fix-rand.csv") %>%
+  mutate(
+    dimension = as.numeric(dimension),
+    population_size = as.numeric(population_size),
+    generations = as.numeric(generations),
+    evaluations = as.numeric(evaluations),
+    max_gens = factor(max_gens),
+    alpha = factor(alpha)
+  )
+
+parameter_levels <- data.frame(
+  parameter = c("dimension", "population_size", "max_gens", "alpha"),
+  levels_in_dataset = c(
+    dplyr::n_distinct(lion_model_data$dimension),
+    dplyr::n_distinct(lion_model_data$population_size),
+    dplyr::n_distinct(lion_model_data$max_gens),
+    dplyr::n_distinct(lion_model_data$alpha)
+  )
+)
+
+knitr::kable(
+  parameter_levels,
+  col.names = c("Parameter", "Observed levels in data"),
+  caption = "Observed support of key algorithm parameters in the final LION dataset."
+)
+```
+
+In this specific file, `alpha` appears with a single observed value, so it has no within-dataset variance for coefficient estimation; `max_gens` appears with two levels and is reflected through realized `generations` and `evaluations` in the multi-stage modeling path above.
+
+```{r lion-expanded-time-model}
+time_model <- lm(
+  seconds ~ dimension + population_size + generations + evaluations,
+  data = lion_model_data
+)
+lion_model_data$residual_seconds <- residuals(time_model)
+
+time_coef <- summary(time_model)$coefficients
+time_coef_table <- data.frame(
+  term = rownames(time_coef),
+  estimate = time_coef[, "Estimate"],
+  std_error = time_coef[, "Std. Error"],
+  statistic = time_coef[, "t value"],
+  p_value = time_coef[, "Pr(>|t|)"],
+  row.names = NULL
+) %>%
+  filter(term != "(Intercept)") %>%
+  arrange(p_value)
+
+time_sig_table <- time_coef_table %>%
+  filter(p_value < 0.05) %>%
+  mutate(
+    estimate = signif(estimate, 4),
+    std_error = signif(std_error, 3),
+    statistic = signif(statistic, 3),
+    p_value = signif(p_value, 3)
+  )
+
+if (nrow(time_sig_table) == 0) {
+  time_sig_table <- data.frame(
+    term = "No coefficient with p < 0.05",
+    estimate = NA, std_error = NA, statistic = NA, p_value = NA
+  )
+}
+
+knitr::kable(
+  time_sig_table,
+  col.names = c("Term", "Estimate", "Std. error", "t", "p-value"),
+  caption = "Stage 1 (runtime model): statistically significant coefficients."
+)
+```
+
+```{r lion-expanded-energy-model}
+energy_model <- lm(
+  PKG ~ dimension + population_size + generations + evaluations + residual_seconds,
+  data = lion_model_data
+)
+
+energy_coef <- summary(energy_model)$coefficients
+energy_coef_table <- data.frame(
+  term = rownames(energy_coef),
+  estimate = energy_coef[, "Estimate"],
+  std_error = energy_coef[, "Std. Error"],
+  statistic = energy_coef[, "t value"],
+  p_value = energy_coef[, "Pr(>|t|)"],
+  row.names = NULL
+) %>%
+  filter(term != "(Intercept)") %>%
+  arrange(p_value)
+
+energy_sig_table <- energy_coef_table %>%
+  filter(p_value < 0.05) %>%
+  mutate(
+    estimate = signif(estimate, 4),
+    std_error = signif(std_error, 3),
+    statistic = signif(statistic, 3),
+    p_value = signif(p_value, 3)
+  )
+
+if (nrow(energy_sig_table) == 0) {
+  energy_sig_table <- data.frame(
+    term = "No coefficient with p < 0.05",
+    estimate = NA, std_error = NA, statistic = NA, p_value = NA
+  )
+}
+
+knitr::kable(
+  energy_sig_table,
+  col.names = c("Term", "Estimate", "Std. error", "t", "p-value"),
+  caption = "Stage 2 (energy model): statistically significant coefficients influencing PKG."
+)
+```
+
+```{r lion-expanded-variance, fig.cap="Variance decomposition for the multi-stage energy model (percent of model sum of squares by term)."}
+energy_anova <- anova(energy_model)
+energy_variance <- data.frame(
+  term = rownames(energy_anova),
+  sum_sq = energy_anova$"Sum Sq",
+  p_value = energy_anova$"Pr(>F)",
+  row.names = NULL
+) %>%
+  filter(!is.na(sum_sq), term != "Residuals") %>%
+  mutate(
+    variance_pct = 100 * sum_sq / sum(sum_sq),
+    term = factor(term, levels = term[order(variance_pct)])
+  )
+
+ggplot(energy_variance, aes(x = term, y = variance_pct, fill = term)) +
+  geom_col(width = 0.72, alpha = 0.9) +
+  geom_text(
+    aes(label = paste0(round(variance_pct, 1), "%")),
+    hjust = -0.1,
+    size = 3.8
+  ) +
+  coord_flip() +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none") +
+  labs(
+    title = "Energy variance explained by each modeled term",
+    subtitle = "Computed from ANOVA sum-of-squares in the Stage 2 model",
+    x = "Model term",
+    y = "Share of explained variance (%)"
+  )
+
+energy_variance_table <- energy_variance %>%
+  mutate(
+    variance_pct = round(variance_pct, 2),
+    p_value = signif(p_value, 3)
+  ) %>%
+  arrange(desc(variance_pct)) %>%
+  select(term, variance_pct, p_value)
+
+knitr::kable(
+  energy_variance_table,
+  col.names = c("Term", "Explained variance (%)", "p-value"),
+  caption = "ANOVA-based variance share by term for the multi-stage energy model."
+)
+```
+
 ## Discussion highlights from the paper
 
 - **Measurement methodology matters as much as algorithm design:** baseline correction and careful sampling choices directly influence the conclusions you can trust [@lion26; @cotta24].
