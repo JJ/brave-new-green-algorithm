@@ -257,7 +257,7 @@ We can observe the effect of using this baseline in Figure \ref{fig:cec.workload
 
 We can mitigate this effect of baseline and workload experiments finding the system in different states by using a {\em sequential mixed} strategy: one baseline measurement, one workload measurement with the same parameters. We are still keeping the same configuration of dimensions and population size
 
-<<cec.sequential, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="PKG energy measured vs. time for sequential baseline and workload measurements. Dashed lines correspond to baseline averages for that specific segment.", fig.height=2.5>>=
+<<cec.sequential, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="PKG energy measured vs. time for sequential baseline and workload measurements, shown in different colors.", fig.height=2.5>>=
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
 ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
 for (i in 2:nrow(ola_mixed_no0)) {
