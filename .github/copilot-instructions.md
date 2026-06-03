@@ -108,6 +108,22 @@ Use the conventions in the [`OLA-26-annotated.Rnw`](OLA-26-annotated.Rnw),
 including package and templates for anotations included there, as a template for
 any other "annotated version of a paper" that's requested.
 
+## Implementation language for bonus documents
+
+For repository bonus documents, always use **R** as the implementation language and
+use the in-repository `energyR` package whenever analysis/plot helpers are needed.
+This applies to:
+
+- `*-explainer.Rmd`
+- `*-expanded.Rmd`
+- `*-progression.Rmd`
+- `*-annotated.Rnw`
+
+Do not implement analysis for these document types in Python, Julia, shell scripts,
+or other languages. In `*.Rmd` files, load `energyR` directly (install from local
+`energyR/` when needed). In `*.Rnw` annotated papers, keep all computation in R
+knitr chunks and use `energyR` helpers where applicable.
+
 ## Template for divulgative / explainer versions
 
 For short-form explainers (for example `*-explainer.Rmd`), keep the structure simple:
