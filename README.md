@@ -54,11 +54,17 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
 
 ### LION'26 conference
 
+Content for this paper is included in [this
+release](https://github.com/JJ/brave-new-green-algorithm/releases/tag/v1.0LION).
+
 - Paper source: [`lion-26.Rnw`](lion-26.Rnw) with extracted R code in
   [`lion-26.R`](lion-26.R).
 - A [short summary of the main findings in the paper](lion-26-explainer.html).
     - You can render locally with `rmarkdown::render("lion-26-explainer.Rmd")`
       if everything is installed properly.
+- [An annotated version of the
+  paper](https://github.com/JJ/brave-new-green-algorithm/releases/download/v1.0LION/lion-26-annotated.pdf)
+  with the main findings and other highlights is included in the release.
 
 ### Cross-paper research progression
 
