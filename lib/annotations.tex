@@ -1,0 +1,23 @@
+% Main annotation package
+\usepackage[colorinlistoftodos, textwidth=5.5cm]{todonotes}
+
+% Semantic colour aliases
+\colorlet{clrKey}{green!25}       % key findings / conclusions
+\colorlet{clrCode}{blue!18}       % code–result links
+\colorlet{clrMethod}{orange!22}   % methodology steps
+\colorlet{clrImportant}{red!18}   % important caveats / warnings
+\colorlet{clrReference}{yellow!18}   % Reference/citation
+
+% Convenience commands: all notes appear in the right margin by default.
+% \sffamily improves readability of \scriptsize annotations (serif looks poor
+% at that size).
+\newcommand{\keyfinding}[1]{%
+  \todo[color=clrKey, size=\scriptsize]{\sffamily\textbf{Key finding:} #1}}
+\newcommand{\codelink}[1]{%
+  \todo[color=clrCode, size=\scriptsize]{\sffamily\textbf{Code:} #1}}
+\newcommand{\methodstep}[1]{%
+  \todo[color=clrMethod, size=\scriptsize]{\sffamily\textbf{Methodology:} #1}}
+\newcommand{\important}[1]{%
+  \todo[color=clrImportant, size=\scriptsize]{\sffamily\textbf{Note:} #1}}
+\newcommand{\reference}[1]{%
+  \todo[color=clrReference]{\sffamily\textbf{Reference:} #1}}
