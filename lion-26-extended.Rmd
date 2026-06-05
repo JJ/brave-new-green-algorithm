@@ -3,6 +3,11 @@ title: "🔍 How much energy is explained by the variables?"
 subtitle: "Modeling energy expenses for tne LION paper"
 author: "JJ Merelo & Cecilia Merelo-Molina"
 date: "`r format(Sys.Date(), '%B %Y')`"
+bibliography:
+  - references.bib
+  - ours.bib
+  - GAs.bib
+  - ga-energy.bib
 output:
   html_document:
     theme: flatly
