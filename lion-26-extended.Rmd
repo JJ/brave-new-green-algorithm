@@ -275,12 +275,42 @@ lion_energy_model <- glm(
 
 ```
 
-## View 2 — Δ PKG distributions per combination
+## View 2 — Understanding noise, that is, operating context
 
-> *What does the subtracted delta look like for each parameter combination?*
+> *Can we learn something from energy consumption, even outside our algorithm?*
+
+```{r noise, fig.cap="what we see"}
+library(ggplot2)
+library(broom)
+
+# 1. Extract the residuals and fitted values from your time model
+# (Make sure to use the model where you dropped evaluations and generations!)
+diagnostics_data <- augment(lion_energy_model)
+
+# 2. Plot the Noise (Residuals) against the Predictions (Fitted)
+ggplot(diagnostics_data, aes(x = .fitted, y = .resid)) +
+  # Draw the actual data points
+  geom_point(alpha = 0.6, size = 3, color = "#444444") +
+  
+  # Draw the "Zero Error" baseline (using linewidth as requested)
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#D55E00", linewidth = 1) +
+  
+  # Add a smoothing line to help detect hidden curves in the noise
+  geom_smooth(method = "loess", se = FALSE, color = "#0072B2", linewidth = 1.2) +
+  
+  labs(
+    title = "Diagnostic: Is the Noise Organized?",
+    subtitle = "Residuals vs. Fitted Values",
+    x = "Predicted Total PKG energy (J)",
+    y = "Residual Error (Actual - Predicted)"
+  ) +
+  theme_bw(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
 
 
 ---
+
 
 
 ---
