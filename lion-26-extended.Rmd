@@ -102,7 +102,7 @@ We load the data from the experiment; in this case it is a run that uses Julia 1
 
 > Operating conditions might account for a certain percentage of the results we are seeing. Let us first isolate co-dependent variables to indentify that dependence.
 
-The measured energy will depend, first and foremost, on the time it takes to run the algorithm; more time will obviously consume more energy for many reasons. And running time will also be dependent on the algorithm parameters. Let us first model that dependence to better understand how our algorithm spends energy.
+The measured energy will depend, first and foremost, on the time it takes to run the algorithm; more time will obviously consume more energy for many reasons. And running time will be dependent on the algorithm parameters. Let us first model that dependence to better understand how our algorithm spends energy.
 
 ```{r view1-plot, fig.cap="**Fig. 1** — How is running time dependent on the algorithm variables?"}
 lion_wl_118_time_model <- glm( seconds ~ dimension*population_size*max_gens + evaluations*generations, data=lion_wl_118)
@@ -153,7 +153,11 @@ ggplot(tidy_model, aes(x = statistic, y = reorder(term, statistic))) +
   )
 ```
 
+In this first stage, we model time to have an idea of what is the precise dependence on algorithm parameters (dimension, population size, maximum number of generations without change to stop) and algorithm outcomes (number of generations until stopping and evaluations performed).
 
+We have plotted here the _t-value_ of the model coefficients, which represents how much the result (number of seconds) is correlated, positively or negatively, with the different combination of parameters. We find a significant correlation for several individual parameters (*max_gens* and _evaluations_) and combinations (population_size x max_gens, and the three interacting algorithm parameters with the maximum positive correlation, dimension x population_size x max_gens).
+
+But we need to check what percentage of the variance they explain. 
 
 ```{r view1-variance-explained, fig.cap="**Fig. 1** — How is running time dependent on the algorithm variables?"}
 
@@ -227,7 +231,9 @@ ggplot(variance_data, aes(x = pct_variance, y = reorder(term, pct_variance), fil
 ```
 ---
 
-There is an issue here, however; the fact that `evaluations` and `generations`  should be dependent on the algorithm parameters and problem size. The leverage we have to optimize energy are only those parameters. So let us try and see how time behaves in terms of those parameters only, and we will use a Generalized Additive Model
+And this is what we find, `r filter(variance_data, term=="Unexplained Variance (Residuals)")[['pct_variance']]`%  of the variance can't be explained by the algorithm parameters. This should be expected: part of it will be the system and framework overhead, and a part will be also explained by the specific algorithm implementation.
+
+There is an issue here, however; the fact that `evaluations` and `generations`  should be dependent on the algorithm parameters and problem size. The leverage we have to optimize energy for a specific implementation are only those parameters. So let us try and see how time behaves in terms of those parameters only, and we will use a Generalized Additive Model
 
 ```{r view1-gam, fig.cap="Generalized additive model on algorithm parameters and problem size"}
 # 1. Preparar los datos tratando las variables de 2 niveles como factores
@@ -254,6 +260,18 @@ summary_effects <- lion_wl_118_clean %>%
 
 plot_relative_impact( strict_factor_model)
 
+
+```
+
+We have also factored those parameters to use the two different values that we have for each one of them. This is also interesting because we can see what specific values have an impact on running time, of which *max_gens = 25* have a maximum positive impact, *population_size = 400 with max_gens=25* a negative one, meaning that that combination will make it take *less* time to run; the fact that that happens independently of problem size is interesting by itself. 
+
+```{r residualize}
+lion_wl_118_clean$residual_seconds <- residuals( strict_factor_model )
+
+lion_energy_model <- glm(
+  formula = PKG ~ dimension * population_size * max_gens + residual_seconds, 
+  data = lion_wl_118_clean
+)
 
 ```
 
