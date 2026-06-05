@@ -46,6 +46,52 @@ Setting up experiments to measure energy spent by an algorithm is an extremely c
 lion_wl_118 <- read.csv("data/lion-1.11.8-bna-fix-rand.csv")
 lion_wl_118$alpha <- NULL # deletes unused column
 lion_wl_118$diff_fitness <- NULL # focus on energy here
+
+plot_relative_impact <- function( time_model ) {
+  tidy_model <- tidy( time_model) %>%
+  # Remove the intercept because it usually overshadows the predictors
+  filter(term != "(Intercept)") %>%
+  mutate(
+    # Create a boolean column for statistical significance (p < 0.05)
+    is_significant = p.value < 0.05,
+    # Clean up the term names: replace ":" with " × " for better readability
+    term = str_replace_all(term, ":", " × ")
+  )
+
+# 2. Create the Lollipop Chart plotting the t-values
+plot_output <- ggplot(tidy_model, aes(x = statistic, y = reorder(term, statistic))) +
+  # Add a dashed line at 0 for reference (using linewidth instead of size)
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50", linewidth = 0.8) +
+  
+  # Draw the lollipop sticks (using linewidth)
+  geom_segment(aes(x = 0, xend = statistic, y = term, yend = term, color = is_significant),
+               linewidth = 1) +
+  
+  # Draw the lollipop heads
+  geom_point(aes(color = is_significant), size = 3.5) +
+  
+  # Custom colors for significance
+  scale_color_manual(values = c("TRUE" = "#0072B2", "FALSE" = "#D55E00"),
+                     labels = c("Not Significant", "Significant (p < 0.05)")) +
+  
+  # Labels and theming
+  labs(
+    title = "Relative Impact of Predictors on 'Seconds'",
+    subtitle = "Comparing t-values to account for the vastly different scales of variables",
+    x = "t-value (Signal-to-Noise Ratio)",
+    y = NULL,
+    color = "Model Term Status:"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+  print(plot_output)
+}
+
 ```
 
 We load the data from the experiment; in this case it is a run that uses Julia 1.11.8 and a series of fixes and improvements. Please check [@lion26] for details or take a look at [the explainer version](lion-26-explainer.html).
@@ -94,7 +140,7 @@ ggplot(tidy_model, aes(x = statistic, y = reorder(term, statistic))) +
   # Labels and theming
   labs(
     title = "Relative Impact of Predictors on 'Seconds'",
-    subtitle = "Comparing t-values to account for the vastly different scales of variables",
+    subtitle = "Comparing t-values",
     x = "t-value (Signal-to-Noise Ratio)",
     y = NULL,
     color = "Model Term Status:"
@@ -178,49 +224,43 @@ ggplot(variance_data, aes(x = pct_variance, y = reorder(term, pct_variance), fil
     panel.grid.major.y = element_blank(),
     plot.title = element_text(face = "bold")
   )
+```
 ---
+
+There is an issue here, however; the fact that `evaluations` and `generations`  should be dependent on the algorithm parameters and problem size. The leverage we have to optimize energy are only those parameters. So let us try and see how time behaves in terms of those parameters only, and we will use a Generalized Additive Model
+
+```{r view1-gam, fig.cap="Generalized additive model on algorithm parameters and problem size"}
+# 1. Preparar los datos tratando las variables de 2 niveles como factores
+lion_wl_118_clean <- lion_wl_118 %>%
+  mutate(
+    dimension = as.factor(dimension),
+    population_size = as.factor(population_size),
+    max_gens = as.factor(max_gens)
+  )
+
+# 2. Ajustar el GLM correcto con interacciones de factores
+# Al ser factores, R calculará automáticamente los contrastes correctos
+strict_factor_model <- glm(
+  formula = seconds ~ dimension * population_size * max_gens, 
+  data = lion_wl_118_clean
+)
+
+summary(strict_factor_model)
+
+# 3. Calcular los tiempos promedio para la visualización de la interacción
+summary_effects <- lion_wl_118_clean %>%
+  group_by(dimension, population_size) %>%
+  summarise(mean_seconds = mean(seconds), .groups = "drop")
+
+plot_relative_impact( strict_factor_model)
+
+
+```
 
 ## View 2 — Δ PKG distributions per combination
 
 > *What does the subtracted delta look like for each parameter combination?*
 
-```{r view2-violin, fig.cap="**Fig. 2** — Violin + notched box-plot of Δ PKG for each parameter combination. The red dotted line marks zero; values below it are negative deltas. Notch = 95 % CI for the median."}
-combo_pal <- c(
-  "Dim 3 | Pop 200" = "#4E79A7",
-  "Dim 3 | Pop 400" = "#76B7B2",
-  "Dim 5 | Pop 200" = "#F28E2B",
-  "Dim 5 | Pop 400" = "#E15759"
-)
-
-ggplot(workload,
-       aes(x = param_combo, y = delta_PKG,
-           fill = param_combo, colour = param_combo)) +
-  geom_violin(alpha = 0.35, linewidth = 0.4, width = 0.85) +
-  geom_boxplot(
-    width = 0.18, notch = TRUE,
-    outlier.size = 1.8, outlier.alpha = 0.5,
-    fill = "white", colour = "grey30", alpha = 0.9
-  ) +
-  geom_hline(yintercept = 0, linetype = "dotted",
-             colour = "red", linewidth = 0.8) +
-  scale_fill_manual(values = combo_pal) +
-  scale_colour_manual(values = combo_pal) +
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position  = "none",
-    axis.text.x      = element_text(angle = 15, hjust = 1),
-    panel.grid.minor = element_blank(),
-    plot.title       = element_text(face = "bold"),
-    plot.subtitle    = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "Distribution of Δ PKG per parameter combination",
-    subtitle = "Δ PKG = workload PKG − per-combination trimmed-mean baseline · Red line at zero",
-    x        = NULL,
-    y        = "Δ PKG energy (Joules)"
-  )
-ggsave("preso/img/baseline-workload-comparison.png", height=4.5, width=8)
-```
 
 ---
 
@@ -229,8 +269,8 @@ ggsave("preso/img/baseline-workload-comparison.png", height=4.5, width=8)
 
 ## About
 
-This document is a companion to the OLA-26 paper
-*"Best practices in measuring energy consumption in population-based metaheuristics"*
+This document is a companion to the LION-26 paper
+
 by Merelo & Merelo-Molina.
 All data and code are available at <https://github.com/JJ/brave-new-green-algorithm>.
 
