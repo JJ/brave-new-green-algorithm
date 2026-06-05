@@ -1,6 +1,6 @@
 ---
-title: "🔍 How Far Is Each Workload Run from Its Baseline?"
-subtitle: "An explicit look at the per-combination baseline subtraction in the OLA-26 experiments"
+title: "🔍 How much energy is explained by the variables?"
+subtitle: "Modeling energy expenses for tne LION paper"
 author: "JJ Merelo & Cecilia Merelo-Molina"
 date: "`r format(Sys.Date(), '%B %Y')`"
 output:
@@ -30,137 +30,154 @@ knitr::opts_chunk$set(
 ```{r libraries}
 library(ggplot2)
 library(dplyr)
-library(ggridges)
 ```
 
 ---
 
 ## Context
 
-The OLA-26 paper computes *workload energy* by subtracting a **per-combination trimmed-mean baseline** from each raw workload measurement — but the subtraction is presented only as a summary table.
-It is impossible to see, run-by-run, how far individual workload readings sit from their respective baseline average, or whether the spread differs between parameter combinations.
-
-This document fills that gap.
-The three views below all come from the same pair of data files:
-
-* **Baseline**: [`ola-base-ola-baseline-14-Dec-12-06-42.csv`](data/ola-base-ola-baseline-14-Dec-12-06-42.csv) (100 ms RAPL sampling)
-* **Workload**: [`ola-1.11.7-ola-14-Dec-13-02-30.csv`](data/ola-base-ola-baseline-14-Dec-12-06-42.csv)
-
-The four parameter combinations tested are chromosome dimension × population size:
-**Dim 3 | Pop 200**, **Dim 3 | Pop 400**, **Dim 5 | Pop 200**, **Dim 5 | Pop 400**.
+Setting up experiments to measure energy spent by an algorithm is an extremely complex task. Our initial approach was to run separated baseline and workload experiments, and subtracting the former from the latter to extract actual workload (our Brave New Algorithm [@merelo2022brave]) energy expenses. The underlying assumption is that measured energy reflects, effectively, what the algorithm is spending and that it will change with the different algorithm parameters. Let us find out, in this expanded paper, how much is the case with the data we used in the paper.
 
 ---
 
 ## Data preparation
 
 ```{r load-data}
-null_cols <- c("alpha", "max_gens", "different_seeds",
-               "diff_fitness", "generations", "evaluations")
-
-# ── Baseline (100 ms sampling) ───────────────────────────────────────────────
-baseline <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
-baseline[null_cols] <- NULL
-
-# Per-combination trimmed mean (20 % trimming) — this is the value subtracted
-baseline_summary <- baseline %>%
-  group_by(dimension, population_size) %>%
-  summarise(
-    n_baseline       = n(),
-    trimmed_mean_PKG = mean(PKG, trim = 0.2),
-    sd_PKG           = sd(PKG),
-    .groups = "drop"
-  ) %>%
-  mutate(param_combo = paste0("Dim ", dimension, " | Pop ", population_size))
-
-# ── Workload ─────────────────────────────────────────────────────────────────
-workload <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
-workload$param_combo <- paste0("Dim ", workload$dimension,
-                                " | Pop ", workload$population_size)
-
-# Join the per-combination trimmed mean onto every workload row
-workload <- workload %>%
-  left_join(
-    baseline_summary %>% select(dimension, population_size, trimmed_mean_PKG, sd_PKG),
-    by = c("dimension", "population_size")
-  ) %>%
-  mutate(
-    delta_PKG = PKG - trimmed_mean_PKG,
-    run_index = ave(seq_along(PKG), param_combo, FUN = seq_along)
-  )
+lion_wl_118 <- read.csv("data/lion-1.11.8-bna-fix-rand.csv")
+lion_wl_118$alpha <- NULL # deletes unused column
+lion_wl_118$diff_fitness <- NULL # focus on energy here
 ```
 
-The trimmed means that will be subtracted are:
-
-```{r baseline-means}
-baseline_summary %>%
-  select(param_combo, n_baseline, trimmed_mean_PKG, sd_PKG) %>%
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
-```
+We load the data from the experiment; in this case it is a run that uses Julia 1.11.8 and a series of fixes and improvements. Please check [@lion26] for details or take a look at [the explainer version](lion-26-explainer.html).
 
 ---
 
-## View 1 — Every run plotted against its own baseline
+## Stage 1: How much does time depend on the algorithm variables
 
-> *Each workload run as a dot. The dashed line is the trimmed-mean baseline for that combination — the exact value that will be subtracted.*
+> Operating conditions might account for a certain percentage of the results we are seeing. Let us first isolate co-dependent variables to indentify that dependence.
 
-Vertical segments connect each run to its baseline:
-green segments reach upward (Δ PKG > 0), pink segments reach downward (Δ PKG < 0).
-The shaded band is ±1 SD of the baseline energy, giving a sense of how variable the idle system itself was.
+The measured energy will depend, first and foremost, on the time it takes to run the algorithm; more time will obviously consume more energy for many reasons. And running time will also be dependent on the algorithm parameters. Let us first model that dependence to better understand how our algorithm spends energy.
 
-```{r view1-plot, fig.cap="**Fig. 1** — Workload PKG energy per run (dark points) with per-combination trimmed-mean baseline overlaid (dashed orange line). Green segments indicate runs above the baseline; pink segments indicate runs below. Shaded band = ±1 SD of baseline energy."}
-pal_sign <- c("TRUE" = "#3D9970", "FALSE" = "#E07A5F")
+```{r view1-plot, fig.cap="**Fig. 1** — How is running time dependent on the algorithm variables?"}
+lion_wl_118_time_model <- glm( seconds ~ dimension*population_size*max_gens + evaluations*generations, data=lion_wl_118)
 
-ggplot(workload, aes(x = as.numeric(run_index), y = PKG)) +
-  # ±1 SD baseline band
-  geom_rect(
-    data = baseline_summary,
-    aes(xmin = -Inf, xmax = Inf,
-        ymin = trimmed_mean_PKG - sd_PKG,
-        ymax = trimmed_mean_PKG + sd_PKG),
-    fill = "#F28E2B", alpha = 0.10, inherit.aes = FALSE
+library(broom)
+library(stringr)
+
+# 1. Tidy the model output using broom
+tidy_model <- tidy(lion_wl_118_time_model) %>%
+  # Remove the intercept because it usually overshadows the predictors
+  filter(term != "(Intercept)") %>%
+  mutate(
+    # Create a boolean column for statistical significance (p < 0.05)
+    is_significant = p.value < 0.05,
+    # Clean up the term names: replace ":" with " × " for better readability
+    term = str_replace_all(term, ":", " × ")
+  )
+
+# 2. Create the Lollipop Chart plotting the t-values
+ggplot(tidy_model, aes(x = statistic, y = reorder(term, statistic))) +
+  # Add a dashed line at 0 for reference (using linewidth instead of size)
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50", linewidth = 0.8) +
+  
+  # Draw the lollipop sticks (using linewidth)
+  geom_segment(aes(x = 0, xend = statistic, y = term, yend = term, color = is_significant),
+               linewidth = 1) +
+  
+  # Draw the lollipop heads
+  geom_point(aes(color = is_significant), size = 3.5) +
+  
+  # Custom colors for significance
+  scale_color_manual(values = c("TRUE" = "#0072B2", "FALSE" = "#D55E00"),
+                     labels = c("Not Significant", "Significant (p < 0.05)")) +
+  
+  # Labels and theming
+  labs(
+    title = "Relative Impact of Predictors on 'Seconds'",
+    subtitle = "Comparing t-values to account for the vastly different scales of variables",
+    x = "t-value (Signal-to-Noise Ratio)",
+    y = NULL,
+    color = "Model Term Status:"
   ) +
-  # sign-coded vertical segments
-  geom_segment(
-    aes(xend = as.numeric(run_index),
-        yend = trimmed_mean_PKG,
-        colour = delta_PKG >= 0),
-    alpha = 0.40, linewidth = 0.6
-  ) +
-  # workload points
-  geom_point(colour = "grey20", size = 2.2, alpha = 0.80) +
-  # baseline average line
-  geom_hline(
-    data = baseline_summary,
-    aes(yintercept = trimmed_mean_PKG),
-    linetype = "dashed", colour = "#F28E2B", linewidth = 1.0
-  ) +
-  scale_colour_manual(
-    values = pal_sign,
-    labels = c("TRUE" = "Above baseline (Δ PKG > 0)",
-               "FALSE" = "Below baseline (Δ PKG < 0)"),
-    name = NULL
-  ) +
-  facet_wrap(~ param_combo, ncol = 2) +
   theme_minimal(base_size = 14) +
   theme(
-    legend.position  = "bottom",
-    strip.text       = element_text(face = "bold"),
+    legend.position = "bottom",
     panel.grid.minor = element_blank(),
-    plot.title       = element_text(face = "bold"),
-    plot.subtitle    = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "Workload runs vs. their per-combination baseline average",
-    subtitle = "Dashed line = trimmed mean of baseline (the subtracted value) · Shaded band = ±1 SD",
-    x        = "Run index within parameter combination",
-    y        = "PKG energy (Joules)"
+    plot.title = element_text(face = "bold")
   )
 ```
 
-**What to take away:** The baseline average does not sit at the centre of the workload distribution — individual runs land 100–200 J above or below it. Theoretically, it should be very similar, since different combinations of problem size and population size shouldn't affect it too much.
-Because only a *constant* is subtracted, the spread of Δ PKG is essentially the same as the spread of the raw workload PKG.
-Runs that fall below their own baseline line produce *negative* Δ PKG values, visible here as pink segments.
 
+
+```{r view1-variance-explained, fig.cap="**Fig. 1** — How is running time dependent on the algorithm variables?"}
+
+library(stringr)
+
+# 1. Run Analysis of Deviance to get the variance explained by each term
+# We use tidy() to immediately format the output into a clean dataframe
+anova_tidy <- tidy(anova(lion_wl_118_time_model))
+
+# 2. Extract deviance totals from the model object
+null_dev <- lion_wl_118_time_model$null.deviance
+resid_dev <- lion_wl_118_time_model$deviance
+
+# 3. Calculate percentages and categorize the terms
+variance_data <- anova_tidy %>%
+  # Remove the intercept/NULL row
+  filter(!is.na(term) & term != "NULL") %>%
+  select(term, deviance) %>%
+  # Calculate the percentage of total variance explained
+  mutate(pct_variance = (deviance / null_dev) * 100) %>%
+  # Make the interaction terms readable
+  mutate(term = str_replace_all(term, ":", " × ")) %>%
+  # Add the Unexplained variance back in as its own row
+  bind_rows(
+    tibble(
+      term = "Unexplained Variance (Residuals)",
+      deviance = resid_dev,
+      pct_variance = (resid_dev / null_dev) * 100
+    )
+  ) %>%
+  # Categorize into the groups you specified
+  mutate(
+    category = case_when(
+      term == "Unexplained Variance (Residuals)" ~ "Unexplained",
+      str_detect(term, "evaluations|generations") ~ "Outcomes / Runtime Metrics",
+      TRUE ~ "Algorithm Parameters"
+    )
+  )
+
+# 4. Generate the Visualization
+ggplot(variance_data, aes(x = pct_variance, y = reorder(term, pct_variance), fill = category)) +
+  geom_col(width = 0.7) +
+  
+  # Add the percentage labels at the end of each bar
+  geom_text(aes(label = sprintf("%.2f%%", pct_variance)), 
+            hjust = -0.15, size = 4, color = "black") +
+  
+  # Color-code by the specified categories
+  scale_fill_manual(values = c(
+    "Algorithm Parameters" = "#0072B2",        # Blue
+    "Outcomes / Runtime Metrics" = "#D55E00",  # Orange
+    "Unexplained" = "#CCCCCC"                  # Grey
+  )) +
+  
+  # Expand the x-axis slightly so the text labels don't get cut off
+  scale_x_continuous(limits = c(0, max(variance_data$pct_variance) * 1.15)) +
+  
+  labs(
+    title = "Percentage of Variance Explained by Each Factor",
+    subtitle = "Decomposition of Deviance from the GLM",
+    x = "% of Total Variance Explained",
+    y = NULL,
+    fill = "Variable Group:"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
 ---
 
 ## View 2 — Δ PKG distributions per combination
@@ -207,40 +224,6 @@ ggsave("preso/img/baseline-workload-comparison.png", height=4.5, width=8)
 
 ---
 
-## View 3 — Ridgeline density of Δ PKG
-
-> *An overlapping density view makes it easier to compare the shape of each combination's distribution.*
-
-```{r view3-ridge, fig.height=4.5, fig.cap="**Fig. 3** — Ridgeline density of Δ PKG. Vertical lines mark Q1, median (solid) and Q3. The red dashed line is at zero."}
-ggplot(workload,
-       aes(x = delta_PKG, y = param_combo, fill = param_combo)) +
-  geom_density_ridges(
-    alpha          = 0.55,
-    scale          = 0.85,
-    quantile_lines = TRUE,
-    quantiles      = c(0.25, 0.5, 0.75),
-    linewidth      = 0.4
-  ) +
-  geom_vline(xintercept = 0, linetype = "dashed",
-             colour = "red", linewidth = 0.8) +
-  scale_fill_manual(values = combo_pal) +
-  theme_ridges(font_size = 14) +
-  theme(
-    legend.position = "none",
-    plot.title      = element_text(face = "bold"),
-    plot.subtitle   = element_text(colour = "grey40")
-  ) +
-  labs(
-    title    = "Ridgeline density of Δ PKG per parameter combination",
-    subtitle = "Quantile lines at Q1, median, Q3 · Red dashed line at zero",
-    x        = "Δ PKG energy (Joules)",
-    y        = NULL
-  )
-```
-
-**What to take away:** The distributions are roughly similar across combinations, but their centres (medians) and tails differ.
-The fraction of runs producing a *negative* Δ PKG varies between combinations — a direct consequence of how variable the idle system was during the (separately recorded) baseline campaign.
-This motivates the *sequential mixed* approach described in the paper, where each workload run is paired with the baseline run that immediately preceded it.
 
 ---
 
@@ -271,3 +254,4 @@ consumption in population-based metaheuristics**, in Proceedings OLA'26
 International Conference on Optimization and Learning, pp 183-194, [available
 online](https://vb.svako.lt/object/elaba:291738676/291738676.pdf#page=188.). Please check [`references.bib`](references.bib) for the BibTeX entry.*
 
+## References
