@@ -1,5 +1,5 @@
 ---
-title: "🔍 How much energy is explained by the variables?"
+title: "🔍 How much energy consumption is explained by the algorithm variables?"
 subtitle: "Modeling energy expenses for tne LION paper"
 author: "JJ Merelo & Cecilia Merelo-Molina"
 date: "`r format(Sys.Date(), '%B %Y')`"
@@ -373,11 +373,15 @@ However, we can se it is not. Energy varies within a 20-Joule range, and within 
 
 This was still a very initial stage of the research. We tried to apply a static view of the system, which unfortunately does not seem to be true. The main takeaway message is that with these experiments and after analyzing data we have a better understanding on how energy consumption for algorithms work in reality, which will help us design better experimental methodologies to do it in the future. In this case, the range of variation induced by algorithm parameters seems to be well below the variation of operating conditions in the system we are measuring our algorithm.
 
+Since running time has the greatest impact in energy consumption, any energy reduction strategy should focus first on reducing that running time, using any of the tools that are available to the researcher, from programming language through sub-algorithmic improvements to programming enhancements. After all, the question that we are asking in this specific report might not be the right one: algorithmic parameters are the last step in a scale of algorithm greening... and it might not be available after all.
+
 There are different ways to overcome this:
 - Repeating the whole set of measurements several times so that different operating conditions will help understand how much additional energy is really being spent. This will also increase statistical significance of the measures. Any of the two factors will help differentiate changes in consumption from simple system noise.
 - Look at different methodologies for running our workload, possibly making it closer to baseline measurements so that, by lowering the intercept, the percentage of change with respect to the system is raised.
-- Use more sensor of operating conditions so that what causes energy consumption can be more easily modelled and the impact of algorithm parameters can be discerned.
+- Use more sensor of operating conditions so that what causes energy consumption can be more easily modeled and the impact of algorithm parameters can be discerned.
+- Extending the range of algorithm parameters tested, on top of the other measures, will also help. We have only tested two levels for 3 variables; other variables might have a bigger impact. These variables will have an impact on the number of evaluations and generations, and the former has a coefficient of `r filter(tidy_model, term=="Unexplained Variance (Residuals)")[['pct_variance']]` in the time model. A difference of several orders of magnitude need to occur for a change of evaluations to be noticed in the energy consumption pattern.
 
+Research progresses by understanding the system under study. With these results, and those in the paper, we have progressed towards this understanding.
 
 ---
 

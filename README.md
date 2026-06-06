@@ -66,6 +66,9 @@ release](https://github.com/JJ/brave-new-green-algorithm/releases/tag/v1.0LION).
   paper](https://github.com/JJ/brave-new-green-algorithm/releases/download/v1.0LION/lion-26-annotated.pdf)
   with the main findings and other highlights is included in the release.
 
+- A [critical examination of the experimental data](lion-26-extended.html) by
+  modeling energy consumption in terms of the algorithm parameters.
+
 ### Cross-paper research progression
 
 A companion document traces the research arc from LION-26 to OLA-26: what the first
