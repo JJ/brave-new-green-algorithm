@@ -249,8 +249,6 @@ lion_wl_118_clean <- lion_wl_118 %>%
     max_gens = as.factor(max_gens)
   )
 
-# 2. Ajustar el GLM correcto con interacciones de factores
-# Al ser factores, R calculará automáticamente los contrastes correctos
 strict_factor_model <- glm(
   formula = seconds ~ dimension * population_size * max_gens, 
   data = lion_wl_118_clean
@@ -258,7 +256,7 @@ strict_factor_model <- glm(
 
 summary(strict_factor_model)
 
-# 3. Calcular los tiempos promedio para la visualización de la interacción
+# This is not used, but can help
 summary_effects <- lion_wl_118_clean %>%
   group_by(dimension, population_size) %>%
   summarise(mean_seconds = mean(seconds), .groups = "drop")
@@ -270,7 +268,15 @@ plot_relative_impact( strict_factor_model)
 
 We have also factored those parameters to use the two different values that we have for each one of them. This is also interesting because we can see what specific values have an impact on running time, of which *max_gens = 25* have a maximum positive impact, *population_size = 400 with max_gens=25* a negative one, meaning that that combination will make it take *less* time to run; the fact that that happens independently of problem size is interesting by itself. 
 
-```{r residualize}
+Time is a factor in energy consumption, but we are really interested in the influence of those parameters on the energy consumed. We'll get to that next.
+
+## View 2 — Understanding noise, that is, operating context
+
+> *Can we learn something from energy consumption, even outside our algorithm?*
+
+We use residuals to eliminate the part of the running time that is explained by the algorithm parameters, and will leave only the residuals to inject into the energy model. This is what we do next.
+
+```{r residualize_and_model}
 lion_wl_118_clean$residual_seconds <- residuals( strict_factor_model )
 
 lion_energy_model <- glm(
@@ -278,11 +284,57 @@ lion_energy_model <- glm(
   data = lion_wl_118_clean
 )
 
+clean_lion_energy_model_coefficients <- tidy( lion_energy_model )
+
+clean_lion_energy_model_coefficients %>% mutate(
+    # Create a boolean column for statistical significance (p < 0.05)
+    is_significant = p.value < 0.05,
+    # Clean up the term names: replace ":" with " × " for better readability
+    term = str_replace_all(term, ":", " × ")
+  ) -> clean_lion_energy_model_coefficients
+
+library(ggplot2)
+library(dplyr)
+library(stringr)
+
+# Assuming your data frame is named 'tidy_energy_model'
+plot_data <- clean_lion_energy_model_coefficients %>%
+  filter(term != "(Intercept)") %>% # Always drop the massive intercept for scale
+  mutate(
+    term = str_replace_all(term, "×", " × "),
+    term = str_replace_all(term, "dimension5", "Dimension 5"),
+    term = str_replace_all(term, "population_size400", "Population 400"),
+    term = str_replace_all(term, "max_gens25", "Max Gens 25"),
+    term = str_replace_all(term, "residual_seconds", "Unexpected Delay (Residuals)"),
+    # Create a strict ordering: put the significant term at the top
+    term = factor(term, levels = term[order(is_significant, statistic)])
+  )
+
+ggplot(plot_data, aes(x = statistic, y = term)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", linewidth = 0.8) +
+  # Use linewidth instead of size for segments
+  geom_segment(aes(x = 0, xend = statistic, y = term, yend = term, color = is_significant), 
+               linewidth = 1.2) +
+  geom_point(aes(color = is_significant), size = 4) +
+  scale_color_manual(values = c("FALSE" = "#B0B0B0", "TRUE" = "#D55E00")) +
+  labs(
+    title = "Impact on Total CPU Energy (PKG)",
+    subtitle = "Only essential running time generate a significant energy footprint",
+    x = "t-value (Signal-to-Noise Ratio)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none", # Kill the legend to reduce clutter
+    plot.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(face = ifelse(levels(plot_data$term) == "Essential Running Time (Residuals)", "bold", "plain"))
+  )
 ```
 
-## View 2 — Understanding noise, that is, operating context
+We can visualize these coefficients as above. Baseline is, the only significant term in the energy model (here modeled using PKG, energy consumed by the package) is the essential part of the running time, the one that is not affected by algorithm parameters. The rest of the measurements indicate that whatever additional energy expenses are incurred by running under different parametrizations it is not enough to overcome non-controlled changes in energy consumption caused by the operating context.
 
-> *Can we learn something from energy consumption, even outside our algorithm?*
+We can try and check of there is some structure in the noise so that it can be somehow subtracted to work with it.
 
 ```{r noise, fig.cap="what we see"}
 library(ggplot2)
@@ -313,9 +365,18 @@ ggplot(diagnostics_data, aes(x = .fitted, y = .resid)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
+However, we can se it is not. Energy varies within a 20-Joule range, and within that range it is more or less white noise, with error independent on the actual amount of energy.
 
 ---
 
+## Takeaway messages
+
+This was still a very initial stage of the research. We tried to apply a static view of the system, which unfortunately does not seem to be true. The main takeaway message is that with these experiments and after analyzing data we have a better understanding on how energy consumption for algorithms work in reality, which will help us design better experimental methodologies to do it in the future. In this case, the range of variation induced by algorithm parameters seems to be well below the variation of operating conditions in the system we are measuring our algorithm.
+
+There are different ways to overcome this:
+- Repeating the whole set of measurements several times so that different operating conditions will help understand how much additional energy is really being spent. This will also increase statistical significance of the measures. Any of the two factors will help differentiate changes in consumption from simple system noise.
+- Look at different methodologies for running our workload, possibly making it closer to baseline measurements so that, by lowering the intercept, the percentage of change with respect to the system is raised.
+- Use more sensor of operating conditions so that what causes energy consumption can be more easily modelled and the impact of algorithm parameters can be discerned.
 
 
 ---
