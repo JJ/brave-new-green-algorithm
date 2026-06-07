@@ -1,5 +1,11 @@
 {
-  "context": {
-    "loadFromAllDirectories": false
-  }
+    "context": {
+        "loadFromAllDirectories": false
+    },
+    "tools": {
+        "run_shell_command": {
+            "tokenBudget": 2000
+        }
+    },
+    "excludeTools": ["findFiles"]
 }

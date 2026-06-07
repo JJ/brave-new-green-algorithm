@@ -1,0 +1,20 @@
+[commands.explain]
+description = "Generate a draft of a *-explainer.Rmd document following strict tech stack rules."
+prompt = """
+Examine the requested paper's analysis code and write an explainer matching our strict typography:
+1. Start with 2 context sentences (algorithm/metrics).
+2. Explicitly define key terms (baseline, delta, max_gens).
+3. Use 3-5 visuals matching our ggplot2/linewidth standards.
+4. Close with practical implications and reproducibility.
+5. Use American spelling and inline citations.
+Join names with ' & ' in the author field.
+"""
+
+[commands.annotate]
+description = "Draft a *-annotated.Rnw file safely escaping LaTeX characters."
+prompt = """
+Examine the source .Rnw paper and output the structural modifications required for an annotated version.
+Ensure you use \\input{lib/annotations.tex}.
+Utilize: \\keyfinding, \\methodstep, \\codelink, \\important, or \\reference.
+CRITICAL: Escape all underscores in technical names (e.g., use max\\_gens or \\texttt{max_gens}) to ensure LaTeX syntax safety.
+"""
