@@ -1,0 +1,187 @@
+---
+title: "Explainer: Measuring Energy in Population-Based Metaheuristics"
+author: "JJ Merelo & Cecilia Merelo-Molina"
+date: "`r Sys.Date()`"
+output: html_document
+bibliography: [ours.bib, energy.bib, ga-energy.bib, GAs.bib, julia.bib, metaheuristics.bib]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+
+# Helper functions
+source("energyR/R/process_deltas.R")
+
+create_summary <- function(data) {
+  return(
+    data %>%
+      group_by(dimension, population_size, max_gens) %>%
+      summarise(
+        mean_delta_PKG = mean(delta_PKG),
+        median_delta_PKG = median(delta_PKG),
+        trimmed_mean_delta_PKG = mean(delta_PKG, trim=0.2),
+        sd_delta_PKG = sd(delta_PKG),
+        iqr_delta_PKG = IQR(delta_PKG),
+        iqr_PKG = IQR(PKG),
+        conf_interval_delta_PKG = sprintf("[%s, %s]", 
+                                          round(t.test(delta_PKG)$conf.int[1], 2), 
+                                          round(t.test(delta_PKG)$conf.int[2], 2)),
+        .groups = 'drop'
+      )
+  )
+}
+```
+
+This research focuses on the Brave New Algorithm (BNA) applied to the Sphere function to establish a methodology for profiling energy consumption. We use the Intel RAPL interface to measure the package-level energy (PKG) in Joules, seeking to isolate the actual workload from system overhead.
+
+In this context, the **baseline** refers to the energy consumed by the system while idle or running only background processes. The **delta** PKG represents the estimated energy consumption of the algorithm itself, calculated by subtracting the baseline from the total measured energy. The parameter **max_gens** (maximum number of generations without improvement) serves as the stopping criterion for the evolutionary process.
+
+# Introduction: Can we measure energy consumption in population-based metaheuristics?
+
+Energy efficiency is becoming a critical engineering requirement for metaheuristics, yet measuring it accurately on modern multi-tasking systems is challenging. Modern processors employ dynamic power management that introduces high variability into measurements. This explainer details a methodology to extract reliable energy profiles using experimental design and statistical processing.
+
+### Why a simple baseline is not enough
+
+Does background energy consumption remain constant enough for a single baseline measurement?
+
+```{r baseline-variability, fig.cap="Figure 1: PKG energy measured over time for two separate baseline measurement sets."}
+baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
+baseline_ola_100s$group <- "Set 1"
+
+baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
+baseline_ola_v2_data$cum_seconds <- cumsum(baseline_ola_v2_data$seconds)
+baseline_ola_v2_data$group <- "Set 2"
+
+baseline_both <- rbind(baseline_ola_100s, baseline_ola_v2_data)
+
+ggplot(baseline_both, aes(x = cum_seconds, y = PKG, group=group, color=group)) +
+    geom_line() +
+    labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
+    theme_minimal()
+```
+
+The baseline energy levels shift significantly over time and between different experimental sessions, sometimes by as much as 100 Joules. Even within a single session, background noise is not uniform, which can lead to "negative" energy estimates if a static baseline is subtracted from a workload run during a low-activity period. 
+
+**Takeaway:** Static baselines are insufficient because system state is non-stationary; measurements must account for temporal drift.
+
+### The "Sandwich" Strategy
+
+How can we mitigate temporal drift in energy measurements?
+
+```{r workload-segments-original, fig.cap="Figure 2: PKG energy measured vs. time for workload measurements. Dashed lines correspond to baseline averages for that segment; color = population size"}
+workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+# Use the same baseline summary as in original context
+baseline_summary <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv") %>%
+      group_by(dimension, population_size) %>%
+      summarise(trimmed_mean_PKG = mean(PKG, trim=0.2), .groups = 'drop')
+
+workload_data_ola$cum_seconds <- cumsum(workload_data_ola$seconds)
+
+plot_with_segments <- ggplot(workload_data_ola, aes(x = cum_seconds, y = PKG)) +
+    geom_line() +
+    labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
+    theme_minimal() +
+    ylim(300, 750)
+
+# Add dashed lines for baseline averages
+for (i in 1:nrow(baseline_summary)) {
+  dim <- baseline_summary$dimension[i]
+  pop <- baseline_summary$population_size[i]
+  
+  # Filter data for this segment
+  seg_data <- workload_data_ola[workload_data_ola$dimension == dim & workload_data_ola$population_size == pop, ]
+  
+  if (nrow(seg_data) > 0) {
+    plot_with_segments <- plot_with_segments +
+      geom_segment(x = min(seg_data$cum_seconds), y = baseline_summary$trimmed_mean_PKG[i],
+                   xend = max(seg_data$cum_seconds), yend = baseline_summary$trimmed_mean_PKG[i], 
+                   linetype="dashed", color="red")
+  }
+}
+print(plot_with_segments)
+```
+
+The proposed "sandwich" strategy interleaves workload runs between baseline measurements, effectively "sandwiching" each algorithm execution. By subtracting the average of the baselines immediately preceding and following a run, we capture the local system state.
+
+```{r workload-delta, fig.cap="Figure 3: Workload measurements (processed delta energy)."}
+# Process the data to get the delta PKG
+workload_data_delta <- process_deltas(read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv"))
+workload_data_delta$cum_seconds <- cumsum(workload_data_delta$delta_seconds)
+
+ggplot(workload_data_delta, aes(x = cum_seconds, y = delta_PKG)) +
+    geom_line() +
+    labs(x = "Cumulative Time (s)", y = "Delta Energy Consumption (Joules)") +
+    theme_minimal()
+```
+
+**Takeaway:** Interleaving measurements effectively tracks the system's thermal and background state, providing a more localized and accurate delta.
+
+### The Sequential Mixed Strategy
+
+Can baseline and workload measurements be interleaved to further mitigate drift?
+
+```{r sequential-mixed, fig.cap="Figure 3: Sequential baseline and workload measurements showing tracking of system state."}
+ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv")
+ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
+
+ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work)) +
+    geom_line() +
+    labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
+    theme_minimal()
+```
+
+**Takeaway:** By interleaving baseline and workload runs in a sequential manner, we ensure that both measurements capture similar system states, effectively cancelling out long-term temporal drift.
+
+### Reducing Variability through Repetition
+
+Can multiple runs across different system states yield a reproducible energy profile?
+
+```{r multi-run-results}
+files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
+           "data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv",
+           "data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv",
+           "data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv",
+           "data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv")
+
+all_data <- do.call(rbind, lapply(files, function(f) process_deltas(read.csv(f))))
+final_summary <- create_summary(all_data)
+
+kable(final_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, iqr_delta_PKG, iqr_PKG),
+      col.names = c("Dim", "Pop", "MaxGens", "Delta PKG (J)", "Delta IQR", "Raw IQR"),
+      caption = "Table 1: Summary of Multi-run Sandwich Measurements") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+What is the relationship between problem complexity and energy variability?
+
+As shown in Table 1, the Interquartile Range (IQR) of the delta measurements is consistently lower than the raw PKG IQR in most cases. For example, in 10-dimensional problems, the methodology successfully reduces the uncertainty associated with background noise, narrowing the confidence intervals for the energy cost per run.
+
+**Takeaway:** Combining the sandwich strategy with multi-session runs (including reboots) significantly enhances reproducibility and provides actionable energy metrics.
+
+### Analyzing Energy Distribution
+
+How does the distribution of delta energy differ across configurations?
+
+```{r ridgeline-delta, fig.cap="Figure 4: Distribution of delta energy for different configurations."}
+library(ggridges)
+all_data$config <- paste(all_data$dimension, "D, P=", all_data$population_size)
+ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
+  geom_density_ridges() +
+  labs(x = "Delta Energy (Joules)", y = "Configuration") +
+  theme_minimal()
+```
+
+**Takeaway:** The ridgeline plot highlights the spread and modality of energy consumption, allowing us to identify stable versus highly variable configurations.
+
+## Practical Implications
+
+This methodology allows researchers to treat energy consumption as a first-class optimization objective. By identifying that smaller populations and shorter stagnation limits (max_gens = 10) consume significantly less energy across all tested dimensions, we can make informed trade-offs between solution quality and carbon footprint.
+
+### Reproducibility Notes
+All experiments were conducted on an AMD Ryzen 9 9950X system using the `pinpoint` tool for RAPL access. The analysis code and datasets are available in the project repository [@merelo2022brave].
+
+# References
