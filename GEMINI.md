@@ -53,7 +53,10 @@ Follow these structural rules for `*-explainer.Rmd`:
    - One bounded takeaway (using "often", "in this setup").
 4. Close with practical implications and reproducibility notes.
 5. Use **American spelling** and **inline citations**.
-6. **Typographics**: Author field should join names with ` & `. "Introduction" header must reference the paper title. Include standard bib files in YAML.
+6. **Typographics**: Author field should join names with ` & `. "Introduction"
+   header must reference the paper title. Include standard bib files in YAML.
+7. Rendering is performed automatically by a workflow, there's no need to create
+   instructions for rendering.
 
 ### 3. Cross-paper Progression Documents
 - Frame changes as **deeper understanding**, never "invalidation".
