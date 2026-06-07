@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8" />
+	<meta
+	    name="viewport"
+		  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+	/>
+
+	<title>Best practices in measuring energy consumption: Merelo & Merelo</title>
+
+	<link rel="stylesheet" href="dist/reset.css" />
+        <link rel="stylesheet" href="dist/extra.css" />
+	<link rel="stylesheet" href="dist/reveal.css" />
+	<link rel="stylesheet" href="dist/bna.css" />
+
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" />
+    </head>
+    <body>
+	<div class="reveal">
+	    <div class="slides">
+		<section data-background="https://www.flickr.com/photo_download.gne?id=55224135893&secret=0c81367d80&size=o&source=photoPageEngagement"><h1>Best practices in measuring energy consumption in
+	            population-based metaheuristics</h1>
+                    <h2>JJ Merelo, Cecilia Merelo-Molina</h2>
+                    <h3>Universidad de Granada, Zenzorrito</h3>
+                </section>
+
+		<section data-background="https://upload.wikimedia.org/wikipedia/commons/d/d8/Knossos_bull_leaping_fresco.jpg?download"><h1>Modern Taurokathapsia</h1>
+
+                <aside class="notes">Taurokatapsia is the art of a person
+                dominating over Nature, riding over it to prove the superiority
+                of intelect over brute force. Metaheuristics, evolutionary
+                computation is a bit like that: lets nature be your guide so
+                    that we can reach the optimum of a function we want to
+                    optimize. This was from the Knossos palace, part of the
+                Minoan civilization, which is one of the oldest civilizations in
+                Europe, contemporaneous to Egypt and to the old Assyrian
+                empire. They had a written, and so far undeciphered, language,
+                Linear A. One of the oldest civilizations, one of the oldest
+                forms of sport and art. Let's see if we can learn something from
+                    them for our research.</aside>
+                </aside>
+                
+                </section>
+
+                <section data-background="https://static.wikia.nocookie.net/mythology/images/5/5a/Herakles_bull_Staatliche_Antikensammlungen_1583.jpg/revision/latest/scale-to-width-down/1000?cb=20201121005820"><h1>We need to tame the bull of energy consumption in
+                    EAs</h1>
+                   <aside class="notes">That was one of Heracles' works, the 7th
+                    one, where he was sent to capture a bull that was razing the
+                       country in Crete, the so called Cretan Bull... That's
+                    only one of the Greek myths, that codified and explained
+                    society and how it was organized in different castes. The
+                    Minoic civilization was matriarchal, and organized women in
+                    4 castes, with restrictions on them. Sparta had 5 castes,
+                    with again reproduction restrictions</aside>
+                </section>
+
+                <section><h1>Meet the Brave New Algorithm</h1>
+                    <img
+                    src="https://pictures.abebooks.com/isbn/9780099518471-es.jpg"
+                        alt="Portada del libro">
+                    <h2 class="fragment">Literature-inspired metaphor</h2>
+                </section>
+
+                <section data-background="https://www.flickr.com/photo_download.gne?id=54749966201&secret=44378fb956&size=k&source=photoPageEngagement"><h1>Stratified population evolutionary algorithm</h1>
+                    <h2 class="fragment">α caste → with itself, crossover +
+                        mutation</h2>
+                    <h2 class="fragment">β only with α → crossover +
+                        mutation</h2>
+                    <h2 class="fragment">γ, δ, ε → only mutation; γ →
+                        hillclimbing</h2>
+
+                    <aside class="notes">Like this so called "geometric"
+                        pottery, a primitive kind of ceramic from the 9-10th century BC</aside>
+                </section>
+
+                <section><h1>It's only fitting that we use Greek letters</h1>
+                    <h2 class="fragment">Crossover was invented in Crete</h2>
+                    <img class="fragment"
+                    src="https://static.wikia.nocookie.net/mythology/images/8/86/Pasiphae_Minotauros_Cdm_Paris_DeRidder1066_detail.jpg/revision/latest/scale-to-width-down/1000?cb=20210923034910"
+                         alt="Representation of the young minotaur">
+
+                    <aside class="notes">Let's see what other lessons can you
+                        learn from Crete and the Greek way of life to create
+                        best practices to measure and optimize energy spent by
+                        this specific evolutionary algorithms</aside>
+                </section>
+
+			<section data-background="img/IMG_2232.jpeg">
+				<h1>After a couple of failed attempts</h1>
+				<img class='fragment'src="img/IMG_2233.jpeg" alt="kidnapping of Europe">
+			</section>
+
+                <section><h1>☝️Take it easy</h1>
+                    <h2 class="fragment">⏱️ Decrease sampling frequency</h2>
+                    <img class="fragment"
+                    src="img/workload-sampling-frequency.png" height="800" alt="different
+                                sampling frequency">
+
+                    <aside class="notes">Explain a bit the setup here: using
+                        Julia, pinpoint, Linux systems, 30 workload + baseline +
+                        30 baseline.
+                        Sampling frequency should allow
+                different systems to be differentiated; although it looks like
+                        it's spending more energy, in reality it's expanding the
+                        range of measurements over what was measured before.</aside>
+                </section>
+
+                <section><h1>✌️ Improve little by little</h1>
+                    <h2 class="fragment">📏 But always measure after trying to
+                        improve</h2>
+                    <img class="fragment"
+                         src="img/microptimization-violin-plot.png" height="800"
+                         alt="Microoptimization">
+                    <aside class="notes">The King Minos palace was not built all
+                    at once, but in different, incremental stages as need arose,
+                    at the same time improving building techniques to allow for
+                    more floors. A case of improvement in small increments. 
+                        However, it does not work as expected. The
+                        workload gets worse, spends more energy, after
+                        microoptimization</aside>
+                </section>
+                
+                <section><h1>Ⅲ Adjust your perception of reality</h1>
+                        <h2 class="fragment">🪏 to find out what's happened</h2>
+
+                        <img class="fragment"
+                             src="img/microoptimization-baseline-timeline-plot.png"
+                             height="800"
+                             alt="Timeline of baseline plots">
+
+                        <aside class="notes">Greek philosophers were the first
+                        to reject mythological explanations like thunderbolts
+                        being launched by Zeus to look for principles that ruled
+                        reality, and readjust them when fact-checking showed
+                            that it didn't.
+                            Baseline run averages are subtracted from the </aside>
+                </section>
+
+                <section><h1>Baseline shouldn't move too much...</h1>
+                    <h2 class="fragment">But it does</h2>
+                    <img class="fragment"
+                         src="img/baseline-workload-comparison.png"
+                         alt="Baseline comparison for different parameter
+                                combination">
+                    <aside class="notes">This causes the workload differences
+                        that have been appreciated above</aside>
+                </section>
+
+                <section><h1>🎯 Ⅳ Localize your measures</h1>
+                            <h2>🔗 Don't separate baseline and workload
+                                measurements</h2>
+
+                            <img class="fragment"
+                                 src="img/new-baseline-plot.png"
+                                 height="800"
+                                 alt="W+B using the new baseline">
+                            <aside class="notes">Cretans used localized
+                            pigments, like Egyptian blue, for their frescoes,
+                            which are much more colorful than anything found on
+                            the mainland. Locality helps relate any work to its
+                            surroundings. Here we see how the energy spent by
+                                 baseline (red) and workload (blue) plots
+                                 oscilates, but usually in the same direction,
+                                despite high variability.</aside>
+                </section>
+
+                <section><h1>We can compare now!</h1>
+                    <img src="img/version-comparison-plot.png" class="fragment"
+                         alt="comparación de versiones"
+                         height="800">
+                </section>
+
+                <section>
+                    <h1>Conclusions</h1>
+                    <h2 class="fragment">Taming the energy bull requires
+                        measuring it first</h2>
+                    <h2 class="fragment">The Brave New Algorithm provides an
+                        interesting framework for applying it to evolutionary
+                        algorithms</h2>
+                    <h2 class="fragment">Follow best practices to make the
+                        measured workload stand out</h2>
+                </section>
+
+                <section data-background="https://www.flickr.com/photo_download.gne?id=55188732934&secret=1127467835&size=k&source=photoPageEngagement"><h1>Let literature</h1>
+                    <h2 class="fragment">and Greek history and philosophy</h2>
+                    <h1 class="fragment">be your guide</h1>
+                    <h1 class="fragment">Σας ευχαριστώ πολύ!</h1>
+					<h2 class="fragment">And check out <a href='https://jj.github.io/brave-new-green-algorithm'><code>https://jj.github.io/brave-new-green-algorithm</code></a> for additional content and code</h2>
+                </section>
+
+	    </div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="dist/plugin/notes.js"></script>
+	<script src="dist/plugin/highlight.js"></script>
+	<script>
+	 Reveal.initialize({
+	     hash: true,
+             width: "95%",
+	     height: '100%',
+	     controls: true,
+	     progress: true,
+	     backgroundTransition: 'convex',
+	     plugins: [RevealHighlight, RevealNotes],
+	 });
+	</script>
+    </body>
+</html>
