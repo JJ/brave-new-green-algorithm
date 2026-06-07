@@ -69,6 +69,8 @@ ggplot(baseline_both, aes(x = cum_seconds, y = PKG,group=group, color=group)) +
     ) +
     theme_minimal()
 
+ggsave("preso/img/cec-fig-1.png", height=4.5, width=8)
+
 library(dplyr)
 baseline_ola_100s %>%
       group_by(dimension, population_size ) %>%
@@ -129,7 +131,7 @@ for (i in 1:nrow(ola_segments)) {
 }
 
 print(plot_with_segments)
-
+ggsave("preso/img/cec-fig-2.png",height=4.5, width=8)
 
 ## ----cec.sequential, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="PKG energy measured vs. time for sequential baseline and workload measurements, shown in different colors.", fig.height=2.5----
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
@@ -149,6 +151,7 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
     ) +
     theme_minimal()
 
+ggsave("preso/img/cec-fig-3.png")
 
 ## ----cec.sequential.table, echo=FALSE, message=FALSE-------------------------------------------------------------
 ola_mixed_no0 %>%

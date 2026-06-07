@@ -113,7 +113,7 @@ for (i in 1:nrow(baseline_summary)) {
 print(plot_with_segments)
 ```
 
-The proposed "sandwich" strategy interleaves workload runs between baseline measurements, effectively "sandwiching" each execution of the algorithm implementation. By subtracting the average of the baselines immediately preceding and following a run it is more likely that the system state of baseline and workload runs is the same.
+But this effectively leads to a confusion of the energy measured for different parametrizations, which are almost impossible to distinguish.
 
 ```{r workload-delta, fig.cap="Figure 3: Workload measurements (processed delta energy)."}
 # Process the data to get the delta PKG
@@ -125,11 +125,9 @@ ggplot(workload_data_delta,
       theme_minimal()
 ```
 
-**Takeaway:** Interleaving measurements effectively tracks the system's thermal and background state, providing a more localized and accurate delta.
-
 ### The Sequential Mixed Strategy
 
-Can baseline and workload measurements be interleaved to further mitigate drift?
+The sequential mixed strategy proposes workload and baseline in a single run, making the state in which the two processes are run close enough to be effectively the same (most of the times, at least)
 
 ```{r sequential-mixed, fig.cap="Figure 3: Sequential baseline and workload measurements showing tracking of system state."}
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv")
@@ -142,6 +140,18 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
 ```
 
 **Takeaway:** By interleaving baseline and workload runs in a sequential manner, we ensure that both measurements capture similar system states, effectively cancelling out long-term temporal drift.
+
+Our initial assumption is that this would dampen noise
+
+```{r workload, fig.cap"Workload distribution in this case"}
+no0_workload_delta <- process_deltas(ola_mixed_no0)
+ggplot(no0_workload_delta, 
+       aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
+      geom_point() +
+      labs(x = "Delta Time (s)", y = "Delta Energy Consumption (Joules)") +
+      theme_minimal()
+```
+We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters.
 
 ### Reducing Variability through Repetition
 
