@@ -113,17 +113,16 @@ for (i in 1:nrow(baseline_summary)) {
 print(plot_with_segments)
 ```
 
-The proposed "sandwich" strategy interleaves workload runs between baseline measurements, effectively "sandwiching" each algorithm execution. By subtracting the average of the baselines immediately preceding and following a run, we capture the local system state.
+The proposed "sandwich" strategy interleaves workload runs between baseline measurements, effectively "sandwiching" each execution of the algorithm implementation. By subtracting the average of the baselines immediately preceding and following a run it is more likely that the system state of baseline and workload runs is the same.
 
 ```{r workload-delta, fig.cap="Figure 3: Workload measurements (processed delta energy)."}
 # Process the data to get the delta PKG
 workload_data_delta <- process_deltas(read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv"))
-workload_data_delta$cum_seconds <- cumsum(workload_data_delta$delta_seconds)
-
-ggplot(workload_data_delta, aes(x = cum_seconds, y = delta_PKG)) +
-    geom_line() +
-    labs(x = "Cumulative Time (s)", y = "Delta Energy Consumption (Joules)") +
-    theme_minimal()
+ggplot(workload_data_delta, 
+       aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
+      geom_point() +
+      labs(x = "Delta Time (s)", y = "Delta Energy Consumption (Joules)") +
+      theme_minimal()
 ```
 
 **Takeaway:** Interleaving measurements effectively tracks the system's thermal and background state, providing a more localized and accurate delta.
