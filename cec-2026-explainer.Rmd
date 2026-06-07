@@ -72,7 +72,7 @@ The baseline energy levels shift significantly over time and between different e
 
 How can we mitigate temporal drift in energy measurements?
 
-```{r workload-segments-original, fig.cap="Figure 2: PKG energy measured vs. time for workload measurements. Dashed lines correspond to baseline averages for that segment; color = population size"}
+```{r workload-segments-original, fig.cap="Figure 2: PKG energy measured vs. time for workload measurements. Dashed lines indicate baseline averages; colors distinguish configurations."}
 workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
 # Use the same baseline summary as in original context
 baseline_summary <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv") %>%
@@ -80,17 +80,25 @@ baseline_summary <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv") %
       summarise(trimmed_mean_PKG = mean(PKG, trim=0.2), .groups = 'drop')
 
 workload_data_ola$cum_seconds <- cumsum(workload_data_ola$seconds)
+workload_data_ola$config <- paste0(workload_data_ola$dimension, "D, P=", workload_data_ola$population_size)
 
-plot_with_segments <- ggplot(workload_data_ola, aes(x = cum_seconds, y = PKG)) +
-    geom_line() +
-    labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
+# Create color palette
+n_configs <- length(unique(workload_data_ola$config))
+colors <- scales::hue_pal()(n_configs)
+names(colors) <- unique(workload_data_ola$config)
+
+plot_with_segments <- ggplot(workload_data_ola, aes(x = cum_seconds, y = PKG, color = config)) +
+    geom_line(alpha=0.6) +
+    labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)", color="Config") +
     theme_minimal() +
-    ylim(300, 750)
+    ylim(300, 750) +
+    scale_color_manual(values=colors)
 
 # Add dashed lines for baseline averages
 for (i in 1:nrow(baseline_summary)) {
   dim <- baseline_summary$dimension[i]
   pop <- baseline_summary$population_size[i]
+  config_name <- paste0(dim, "D, P=", pop)
   
   # Filter data for this segment
   seg_data <- workload_data_ola[workload_data_ola$dimension == dim & workload_data_ola$population_size == pop, ]
@@ -99,7 +107,7 @@ for (i in 1:nrow(baseline_summary)) {
     plot_with_segments <- plot_with_segments +
       geom_segment(x = min(seg_data$cum_seconds), y = baseline_summary$trimmed_mean_PKG[i],
                    xend = max(seg_data$cum_seconds), yend = baseline_summary$trimmed_mean_PKG[i], 
-                   linetype="dashed", color="red")
+                   linetype="dashed", color=colors[config_name], linewidth=1)
   }
 }
 print(plot_with_segments)
