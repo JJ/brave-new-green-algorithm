@@ -58,12 +58,6 @@ Follow these structural rules for `*-explainer.Rmd`:
 7. Rendering is performed automatically by a workflow, there's no need to create
    instructions for rendering.
 
-### 3. Cross-paper Progression Documents
-- Frame changes as **deeper understanding**, never "invalidation".
-- Apply new methodologies operationally to earlier data (don't just juxtapose).
-- Use **changepoint detection** (not LOESS sign changes) for thermal-regime shifts.
-- Use published venue names (e.g., LION), not submission prefixes (e.g., evoapps).
-
 ### 4. Developing `energyR` Package
 - **One function per file** in `energyR/R/`.
 - **ASCII ONLY**: No non-ASCII characters or escape sequences in code, comments, or vignettes.

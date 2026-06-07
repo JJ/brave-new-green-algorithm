@@ -18,3 +18,13 @@ Ensure you use \\input{lib/annotations.tex}.
 Utilize: \\keyfinding, \\methodstep, \\codelink, \\important, or \\reference.
 CRITICAL: Escape all underscores in technical names (e.g., use max\\_gens or \\texttt{max_gens}) to ensure LaTeX syntax safety.
 """
+
+---
+name: rmd-explainer
+description: Standard guidelines for compiling R Markdown progression explainers.
+---
+# Detailed Explainer Rules
+- Establish an opening 2-sentence structural introduction tracking the specific algorithm and metrics.
+- Enforce American spelling.
+- Ensure all underscores in technical names are escaped (e.g., max\_gens).
+- Map statistical shifts to changepoint detection, explicitly using `wilcox.test()`.
