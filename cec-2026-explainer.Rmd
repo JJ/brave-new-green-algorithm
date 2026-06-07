@@ -144,10 +144,10 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
 Our initial assumption is that this would dampen noise
 
 ```{r workload, fig.cap"Workload distribution in this case"}
-no0_workload_delta <- process_deltas(ola_mixed_no0)
-ggplot(no0_workload_delta, 
+mixed_workload_delta <- process_deltas(read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv"))
+ggplot(mixed_workload_delta, 
        aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
-      geom_point() +
+      geom_point( alpha=0.5) +
       labs(x = "Delta Time (s)", y = "Delta Energy Consumption (Joules)") +
       theme_minimal()
 ```
