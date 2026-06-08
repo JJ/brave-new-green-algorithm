@@ -1,0 +1,43 @@
+```json
+{
+  "sequence_number" : 1,
+  "key_findings": [
+    "Energy consumption (PKG) depends linearly on execution time, which is driven by algorithm parameters (dimension, pop_size, max_gens).",
+    "Essential running time (residuals from parameter models) is the only significant predictor of CPU energy noise.",
+    "Optimization targeting memory allocations (mutation-perf-boost) unexpectedly increased energy per evaluation despite improving exploration.",
+    "Uniform random mutation provides the optimal trade-off, significantly improving fitness for comparable energy levels.",
+    "Exploration-exploitation balance: Low alpha values (less exploitation) improve both energy efficiency and fitness.",
+    "Early termination (25 vs 50 max_gens) saves significant energy without compromising solution quality.",
+    "Julia 1.11.8 exhibits higher baseline energy consumption compared to version 1.11.7 under identical workloads."
+  ],
+  "variable_index": [
+    "lion_wl_118", "lion_wl_118_time_model", "variance_data", "strict_factor_model", "lion_energy_model", "baseline_results", "summary_baseline_results", "evoapps_results", "evoapps_perf_results", "all_results", "evoapps_uniform_results", "new_results", "lion_baseline", "lion_results"
+  ],
+  "statistical_models": [
+    "GLM: seconds ~ dimension * population_size * max_gens + evaluations * generations",
+    "GLM (Factored): seconds ~ dimension * population_size * max_gens",
+    "GLM: PKG ~ dimension * population_size * max_gens + residual_seconds",
+    "ANOVA: delta_PKG ~ work + dimension + population_size + max_gens + alpha",
+    "ANOVA: log_diff ~ population_size + max_gens + alpha",
+    "ANOVA: delta_PKG ~ dimension * population_size * max_gens * alpha"
+  ],
+  "code_chunks": [
+    { "id": "load-data", "summary": "Loads and cleans LION experimental data while defining impact visualization helpers.", "relation": "Foundational setup for all energy modeling analysis." },
+    { "id": "view1-plot", "summary": "Models execution time against parameters to visualize signal-to-noise via t-values.", "relation": "Identifies max_gens and evaluations as primary runtime drivers." },
+    { "id": "view1-variance-explained", "summary": "Decomposes deviance to quantify the percentage of variance explained by each factor.", "relation": "Quantifies the ~5.5% unexplained overhead in Julia runtime." },
+    { "id": "view1-gam", "summary": "Uses a factored model to isolate discrete impacts of specific parameter levels on runtime.", "relation": "Shows max_gens=25 has a high positive impact on runtime efficiency." },
+    { "id": "residualize_and_model", "summary": "Models PKG energy using runtime residuals to isolate algorithm-independent noise.", "relation": "Proves energy footprint is dominated by essential runtime rather than parameter shifts." },
+    { "id": "noise", "summary": "Plots residuals vs fitted values to detect structure in energy measurement errors.", "relation": "Confirms energy noise is white noise within a 20-Joule range." },
+    { "id": "evoapps.baseline.results", "summary": "Plots baseline energy vs time to establish the linear relationship and data dispersion.", "relation": "Validates the need for robust central tendency measures due to measurement variance." },
+    { "id": "evoapps.baseline.violin", "summary": "Visualizes energy distributions across parameter combinations to identify clustering.", "relation": "Justifies the use of trimmed means for baseline subtraction." },
+    { "id": "lion.results", "summary": "Calculates workload deltas and plots energy vs fitness for initial experiments.", "relation": "Shows larger populations are energy-efficient relative to initialization costs." },
+    { "id": "evoapps.perf.boost", "summary": "Compares original mutation with an allocation-optimized version regarding energy and evaluations.", "relation": "Reveals that allocation optimization can paradoxically increase energy per unit of work." },
+    { "id": "evoapps.compare", "summary": "Uses boxplots to compare Joules per evaluation across different implementation versions.", "relation": "Empirically rejects the first optimization attempt on energy grounds." },
+    { "id": "evoapps.fitness.vs.energy.boost", "summary": "Visualizes the trade-off between energy consumption and fitness achieved.", "relation": "Demonstrates that improved exploration can reach better fitness despite higher energy." },
+    { "id": "evoapps.uniform.mutation", "summary": "Analyzes the impact of uniform random mutation on fitness and energy.", "relation": "Identifies uniform mutation as the superior algorithmic strategy for green EAs." },
+    { "id": "evoapps.energy.compare", "summary": "Directly compares uniform mutation against previous versions for energy and fitness.", "relation": "Confirms uniform mutation provides best-in-class fitness-to-energy ratio." },
+    { "id": "evoapps.parameters.comparison", "summary": "Analyzes alpha and termination parameters to find optimal operational settings.", "relation": "Concludes low-exploitation setups (low alpha) are more efficient and effective." },
+    { "id": "lion.julia.1.11.8", "summary": "Repeats experiments on Julia 1.11.8 to check consistency and platform impacts.", "relation": "Finds version upgrades increase energy consumption, suggesting a preference for older runtimes." }
+  ]
+}
+```

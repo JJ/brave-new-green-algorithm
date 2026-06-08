@@ -1,0 +1,85 @@
+```json
+{
+  "sequence_number" : 2,
+  "key_findings": [
+    "RAPL sampling at 100ms (vs 50ms) reduces measurement overhead and improves precision.",
+    "Sequential mixed methodology (subtracting baseline from the immediately following workload run) mitigates thermal hysteresis and eliminates negative energy artifacts.",
+    "Upgrading to Julia 1.11.8 and applying memory-allocation micro-optimizations each yield approximately 10% energy savings.",
+    "Suppressing and repeating failed 0-Joules runs reduces distribution dispersion and enhances reproducibility."
+  ],
+  "variable_index": [
+    "PKG: Raw package energy in Joules",
+    "delta_PKG: Workload-specific energy (Workload - Baseline)",
+    "seconds / delta_seconds: Execution time and its differential",
+    "population_size / dimension: BNA algorithm configuration parameters",
+    "max_gens: Termination criterion representing workload intensity",
+    "work: Categorical label for experiment versions (e.g., v1.11.7, v1.11.8, mixed)",
+    "trimmed_mean_PKG: Robust baseline central tendency using 20% trimming",
+    "cumulative_time: Running total of time to detect thermal regime shifts"
+  ],
+  "statistical_models": [
+    "Wilcoxon Rank-Sum Test (non-parametric significance testing between versions)",
+    "Trimmed Mean (20% trim for robust baseline estimation)",
+    "Median and Interquartile Range (distribution summary)",
+    "LOESS (local regression for trend visualization in time-series energy data)",
+    "Quantile Estimation (Q1, Median, Q3 for ridgeline and notched boxplots)"
+  ],
+  "code_chunk_index": [
+    {
+      "chunk": "load-data (Rmd)",
+      "summary": "Calculates per-combination trimmed means from baseline CSV and joins them to workload data.",
+      "relation": "Establishes the per-combination baseline subtraction logic criticized for missing run-by-run nuance."
+    },
+    {
+      "chunk": "view1-plot (Rmd)",
+      "summary": "Visualizes individual workload runs against their dashed baseline averages with sign-coded segments.",
+      "relation": "Empirically demonstrates that raw workload spread is preserved after constant baseline subtraction."
+    },
+    {
+      "chunk": "view2-violin (Rmd)",
+      "summary": "Plots distributions of delta_PKG per parameter combination using notched boxplots.",
+      "relation": "Shows median energy shifts between configurations and highlights the occurrence of negative deltas."
+    },
+    {
+      "chunk": "view3-ridge (Rmd)",
+      "summary": "Displays overlapping ridgeline densities of delta_PKG for shape comparison.",
+      "relation": "Visualizes tail differences and distribution overlap, justifying the move to sequential pairing."
+    },
+    {
+      "chunk": "ola.base.frequency (Rnw)",
+      "summary": "Compares 50ms vs 100ms RAPL sampling using Wilcoxon significance tests.",
+      "relation": "Supports the finding that measurement tool configuration significantly impacts baseline accuracy."
+    },
+    {
+      "chunk": "ola.deltas (Rnw)",
+      "summary": "Plots delta energy vs time for different sampling frequencies.",
+      "relation": "Shows that doubling the sampling period reduces uncertainty and absolute energy/time error."
+    },
+    {
+      "chunk": "ola.micro (Rnw)",
+      "summary": "Evaluates baseline energy changes after implementation-level memory optimizations.",
+      "relation": "Quantifies the impact of 'greener' code adjustments on the algorithm's foundational energy profile."
+    },
+    {
+      "chunk": "ola.micro.hysteresis (Rnw)",
+      "summary": "Plots PKG energy against cumulative time to identify external thermal regime shifts.",
+      "relation": "Identifies time-related hysteresis that compromises reproducibility in standard lab environments."
+    },
+    {
+      "chunk": "ola.mixed (Rnw)",
+      "summary": "Implements the sequential mixed approach by subtracting the preceding baseline from each run.",
+      "relation": "Directly mitigates system overhead effects, providing a more robust fit for actual workload energy."
+    },
+    {
+      "chunk": "ola.v11_8 (Rnw)",
+      "summary": "Compares Julia 1.11.7 and 1.11.8 side-by-side across various generation limits.",
+      "relation": "Confirms that recent compiler versions provide measurable (approx. 10%) energy efficiency gains."
+    },
+    {
+      "chunk": "ola.no0 (Rnw)",
+      "summary": "Analyzes the effect of repeating runs that return zero energy readings.",
+      "relation": "Proves that data cleaning and 'dry' runs stabilize measurements and improve methodology robustness."
+    }
+  ]
+}
+```

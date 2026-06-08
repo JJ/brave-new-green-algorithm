@@ -1,3 +1,15 @@
+[commands.tokenize-paper]
+description = "Generate a context JSON file with key takeaways of the paper"
+prompt="""
+Analyze these files carefully:
+1. Summarize key findings and takeaway messages
+2. Extract an index of all defined variables,
+3. A list of active statistical models used,
+4. An 1-sentence summary of what each code chunk does and how it relates to the main key paper findings.
+
+OUTPUT REQUIREMENT:
+Return ONLY the raw JSON object string data. Do NOT use any markdown formatting blocks. Do NOT wrap the data inside backticks (```) or ```json code fences. Do NOT include any conversational preamble or summary introduction text outside the JSON structure. Start your response directly with { and end it directly with }.
+"""
 [commands.explain]
 description = "Generate a draft of a *-explainer.Rmd document following strict tech stack rules."
 prompt = """

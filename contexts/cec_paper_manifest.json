@@ -1,0 +1,32 @@
+{
+  "sequence_number" : 3,
+  "key_findings": [
+    "Background energy consumption (baseline) is non-stationary and exhibits significant temporal drift (up to 100 Joules) between sessions.",
+    "Static baseline subtraction is unreliable for workload isolation and can lead to erroneous 'negative' energy estimates.",
+    "The Sequential Mixed Strategy (interleaving baseline and workload) effectively tracks real-time system state shifts.",
+    "The 'Sandwich Strategy' (averaging two surrounding baselines) significantly reduces measurement variability (IQR) by almost half.",
+    "Multi-session experiments involving system reboots are essential for achieving a reproducible energy profile in multi-tasking environments.",
+    "For problem dimensions 3, 5, and 10, smaller population sizes (P=200) and lower stagnation limits (max_gens=10) consistently minimize energy footprint.",
+    "The proposed methodology provides a statistically sound basis for comparing algorithm parametrizations as a 'noisy' fitness objective."
+  ],
+  "variable_index": [
+    "PKG", "delta_PKG", "seconds", "delta_seconds", "dimension", "population_size", "max_gens", "cum_seconds", "trimmed_mean_PKG", "energy_per_evaluation", "config"
+  ],
+  "statistical_models": [
+    "Trimmed Mean (20%) for robust baseline central tendency estimation.",
+    "Sequential Delta subtraction: Workload energy tracking via immediate preceding baseline.",
+    "Sandwich Strategy: Workload(i) - (Baseline(i-1) + Baseline(i+1)) / 2.",
+    "One-sample t-test (t.test) for calculating 95% confidence intervals of Delta PKG.",
+    "IQR-based variability assessment for reproducibility quantification.",
+    "Multi-run data aggregation: Pooling 5 independent experimental sessions including reboots."
+  ],
+  "code_chunks": [
+    { "id": "cec.baseline", "summary": "Analyzes temporal drift in baseline energy across separate measurement sets to establish non-stationarity.", "relation": "Justifies the need for dynamic baseline tracking instead of static subtraction." },
+    { "id": "cec.workload", "summary": "Demonstrates the failure of static baselines, showing inconsistent and negative energy results.", "relation": "Highlights the methodological flaw in common energy profiling approaches." },
+    { "id": "cec.sequential", "summary": "Visualizes the Sequential Mixed Strategy where baseline and workload track each other's state.", "relation": "Proves that temporal proximity is key to cancelling out background noise." },
+    { "id": "cec.sequential.table", "summary": "Quantifies the initial reduction in variability achieved by interleaving measurements.", "relation": "Provides the first statistical evidence for the improvement in reproducibility." },
+    { "id": "cec.sandwich", "summary": "Applies the sandwich method to further refine the isolation of workload energy.", "relation": "Establishes the preferred methodology for minimizing single-session variance." },
+    { "id": "cec.reboots", "summary": "Aggregates data from 5 multi-session runs to produce the final robust energy profile.", "relation": "Validates the methodology's stability across different system states and reboots." },
+    { "id": "ridgeline-delta", "summary": "Visualizes the distribution and modality of energy consumption across configurations.", "relation": "Identifies stable vs highly variable parameter settings for decision making." }
+  ]
+}
