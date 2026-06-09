@@ -2,7 +2,7 @@
 title: "Explainer: Measuring Energy in Population-Based Metaheuristics"
 author: "JJ Merelo & Cecilia Merelo-Molina"
 date: "`r Sys.Date()`"
-output: html_document
+output: bookdown::html_document2
 bibliography: [ours.bib, energy.bib, ga-energy.bib, GAs.bib, julia.bib, metaheuristics.bib]
 ---
 
@@ -12,8 +12,7 @@ library(ggplot2)
 library(dplyr)
 library(kableExtra)
 
-# Helper functions
-source("energyR/R/process_deltas.R")
+source("energyR/R/process_deltas.R") # Our own utility library
 
 create_summary <- function(data) {
   return(
@@ -43,11 +42,11 @@ In this context, the **baseline** refers to the energy consumed by the system wh
 
 Energy efficiency is becoming a critical engineering requirement for metaheuristics, yet measuring it accurately on modern multi-tasking systems is challenging. Modern processors employ dynamic power management that introduces high variability into measurements. This explainer details a methodology to extract reliable energy profiles using experimental design and statistical processing.
 
-### Why a simple baseline is not enough
+# Why a simple baseline is not enough
 
 Does background energy consumption remain constant enough for a single baseline measurement?
 
-```{r baseline-variability, fig.cap="Figure 1: PKG energy measured over time for two separate baseline measurement sets."}
+```{r baseline-variability, fig.cap="PKG energy measured over time for two separate baseline measurement sets."}
 baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
 baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
 baseline_ola_100s$group <- "Set 1"
@@ -68,11 +67,11 @@ The baseline energy levels shift significantly over time and between different e
 
 **Takeaway:** Static baselines are insufficient because system state is non-stationary; measurements must account for temporal drift.
 
-### The "Sandwich" Strategy
+# The issue with separated baseline and workload experiments
 
 How can we mitigate temporal drift in energy measurements?
 
-```{r workload-segments-original, fig.cap="Figure 2: PKG energy measured vs. time for workload measurements. Dashed lines indicate baseline averages; colors distinguish configurations."}
+```{r workload-segments-original, fig.cap="PKG energy measured vs. time for workload measurements. Dashed lines indicate baseline averages; colors distinguish configurations."}
 workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
 # Use the same baseline summary as in original context
 baseline_summary <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv") %>%
@@ -125,11 +124,11 @@ ggplot(workload_data_delta,
       theme_minimal()
 ```
 
-### The Sequential Mixed Strategy
+# The Sequential Mixed Strategy
 
 The sequential mixed strategy proposes workload and baseline in a single run, making the state in which the two processes are run close enough to be effectively the same (most of the times, at least)
 
-```{r sequential-mixed, fig.cap="Figure 3: Sequential baseline and workload measurements showing tracking of system state."}
+```{r sequential-mixed, fig.cap="Sequential baseline and workload measurements showing tracking of system state."}
 ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv")
 ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
 
@@ -137,13 +136,20 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
     geom_line() +
     labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
     theme_minimal()
+
+ola_no0_base_PKG <- ola_mixed_no0[ ola_mixed_no0$work == "base-ola-no0",]$PKG
+ola_no0_workload_PKG <- ola_mixed_no0[ ola_mixed_no0$work == "ola-no0",]$PKG
+initial_correlation = cor(ola_no0_base_PKG, ola_no0_workload_PKG, use = "complete.obs")
 ```
+
+The correlation between the energy yielded by baseline and workload runs is now `r initial_correlation`, which is a moderate correlation. In general, baseline and workload will change in the same way, implying that they are tracking system state. 
 
 **Takeaway:** By interleaving baseline and workload runs in a sequential manner, we ensure that both measurements capture similar system states, effectively cancelling out long-term temporal drift.
 
 Our initial assumption is that this would dampen noise
 
-```{r workload, fig.cap"Workload distribution in this case"}
+
+```{r workload, fig.cap="Workload distribution in this case"}
 mixed_workload_delta <- process_deltas(read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv"))
 ggplot(mixed_workload_delta, 
        aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
@@ -151,9 +157,11 @@ ggplot(mixed_workload_delta,
       labs(x = "Delta Time (s)", y = "Delta Energy Consumption (Joules)") +
       theme_minimal()
 ```
+
+
 We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters.
 
-### Reducing Variability through Repetition
+# Reducing Variability through Repetition
 
 Can multiple runs across different system states yield a reproducible energy profile?
 
@@ -179,11 +187,11 @@ As shown in Table 1, the Interquartile Range (IQR) of the delta measurements is 
 
 **Takeaway:** Combining the sandwich strategy with multi-session runs (including reboots) significantly enhances reproducibility and provides actionable energy metrics.
 
-### Analyzing Energy Distribution
+# Analyzing Energy Distribution
 
 How does the distribution of delta energy differ across configurations?
 
-```{r ridgeline-delta, fig.cap="Figure 4: Distribution of delta energy for different configurations."}
+```{r ridgeline-delta, fig.cap="Distribution of delta energy for different configurations."}
 library(ggridges)
 all_data$config <- paste(all_data$dimension, "D, P=", all_data$population_size)
 ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
@@ -194,11 +202,11 @@ ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
 
 **Takeaway:** The ridgeline plot highlights the spread and modality of energy consumption, allowing us to identify stable versus highly variable configurations.
 
-## Practical Implications
+# Practical Implications
 
 This methodology allows researchers to treat energy consumption as a first-class optimization objective. By identifying that smaller populations and shorter stagnation limits (max_gens = 10) consume significantly less energy across all tested dimensions, we can make informed trade-offs between solution quality and carbon footprint.
 
-### Reproducibility Notes
+# Reproducibility Notes
 All experiments were conducted on an AMD Ryzen 9 9950X system using the `pinpoint` tool for RAPL access. The analysis code and datasets are available in the project repository [@merelo2022brave].
 
 # References
