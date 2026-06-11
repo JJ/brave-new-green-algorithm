@@ -49,11 +49,11 @@ Does background energy consumption remain constant enough for a single baseline 
 ```{r baseline-variability, fig.cap="PKG energy measured over time for two separate baseline measurement sets."}
 baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
 baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
-baseline_ola_100s$group <- "Set 1"
+baseline_ola_100s$group <- "First experiment"
 
 baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
 baseline_ola_v2_data$cum_seconds <- cumsum(baseline_ola_v2_data$seconds)
-baseline_ola_v2_data$group <- "Set 2"
+baseline_ola_v2_data$group <- "Second experiment"
 
 baseline_both <- rbind(baseline_ola_100s, baseline_ola_v2_data)
 
@@ -63,7 +63,7 @@ ggplot(baseline_both, aes(x = cum_seconds, y = PKG, group=group, color=group)) +
     theme_minimal()
 ```
 
-The baseline energy levels shift significantly over time and between different experimental sessions, sometimes by as much as 100 Joules. Even within a single session, background noise is not uniform, which can lead to "negative" energy estimates if a static baseline is subtracted from a workload run during a low-activity period. 
+The baseline energy levels shift significantly over time and between different experimental sessions, sometimes by as much as 100 Joules. Even within a single session, background noise is not uniform, which can lead to "negative" energy estimates if a static baseline is subtracted from a workload run during a low-activity period.
 
 **Takeaway:** Static baselines are insufficient because system state is non-stationary; measurements must account for temporal drift.
 
@@ -146,8 +146,7 @@ The correlation between the energy yielded by baseline and workload runs is now 
 
 **Takeaway:** By interleaving baseline and workload runs in a sequential manner, we ensure that both measurements capture similar system states, effectively cancelling out long-term temporal drift.
 
-Our initial assumption is that this would dampen noise
-
+Our initial assumption is that this would dampen noise. Let's see
 
 ```{r workload, fig.cap="Workload distribution in this case"}
 mixed_workload_delta <- process_deltas(read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv"))
@@ -158,14 +157,15 @@ ggplot(mixed_workload_delta,
       theme_minimal()
 ```
 
+We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters. 
 
-We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters.
+**Takeaway:** It's a bit better, and it leaves room for more variance explained by changes in the algorithm or its parameters. But the main issue is that system state is not *totally* eliminated by subtracting baseline.
 
 # Reducing Variability through Repetition
 
 Can multiple runs across different system states yield a reproducible energy profile?
 
-```{r multi-run-results}
+```{r multi-run-results, fig.cap="Energy consumption still depends on time"}
 files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv",
@@ -173,13 +173,40 @@ files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv")
 
 all_data <- do.call(rbind, lapply(files, function(f) process_deltas(read.csv(f))))
-final_summary <- create_summary(all_data)
 
-kable(final_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, iqr_delta_PKG, iqr_PKG),
-      col.names = c("Dim", "Pop", "MaxGens", "Delta PKG (J)", "Delta IQR", "Raw IQR"),
-      caption = "Table 1: Summary of Multi-run Sandwich Measurements") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+all_data$dimension <- as.factor( all_data$dimension)
+all_data$population_size <- as.factor( all_data$population_size)
+all_data$max_gens <- as.factor(all_data$max_gens)
+
+multi_run_time_model <- glm( seconds ~ dimension*population_size*max_gens, data = all_data)
+all_data$residual_seconds <- residuals( multi_run_time_model)
+
+multi_run_PKG_model <- glm( PKG ~ seconds + I(seconds^2) + dimension*population_size*max_gens, data=all_data)
+
+library(marginaleffects)
+
+# Assuming your model is saved as 'modelo_factores'
+# Ensure dimension, population_size, and max_gens are explicitly coded as factors in your dataframe
+
+# ---------------------------------------------------------
+# GRAPH 1: The Time Effect (Quadratic)
+# ---------------------------------------------------------
+pred_tiempo <- predictions(multi_run_PKG_model, newdata = datagrid(seconds = seq(9.5, 15, by = 0.2))) # taking into account real max and min
+
+ggplot(pred_tiempo, aes(x = seconds, y = estimate)) +
+  geom_point(data=all_data, aes(x=seconds, y =PKG, color=interaction(dimension,population_size))) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), fill = "blue", alpha = 0.2) +
+  geom_line(color = "darkblue", linewidth = 1.2) + 
+  labs(title = "Marginal Effect of Time on PKG",
+       x = "Time (Seconds)",
+       y = "Predicted Energy (PKG)") +
+  theme_minimal() 
+
 ```
+This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
+
+**Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
+
 
 What is the relationship between problem complexity and energy variability?
 
