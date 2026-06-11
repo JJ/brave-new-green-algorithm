@@ -79,6 +79,15 @@ built from both datasets):
     - Render locally with `rmarkdown::render("lion-ola-progression.Rmd")`
       after cloning the repository.
 
+### CEC'26 conference
+
+- In this paper we started to repeat the experiments multiple times looking for
+  statistical significance of the dependence on the algorithm parameters,
+  mainly. [This simulation](bonus/cec-energy-model.html), that uses the actual
+  model parameters, show how energy consumption varies with time, and how it is
+  modulated by problem size (dimension) and algorithm parameters (population
+  size and max number of generations to stop).
+
 ## Bibliography
 
 Please reference [one of these papers](references.bib) when re-using the content of this
