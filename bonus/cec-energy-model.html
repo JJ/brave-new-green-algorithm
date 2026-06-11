@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLM Energy Consumption Simulation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .dashboard {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            font-size: 1.5em;
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        select, input[type="range"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .gauge-container {
+            text-align: center;
+            background: #eef2f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .gauge-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .gauge-label {
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 1.5em;
+        }
+        canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>Energy Consumption (PKG) Interactive Model</h1>
+    
+    <div class="gauge-container">
+        <div id="pkg-display" class="gauge-value">Loading...</div>
+        <div class="gauge-label">Predicted Energy (PKG)</div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="seconds">Time (Seconds): <span id="sec-val">15</span></label>
+            <input type="range" id="seconds" step="0.1" value="15">
+        </div>
+        
+        <div class="control-group">
+            <label for="dimension">Dimension:</label>
+            <select id="dimension">
+                <option value="Baseline">Baseline</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="population">Population Size:</label>
+            <select id="population">
+                <option value="Baseline">Baseline</option>
+                <option value="400">400</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="maxgens">Max Gens:</label>
+            <select id="maxgens">
+                <option value="Baseline">Baseline</option>
+                <option value="25">25</option>
+            </select>
+        </div>
+    </div>
+
+    <div>
+        <canvas id="pkgChart"></canvas>
+    </div>
+</div>
+
+<script>
+ // Elements
+ const secInput = document.getElementById('seconds');
+ const secValDisplay = document.getElementById('sec-val');
+ const dimInput = document.getElementById('dimension');
+ const popInput = document.getElementById('population');
+ const gensInput = document.getElementById('maxgens');
+ const pkgDisplay = document.getElementById('pkg-display');
+ const ctx = document.getElementById('pkgChart').getContext('2d');
+ 
+ // Constants
+ const minTime = 9;
+ const maxTime = 15;
+
+ // Apply constants to the HTML range input dynamically
+ secInput.min = minTime;
+ secInput.max = maxTime;
+ if (secInput.value < minTime) secInput.value = minTime;
+ if (secInput.value > maxTime) secInput.value = maxTime;
+
+ // PKG Calculation Logic (Factorized Model)
+ function calculatePKG(sec, dim, pop, gens) {
+     // Base continuous calculation
+     let pkg = -4320.221 + (684.133 * sec) - (19.885 * sec * sec);
+
+     // Main categorical effects
+     if (dim === '5') pkg -= 30.411;
+     if (dim === '10') pkg -= 25.660;
+     if (pop === '400') pkg -= 15.231;
+     if (gens === '25') pkg += 13.182;
+
+     // Two-way interactions
+     if (dim === '5' && pop === '400') pkg += 14.966;
+     if (dim === '10' && pop === '400') pkg += 24.817;
+     
+     if (dim === '5' && gens === '25') pkg -= 7.578;
+     if (dim === '10' && gens === '25') pkg -= 26.162;
+     
+     if (pop === '400' && gens === '25') pkg -= 7.107;
+
+     // Three-way interactions
+     if (dim === '5' && pop === '400' && gens === '25') pkg -= 4.882;
+     if (dim === '10' && pop === '400' && gens === '25') pkg += 35.112;
+
+     return pkg;
+ }
+
+ // Chart Setup
+ let chart;
+ let globalMaxY = 0;
+ 
+ function initChart() {
+     // Find the absolute maximum PKG across all possible combinations to lock the Y-axis
+     const dims = ['Baseline', '5', '10'];
+     const pops = ['Baseline', '400'];
+     const gens = ['Baseline', '25'];
+     
+     for (let t = minTime; t <= maxTime; t += 0.5) {
+         for (let d of dims) {
+             for (let p of pops) {
+                 for (let g of gens) {
+                     let val = calculatePKG(t, d, p, g);
+                     if (val > globalMaxY) globalMaxY = val;
+                 }
+             }
+         }
+     }
+
+     chart = new Chart(ctx, {
+         type: 'line',
+         data: {
+             labels: [],
+             datasets: [
+                 {
+                     label: 'Predicted PKG Curve',
+                     data: [],
+                     borderColor: '#2980b9',
+                     backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                     borderWidth: 3, 
+                     fill: true,
+                     pointRadius: 0,
+                     tension: 0.4
+                 },
+                 {
+                     label: 'Current Setup',
+                     data: [],
+                     borderColor: '#e74c3c',
+                     backgroundColor: '#e74c3c',
+                     pointRadius: 6,
+                     pointHoverRadius: 8,
+                     showLine: false
+                 }
+             ]
+         },
+         options: {
+             responsive: true,
+             scales: {
+                 x: {
+                     type: 'linear',
+                     title: { display: true, text: 'Time (Seconds)' },
+                     min: minTime,
+                     max: maxTime
+                 },
+                 y: {
+                     title: { display: true, text: 'Energy (PKG)' },
+                     min: 0, 
+                     max: Math.ceil(globalMaxY * 1.1) // Locked Y-axis upper limit
+                 }
+             },
+             plugins: {
+                 tooltip: { enabled: true },
+                 animation: { duration: 300 } // Smooth animation when the line shifts
+             }
+         }
+     });
+ }
+
+ function updateSimulation() {
+     const sec = parseFloat(secInput.value);
+     const dim = dimInput.value;
+     const pop = popInput.value;
+     const gens = gensInput.value;
+
+     secValDisplay.innerText = sec.toFixed(1);
+
+     // Update Gauge
+     const currentPKG = calculatePKG(sec, dim, pop, gens);
+     if (currentPKG < 0) {
+         pkgDisplay.innerHTML = '<span class="error">Out of Bounds (< 0)</span>';
+     } else {
+         pkgDisplay.innerText = currentPKG.toFixed(2);
+     }
+
+     // Update Chart Curve
+     const labels = [];
+     const curveData = [];
+     const pointData = [];
+
+     for (let t = minTime; t <= maxTime; t += 0.5) {
+         let val = calculatePKG(t, dim, pop, gens);
+         labels.push(t);
+         curveData.push({x: t, y: val});
+
+         if (Math.abs(t - sec) < 0.1) {
+             pointData.push({x: t, y: val});
+         }
+     }
+
+     // Add exact slider point if it falls between the 0.5 steps
+     if (sec % 0.5 !== 0) {
+         pointData.push({x: sec, y: currentPKG});
+     }
+
+     chart.data.datasets[0].data = curveData;
+     chart.data.datasets[1].data = pointData;
+     
+     // Removed dynamic Y-axis scaling here to keep the scale locked
+     chart.update();
+ }
+
+ // Event Listeners
+ secInput.addEventListener('input', updateSimulation);
+ dimInput.addEventListener('change', updateSimulation);
+ popInput.addEventListener('change', updateSimulation);
+ gensInput.addEventListener('change', updateSimulation);
+
+ // Initialize
+ initChart();
+ updateSimulation();
+
+</script>
+</body>
+</html>
