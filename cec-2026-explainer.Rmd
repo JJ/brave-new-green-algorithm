@@ -155,6 +155,12 @@ ggplot(mixed_workload_delta,
       geom_point( alpha=0.5) +
       labs(x = "Delta Time (s)", y = "Delta Energy Consumption (Joules)") +
       theme_minimal()
+
+mixed_only_workload_delta <- mixed_workload_delta[ mixed_workload_delta$work == "ola-mixed",]
+single_run_time_model <- glm( seconds ~ dimension*population_size*max_gens, data = mixed_only_workload_delta)
+mixed_only_workload_delta$residual_seconds <- residuals( single_run_time_model)
+
+single_run_PKG_model <- glm( PKG ~ residual_seconds + I(residual_seconds^2) + dimension*population_size*max_gens, data=mixed_only_workload_delta)
 ```
 
 We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters. 
@@ -163,7 +169,9 @@ We see some more differentiation, with dim=3 and population=200 occupying the "n
 
 # Reducing Variability through Repetition
 
-Can multiple runs across different system states yield a reproducible energy profile?
+Can multiple runs across different system states yield an energy profile that allows us to compare between different algorithm configurations and representations?
+
+Let us try and repeat the experiments *five* times; measurements of energy for every parameter configuration are then repeated *30 x 5* times. 
 
 ```{r multi-run-results, fig.cap="Energy consumption still depends on time"}
 files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
@@ -181,12 +189,9 @@ all_data$max_gens <- as.factor(all_data$max_gens)
 multi_run_time_model <- glm( seconds ~ dimension*population_size*max_gens, data = all_data)
 all_data$residual_seconds <- residuals( multi_run_time_model)
 
-multi_run_PKG_model <- glm( PKG ~ seconds + I(seconds^2) + dimension*population_size*max_gens, data=all_data)
+multi_run_PKG_model <- glm( PKG ~ residual_seconds + I(residual_seconds^2) + dimension*population_size*max_gens, data=all_data)
 
 library(marginaleffects)
-
-# Assuming your model is saved as 'modelo_factores'
-# Ensure dimension, population_size, and max_gens are explicitly coded as factors in your dataframe
 
 # ---------------------------------------------------------
 # GRAPH 1: The Time Effect (Quadratic)
@@ -201,6 +206,12 @@ ggplot(pred_tiempo, aes(x = seconds, y = estimate)) +
        x = "Time (Seconds)",
        y = "Predicted Energy (PKG)") +
   theme_minimal() 
+
+
+mse_single <- deviance(single_run_PKG_model) / df.residual(single_run_PKG_model)
+
+# Error promedio del modelo con todas las ejecuciones
+mse_multi <- deviance(multi_run_PKG_model) / df.residual(multi_run_PKG_model)
 
 ```
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
