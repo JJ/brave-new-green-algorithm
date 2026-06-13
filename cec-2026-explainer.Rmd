@@ -160,7 +160,9 @@ mixed_only_workload_delta <- mixed_workload_delta[ mixed_workload_delta$work == 
 single_run_time_model <- glm( seconds ~ dimension*population_size*max_gens, data = mixed_only_workload_delta)
 mixed_only_workload_delta$residual_seconds <- residuals( single_run_time_model)
 
-single_run_PKG_model <- glm( PKG ~ residual_seconds + I(residual_seconds^2) + dimension*population_size*max_gens, data=mixed_only_workload_delta)
+mixed_only_workload_delta$dimension <- as.factor(mixed_only_workload_delta$dimension)
+mixed_only_workload_delta$population_size <- as.factor(mixed_only_workload_delta$population_size)
+single_run_PKG_model <- glm( PKG ~ residual_seconds + I(residual_seconds^2) + dimension*population_size, data=mixed_only_workload_delta)
 ```
 
 We see some more differentiation, with dim=3 and population=200 occupying the "negative" area, but still there is some confusion and besides, there is a strange distribution in two clusters. 
@@ -207,11 +209,24 @@ ggplot(pred_tiempo, aes(x = seconds, y = estimate)) +
        y = "Predicted Energy (PKG)") +
   theme_minimal() 
 
+# 1. Extract 95% Confidence Intervals for both models
+ci_single <- confint(single_run_PKG_model)
+ci_multi  <- confint(multi_run_PKG_model)
 
-mse_single <- deviance(single_run_PKG_model) / df.residual(single_run_PKG_model)
+# 2. Pick a parameter that exists in both to compare (e.g., population_size)
+# Replace 'population_size' with the exact name of the row from your summary
+param <- "dimension5:population_size400"
 
-# Error promedio del modelo con todas las ejecuciones
-mse_multi <- deviance(multi_run_PKG_model) / df.residual(multi_run_PKG_model)
+# 3. Calculate the Width (Upper Bound - Lower Bound)
+width_single <- ci_single[param, 2] - ci_single[param, 1]
+width_multi  <- ci_multi[param, 2] - ci_multi[param, 1]
+
+cat("Uncertainty (CI Width) from 1 Block: ", round(width_single, 2), " PKG units\n")
+cat("Uncertainty (CI Width) from 5 Blocks: ", round(width_multi, 2), " PKG units\n")
+
+# 4. Calculate the ROI of your time investment
+certainty_gained <- ((width_single - width_multi) / width_single) * 100
+cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
 
 ```
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
