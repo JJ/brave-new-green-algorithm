@@ -221,13 +221,53 @@ param <- "dimension5:population_size400"
 width_single <- ci_single[param, 2] - ci_single[param, 1]
 width_multi  <- ci_multi[param, 2] - ci_multi[param, 1]
 
-cat("Uncertainty (CI Width) from 1 Block: ", round(width_single, 2), " PKG units\n")
-cat("Uncertainty (CI Width) from 5 Blocks: ", round(width_multi, 2), " PKG units\n")
+#cat("Uncertainty (CI Width) from 1 Block: ", round(width_single, 2), " PKG units\n")
+#cat("Uncertainty (CI Width) from 5 Blocks: ", round(width_multi, 2), " PKG units\n")
 
 # 4. Calculate the ROI of your time investment
 certainty_gained <- ((width_single - width_multi) / width_single) * 100
-cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
+# cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
 
+
+### Comparing the two models in an absolute way
+### 
+
+# 1. Extraer los nombres de los coeficientes de ambos modelos
+coefs_single <- rownames(summary(single_run_PKG_model)$coefficients)
+coefs_multi  <- rownames(summary(multi_run_PKG_model)$coefficients)
+
+# 2. Identificar qué términos existen en AMBOS modelos (para una comparación justa)
+terminos_compartidos <- intersect(coefs_single, coefs_multi)
+
+# 3. Extraer los Errores Estándar (Std. Error) solo de esos términos compartidos
+se_single_shared <- summary(single_run_PKG_model)$coefficients[terminos_compartidos, "Std. Error"]
+se_multi_shared  <- summary(multi_run_PKG_model)$coefficients[terminos_compartidos, "Std. Error"]
+
+# 4. Calcular el Error Estándar Medio (Incertidumbre Global Promedio)
+incertidumbre_global_single <- mean(se_single_shared)
+incertidumbre_global_multi  <- mean(se_multi_shared)
+
+# 5. Calcular la Varianza Total de los Parámetros (A-Optimalidad)
+# Esta es la suma de las varianzas (Std. Error al cuadrado)
+a_opt_single <- sum(se_single_shared^2)
+a_opt_multi  <- sum(se_multi_shared^2)
+
+# 6. Calcular el Retorno de Inversión (ROI) en Porcentaje
+mejora_incertidumbre <- ((incertidumbre_global_single - incertidumbre_global_multi) / incertidumbre_global_single) * 100
+mejora_varianza <- ((a_opt_single - a_opt_multi) / a_opt_single) * 100
+
+# --- IMPRIMIR RESULTADOS LISTOS PARA EL PAPER ---
+cat("--- INCERTIDUMBRE GLOBAL DEL MODELO (Basado en términos compartidos) ---\n\n")
+
+cat("1. Error Estándar Promedio (Incertidumbre Lineal):\n")
+cat("   - Modelo de 1 Bloque: ", round(incertidumbre_global_single, 3), " PKG units\n")
+cat("   - Modelo de 5 Bloques:", round(incertidumbre_global_multi, 3), " PKG units\n")
+cat("   -> REDUCCIÓN DEL MARGEN DE ERROR: ", round(mejora_incertidumbre, 2), "%\n\n")
+
+cat("2. A-Optimalidad (Varianza Total de los Coeficientes):\n")
+cat("   - Modelo de 1 Bloque: ", round(a_opt_single, 1), "\n")
+cat("   - Modelo de 5 Bloques:", round(a_opt_multi, 1), "\n")
+cat("   -> REDUCCIÓN DE LA VARIANZA TOTAL: ", round(mejora_varianza, 2), "%\n")
 ```
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
