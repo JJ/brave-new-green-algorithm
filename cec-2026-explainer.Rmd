@@ -221,10 +221,10 @@ ggplot(pred_tiempo, aes(x = residual_seconds, y = estimate)) +
   # Línea predictiva del modelo
   geom_line(color = "darkblue", linewidth = 1.2) + 
   
-  labs(title = "Efecto Marginal del Tiempo en PKG superpuesto a Datos Crudos",
-       x = "Tiempo (Segundos Residuales)",
-       y = "Consumo de Energía Estimado (PKG)",
-       color = "Dimensión x Población") +
+  labs(title = "Marginal time effect in PKG over raw data",
+       x = "Time (residual seconds)",
+       y = "Energy consumption (PKG)",
+       color = "Dimension x Population size") +
   theme_minimal()
 
 # Check how much we have improved
@@ -248,7 +248,6 @@ certainty_gained <- ((width_single - width_multi) / width_single) * 100
 # cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
 ```
 
-But we are also going to work with data at a different level, using statistical models instead of working directly on averages, even if the certainty gained of  `r round(certainty_gained,2)` % allows us to work with that. We are going to work with two-state models, that allow us to understand better how variance is distributed along all the different algorithm factor and variables.
 
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
