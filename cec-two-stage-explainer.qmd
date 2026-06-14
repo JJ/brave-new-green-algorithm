@@ -7,7 +7,7 @@ format:
     toc: true
     toc-depth: 3
     theme: flatly
-    code-fold: show
+    code-fold: true
     fig-width: 8
     fig-height: 5
     embed-resources: true
@@ -57,7 +57,7 @@ all_data$population_size <- as.factor(all_data$population_size)
 all_data$max_gens <- as.factor(all_data$max_gens)
 ```
 
-### 1.2 The Collinearity Trap (Why a single model fails)
+### 1.2 The Co-linearity Trap (Why a single model fails)
 
 Before applying the two-stage method, let's visualize why time and parameters cannot share the same predictive space without adjustments.
 
@@ -71,21 +71,21 @@ ggplot(all_data, aes(x = seconds, y = PKG, color = dimension)) +
   labs(
     title = "The Confounding Effect: Time vs. Energy",
     subtitle = "Larger dimensions inherently take more time, tangling the variables.",
-    x = "Execution Time (Seconds / Delta Seconds)",
-    y = "Energy Consumption (PKG / Delta PKG)",
+    x = "Execution Time (Seconds)",
+    y = "Energy Consumption (PKG)",
     color = "Problem\nDimension"
   ) +
   theme_minimal() +
   theme(legend.position = "right")
 ```
 
-Because `dimension` fundamentally drives `seconds`, a single model cannot determine if an energy spike is caused by the geometry of the problem or simply because the clock ticked longer.
+Because `dimension` and the rest of the algorithm variables fundamentally drive `seconds`, a single-stage model cannot determine if an energy spike is caused by the problem size or simply because the clock ticked longer.
 
 ---
 
 ## 2. Stage 1: The Time Model (Extracting the Context)
 
-To break the collinearity, we first model the algorithm's execution time based *exclusively* on its configuration parameters.
+To break the co-linearity, we first model the algorithm's execution time based *exclusively* on its configuration parameters and variables.
 
 ```{r}
 #| label: stage1-time-model
@@ -122,6 +122,53 @@ ggplot(all_data, aes(x = residual_seconds)) +
   ) +
   theme_minimal()
 ```
+
+What we are seeing here is a two peak distribution. We might need to understand it better.
+
+```{r}
+#! label: two-regime-distribution
+#! fig-cap: understanding the two "time" regimes
+
+# 1. Compute the density explicitly
+dens <- density(all_data$residual_seconds)
+dens_df <- data.frame(x = dens$x, y = dens$y)
+
+# 2. Find the local maxima (peaks)
+# Mathematically, a peak occurs where the slope changes from positive to negative
+peaks_indices <- which(diff(sign(diff(dens_df$y))) == -2) + 1
+peaks <- dens_df[peaks_indices, ]
+
+# Sort by density (y-axis) to grab the two most prominent peaks, 
+# then re-sort them by the x-axis (left to right)
+top_peaks <- peaks[order(-peaks$y), ][1:2, ]
+top_peaks <- top_peaks[order(top_peaks$x), ]
+
+# 3. Plot the data with the detected regimes
+ggplot(all_data, aes(x = residual_seconds)) +
+  geom_density(fill = "steelblue", alpha = 0.5, color = "darkblue", linewidth = 1) +
+  
+  # Peak 1: High-Power / Fast State (Left)
+  geom_vline(xintercept = top_peaks$x[1], color = "darkgreen", linetype = "dashed", linewidth = 1) +
+  annotate("text", x = top_peaks$x[1], y = top_peaks$y[1] + 0.05, 
+           label = paste("Turbo Regime\nPeak:", round(top_peaks$x[1], 2), "s"), 
+           color = "darkgreen", hjust = 0.5) +
+  
+  # Peak 2: Low-Power / Throttled State (Right)
+  geom_vline(xintercept = top_peaks$x[2], color = "darkred", linetype = "dashed", linewidth = 1) +
+  annotate("text", x = top_peaks$x[2], y = top_peaks$y[2] + 0.05, 
+           label = paste("Throttled Regime\nPeak:", round(top_peaks$x[2], 2), "s"), 
+           color = "darkred", hjust = 0.5) +
+  
+  labs(
+    title = "Observing operating context",
+    subtitle = "Bimodal distribution reveals two distinct processor performance regimes.",
+    x = "Residual Time (Seconds)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+By creating a model and working with the residuals of that model, we begin to understand how the operating context is influencing the energy we are measuring: we have two different peaks, one where an experiment is taking longer than expected: the system has lowered frequency, and then the CPU can extract less power, making it take longer. This is less frequent than the opposite: taking less time than expected because the experiment has been assigned to a higher-frequency core or simply because the CPU is being maintained at a higher frequency.
 
 ---
 
@@ -167,6 +214,8 @@ ggplot(pred_noise, aes(x = residual_seconds, y = estimate)) +
   ) +
   theme_minimal()
 ```
+
+Here you can also observe how the two regimes play out: high-frequency, the majority, would be below the line, lower-frequency above the line. The paradox here is that since we can only measure energy-consumed-while-we-run, since these take longer they consume more energy.
 
 ### 3.2 Visualizing the Pure Algorithmic Truth
 Finally, because the Stage 2 model has absorbed the hardware noise, the coefficients for our parameters (`dimension`, `population_size`, `max_gens`) now represent the **pure algorithmic truth**. 
