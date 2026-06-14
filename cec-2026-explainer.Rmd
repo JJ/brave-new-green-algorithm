@@ -198,16 +198,34 @@ library(marginaleffects)
 # ---------------------------------------------------------
 # GRAPH 1: The Time Effect (Quadratic)
 # ---------------------------------------------------------
-pred_tiempo <- predictions(multi_run_PKG_model, newdata = datagrid(seconds = seq(9.5, 15, by = 0.2))) # taking into account real max and min
+library(ggplot2)
+library(marginaleffects)
 
-ggplot(pred_tiempo, aes(x = seconds, y = estimate)) +
-  geom_point(data=all_data, aes(x=seconds, y =PKG, color=interaction(dimension,population_size))) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), fill = "blue", alpha = 0.2) +
+# 1. Generar predicciones usando la variable exacta del modelo
+pred_tiempo <- predictions(multi_run_PKG_model, 
+                           newdata = datagrid(residual_seconds = seq(-1, 4.8, by = 0.2)))
+
+# 2. Dibujar el gráfico superponiendo la predicción y los datos brutos
+ggplot(pred_tiempo, aes(x = residual_seconds, y = estimate)) +
+  
+  # Puntos de datos crudos
+  # (Nota: asumo que en all_data la columna se llama residual_seconds. 
+  # Si sigue siendo 'seconds', cambia el x= de aquí abajo a x=seconds)
+  geom_point(data = all_data, 
+             aes(x = residual_seconds, y = PKG, color = interaction(dimension, population_size)), 
+             alpha = 0.3) + 
+  
+  # Banda del intervalo de confianza del modelo
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), fill = "blue", alpha = 0.4) +
+  
+  # Línea predictiva del modelo
   geom_line(color = "darkblue", linewidth = 1.2) + 
-  labs(title = "Marginal Effect of Time on PKG",
-       x = "Time (Seconds)",
-       y = "Predicted Energy (PKG)") +
-  theme_minimal() 
+  
+  labs(title = "Efecto Marginal del Tiempo en PKG superpuesto a Datos Crudos",
+       x = "Tiempo (Segundos Residuales)",
+       y = "Consumo de Energía Estimado (PKG)",
+       color = "Dimensión x Población") +
+  theme_minimal()
 
 # Check how much we have improved
 # 1. Extract 95% Confidence Intervals for both models
@@ -230,11 +248,13 @@ certainty_gained <- ((width_single - width_multi) / width_single) * 100
 # cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
 ```
 
+But we are also going to work with data at a different level, using statistical models instead of working directly on averages, even if the certainty gained of  `r round(certainty_gained,2)` % allows us to work with that. We are going to work with two-state models, that allow us to understand better how variance is distributed along all the different algorithm factor and variables.
+
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
 **Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
 
-But we already knew that. 
+But we already knew that. The main thing is that by making 5 experiment blocks, we have reduced undertainty
 
 ```{r confidence.gained}
 
