@@ -51,6 +51,8 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
       - name: Cache R packages
         uses: actions/cache@v5
         with:
@@ -62,10 +64,17 @@ jobs:
       - name: Install R dependencies
         run: install.packages(c("marginaleffects","bookdown", "broom","rmarkdown", "ggplot2", "dplyr", "knitr", "ggridges","kableExtra"))
         shell: Rscript {0}
-      - name: Render all Rmd files to HTML
+      - name: Render all Rmd and qmd files
         run: |
           for f in *.Rmd; do
-            Rscript -e "rmarkdown::render('${f}')"
+            if [ -f "$f" ]; then
+              Rscript -e "rmarkdown::render('${f}')"
+            fi
+          done
+          for f in *.qmd; do
+            if [ -f "$f" ]; then
+              quarto render "${f}"
+            fi
           done
       - name: Setup Pages
         uses: actions/configure-pages@v6
