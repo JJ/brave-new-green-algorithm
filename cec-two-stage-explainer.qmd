@@ -1,6 +1,6 @@
 ---
-title: "Aislamiento de la Huella Energética Algorítmica: Metodología GLM en Dos Fases"
-author: "Explicación Metodológica"
+title: "Unmasking Algorithmic Energy: A Two-Stage GLM Methodology"
+author: "Methodology Explainer"
 date: today
 format: 
   html:
@@ -16,20 +16,20 @@ execute:
   message: false
 ---
 
-## 1. El Desafío: Ruido del Hardware frente a la Verdad Algorítmica
+## 1. The Challenge: Hardware Noise vs. Algorithmic Truth
 
-Al medir el consumo energético de un algoritmo evolutivo, las mediciones brutas (`PKG` o `delta_PKG`) están fuertemente contaminadas por el entorno de ejecución. La huella energética de una sola ejecución está determinada por dos fuerzas en conflicto:
+When measuring the energy consumption of an evolutionary algorithm, the raw measurements (`PKG` or `delta_PKG`) are heavily contaminated by the operating environment. A single execution's energy footprint is determined by two competing forces:
 
-1. **La Intención Algorítmica:** El coste teórico que exigen los parámetros del problema (Dimensión, Tamaño de la Población, Máximo de Generaciones).
-2. **La Fricción Ambiental:** Las tareas en segundo plano del sistema operativo (OS), la fluctuación de frecuencia de la CPU y los fallos de caché que ocurren aleatoriamente durante la ejecución.
+1. **The Algorithmic Intent:** The theoretical cost demanded by the problem parameters (Dimension, Population Size, Max Generations).
+2. **The Environmental Friction:** Operating system background tasks, CPU frequency scaling, and cache misses that occur randomly during execution.
 
-Si intentamos modelar la energía directamente en función del tiempo y los parámetros simultáneamente, nos topamos con la **multicolinealidad**: los parámetros del algoritmo dictan inherentemente el tiempo de ejecución, lo que confunde al modelo estadístico. 
+If we attempt to model energy directly against time and parameters simultaneously, we run into **multicollinearity**—the algorithm's parameters inherently dictate the execution time, which confuses the statistical model. 
 
-Para resolver esto, empleamos un **Modelo Lineal Generalizado (GLM) en Dos Fases** con el fin de separar quirúrgicamente el ruido ambiental del coste algorítmico puro.
+To solve this, we employ a **Two-Stage Generalized Linear Model (GLM)** to surgically separate the environmental noise from the pure algorithmic cost.
 
-### 1.1 Carga y Preparación de Datos
+### 1.1 Data Loading and Preparation
 
-Primero, cargamos nuestros 5 bloques experimentales independientes. Al depender de la función `process_deltas()` del paquete `energyR`, garantizamos que la potencia base estática se reste, dejándonos con métricas de ejecución puramente dinámicas (Protocolo Sandwich).
+First, we load our 5 independent experimental blocks. By relying on the `process_deltas()` function from the `energyR` package, we ensure that static baseline power is subtracted, leaving us with purely dynamic execution metrics (the Sandwich Protocol).
 
 ```{r}
 #| label: load-data
@@ -38,114 +38,114 @@ library(ggplot2)
 library(dplyr)
 library(marginaleffects)
 
-# Cargar la lógica de procesamiento de deltas del protocolo Sandwich
+# Load the Sandwich protocol delta processing logic
 source("energyR/R/process_deltas.R")
 
-# Cargar los 5 bloques experimentales
+# Load the 5 experimental blocks
 files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv",
            "data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv")
 
-# Combinar y procesar los deltas
+# Combine and process the deltas
 all_data <- do.call(rbind, lapply(files, function(f) process_deltas(read.csv(f))))
 
-# Asegurar que los parámetros se traten como factores categóricos discretos
+# Ensure parameters are treated as discrete categorical factors
 all_data$dimension <- as.factor(all_data$dimension)
 all_data$population_size <- as.factor(all_data$population_size)
 all_data$max_gens <- as.factor(all_data$max_gens)
 ```
 
-### 1.2 La Trampa de la Colinealidad (Por qué falla un modelo único)
+### 1.2 The Collinearity Trap (Why a single model fails)
 
-Antes de aplicar el método de dos fases, vamos a visualizar por qué el tiempo y los parámetros no pueden compartir el mismo espacio predictivo sin ajustes.
+Before applying the two-stage method, let's visualize why time and parameters cannot share the same predictive space without adjustments.
 
 ```{r}
 #| label: plot-collinearity
-#| fig-cap: "Correlación severa entre el tiempo de ejecución y la dimensión del problema."
+#| fig-cap: "Severe correlation between execution time and problem dimension."
 
 ggplot(all_data, aes(x = seconds, y = PKG, color = dimension)) +
   geom_point(alpha = 0.4, size = 1.5) +
   geom_smooth(method = "lm", se = FALSE, linewidth = 1.2) +
   labs(
-    title = "El Efecto de Confusión: Tiempo vs. Energía",
-    subtitle = "Dimensiones mayores requieren más tiempo inherentemente, enredando las variables.",
-    x = "Tiempo de Ejecución (Segundos / Delta Segundos)",
-    y = "Consumo de Energía (PKG / Delta PKG)",
-    color = "Dimensión\ndel Problema"
+    title = "The Confounding Effect: Time vs. Energy",
+    subtitle = "Larger dimensions inherently take more time, tangling the variables.",
+    x = "Execution Time (Seconds / Delta Seconds)",
+    y = "Energy Consumption (PKG / Delta PKG)",
+    color = "Problem\nDimension"
   ) +
   theme_minimal() +
   theme(legend.position = "right")
 ```
 
-Dado que la `dimension` impulsa fundamentalmente los `seconds`, un modelo único no puede determinar si un pico de energía es causado por la geometría del problema o simplemente porque el reloj avanzó durante más tiempo.
+Because `dimension` fundamentally drives `seconds`, a single model cannot determine if an energy spike is caused by the geometry of the problem or simply because the clock ticked longer.
 
 ---
 
-## 2. Fase 1: El Modelo de Tiempo (Extrayendo el Contexto)
+## 2. Stage 1: The Time Model (Extracting the Context)
 
-Para romper la colinealidad, primero modelamos el tiempo de ejecución del algoritmo basándonos *exclusivamente* en sus parámetros de configuración.
+To break the collinearity, we first model the algorithm's execution time based *exclusively* on its configuration parameters.
 
 ```{r}
 #| label: stage1-time-model
 
-# Fase 1: ¿Cuánto TIEMPO DEBERÍA tardar el algoritmo según sus parámetros?
+# Stage 1: How LONG SHOULD the algorithm take based on its parameters?
 multi_run_time_model <- glm(seconds ~ dimension * population_size * max_gens, data = all_data)
 
-# Extraer los residuos: La diferencia entre el tiempo esperado y el tiempo real
+# Extract the residuals: The difference between expected time and actual time
 all_data$residual_seconds <- residuals(multi_run_time_model)
 ```
 
-### Comprendiendo los Residuos
-Al extraer los `residual_seconds` (segundos residuales), hemos cuantificado la "Fricción Ambiental":
-* **`Residual = 0`**: El sistema operativo ejecutó el algoritmo exactamente en el tiempo esperado.
-* **`Residual > 0`**: El servidor estaba "ruidoso" u ocupado, haciendo que la ejecución se prolongara más de lo que requerían los parámetros puros.
-* **`Residual < 0`**: El servidor ejecutó la tarea inusualmente rápido (por ejemplo, por aciertos óptimos en la caché).
+### Understanding the Residuals
+By extracting the `residual_seconds`, we have quantified the "Environmental Friction":
+* **`Residual = 0`**: The operating system executed the algorithm exactly in the expected time.
+* **`Residual > 0`**: The server was "noisy" or busy, causing the execution to drag on longer than the pure parameters required.
+* **`Residual < 0`**: The server executed the task unusually fast (e.g., optimal cache hits).
 
-Visualicemos la forma de este ruido ambiental a través de nuestros 5 bloques experimentales.
+Let's visualize the shape of this environmental noise across our 5 experimental blocks.
 
 ```{r}
 #| label: plot-residuals
-#| fig-cap: "Distribución del ruido del Sistema Operativo aislado de la complejidad algorítmica."
+#| fig-cap: "Distribution of Operating System noise isolated from algorithmic complexity."
 
 ggplot(all_data, aes(x = residual_seconds)) +
   geom_density(fill = "steelblue", alpha = 0.5, color = "darkblue", linewidth = 1) +
   geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
-  annotate("text", x = 0.5, y = 0.1, label = "Más lento de lo esperado\n(Fricción del OS)", color = "red", hjust = 0) +
-  annotate("text", x = -0.5, y = 0.1, label = "Más rápido de lo esperado", color = "darkgreen", hjust = 1) +
+  annotate("text", x = 0.5, y = 0.1, label = "Slower than expected\n(OS Friction)", color = "red", hjust = 0) +
+  annotate("text", x = -0.5, y = 0.1, label = "Faster than expected", color = "darkgreen", hjust = 1) +
   labs(
-    title = "Ruido Ambiental Aislado (Segundos Residuales)",
-    subtitle = "Esta métrica es matemáticamente completamente ortogonal a nuestros parámetros.",
-    x = "Tiempo Residual (Segundos)",
-    y = "Densidad"
+    title = "Isolated Environmental Noise (Residual Seconds)",
+    subtitle = "This metric is mathematically entirely orthogonal to our parameters.",
+    x = "Residual Time (Seconds)",
+    y = "Density"
   ) +
   theme_minimal()
 ```
 
 ---
 
-## 3. Fase 2: El Modelo de Energía (La Huella Limpia)
+## 3. Stage 2: The Energy Model (The Clean Footprint)
 
-Con el ruido del OS matemáticamente aislado (`residual_seconds`), ahora podemos construir nuestro modelo de energía definitivo. Dado que los residuos son totalmente incorrelados con las variables `dimension` o `population_size`, la multicolinealidad es igual a cero.
+With the OS noise mathematically isolated (`residual_seconds`), we can now build our definitive energy model. Because the residuals are completely uncorrelated with the `dimension` or `population_size` variables, multicollinearity is reduced to zero.
 
 ```{r}
 #| label: stage2-pkg-model
 
-# Fase 2: Modelado de Energía usando el ruido aislado + parámetros algorítmicos puros
+# Stage 2: Modeling Energy using isolated noise + pure algorithmic parameters
 multi_run_PKG_model <- glm(PKG ~ residual_seconds + I(residual_seconds^2) + 
                                  dimension * population_size * max_gens, 
                            data = all_data)
 ```
 
-### 3.1 Visualizando la Penalización del Hardware
-Primero, observemos qué están haciendo los términos de `residual_seconds`. Actúan como una esponja matemática, absorbiendo la penalización de energía no lineal de un sistema operativo ocupado.
+### 3.1 Visualizing the Hardware Penalty
+First, let's look at what the `residual_seconds` terms are doing. They act as a mathematical sponge, absorbing the non-linear energy penalty of a busy operating system.
 
 ```{r}
 #| label: plot-penalty
-#| fig-cap: "El efecto aislado de la fricción ambiental sobre el consumo total de energía."
+#| fig-cap: "The isolated effect of environmental friction on total energy consumption."
 
-# Generar predicciones variando ÚNICAMENTE el ruido, manteniendo los parámetros base
+# Generate predictions varying ONLY the noise, keeping base parameters constant
 pred_noise <- predictions(
   multi_run_PKG_model, 
   newdata = datagrid(residual_seconds = seq(min(all_data$residual_seconds), 
@@ -160,31 +160,31 @@ ggplot(pred_noise, aes(x = residual_seconds, y = estimate)) +
   geom_line(color = "darkred", linewidth = 1.2) +
   geom_vline(xintercept = 0, linetype = "dotted", color = "black", linewidth = 1) +
   labs(
-    title = "El Coste Energético de la Fricción del Sistema Operativo",
-    subtitle = "La curva cuadrática absorbe la penalización del hardware, limpiando los parámetros.",
-    x = "Ruido Ambiental (Segundos Residuales)",
-    y = "Energía Predicha (PKG)"
+    title = "The Energy Cost of Operating System Friction",
+    subtitle = "The quadratic curve absorbs the hardware penalty, cleaning the parameters.",
+    x = "Environmental Noise (Residual Seconds)",
+    y = "Predicted Energy (PKG)"
   ) +
   theme_minimal()
 ```
 
-### 3.2 Visualizando la Verdad Algorítmica Pura
-Finalmente, debido a que el modelo de la Fase 2 ha absorbido el ruido del hardware, los coeficientes para nuestros parámetros (`dimension`, `population_size`, `max_gens`) ahora representan la **verdad algorítmica pura**. 
+### 3.2 Visualizing the Pure Algorithmic Truth
+Finally, because the Stage 2 model has absorbed the hardware noise, the coefficients for our parameters (`dimension`, `population_size`, `max_gens`) now represent the **pure algorithmic truth**. 
 
-Podemos preguntarle al modelo: *"¿Cuál sería el consumo de energía si el sistema operativo estuviera en perfecto silencio (`residual_seconds = 0`)?"*
+We can ask the model: *"What would the energy consumption be if the operating system were perfectly silent (`residual_seconds = 0`)?"*
 
 ```{r}
 #| label: plot-truth
-#| fig-cap: "El coste energético puro y sin factores de confusión de los parámetros evolutivos."
+#| fig-cap: "The pure, unconfounded energy cost of evolutionary parameters."
 
-# Predecir energía a través de distintas dimensiones y poblaciones, FORZANDO el ruido a 0
+# Predict energy across different dimensions and populations, FORCING noise to 0
 pred_algo <- predictions(
   multi_run_PKG_model,
   newdata = datagrid(
     dimension = unique(all_data$dimension),
     population_size = unique(all_data$population_size),
-    max_gens = unique(all_data$max_gens)[1], # Mantener max_gens constante para visualización 2D
-    residual_seconds = 0                     # El paso crucial: silenciar el ruido del hardware
+    max_gens = unique(all_data$max_gens)[1], # Keep max_gens constant for 2D visualization
+    residual_seconds = 0                     # The crucial step: silencing the hardware noise
   )
 )
 
@@ -193,26 +193,26 @@ ggplot(pred_algo, aes(x = dimension, y = estimate, color = population_size, grou
   geom_line(linewidth = 1.2) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, linewidth = 0.8) +
   labs(
-    title = "Huella Energética Algorítmica Desenmascarada",
-    subtitle = "Modelado bajo condiciones de OS 'perfectas' (Residuo = 0) revelando la interacción real.",
-    x = "Dimensión del Problema",
-    y = "Coste Energético Puro Predicho (PKG)",
-    color = "Tamaño de\nPoblación"
+    title = "Unmasked Algorithmic Energy Footprint",
+    subtitle = "Modeled under 'perfect' OS conditions (Residual = 0) revealing the true interaction.",
+    x = "Problem Dimension",
+    y = "Predicted Pure Energy Cost (PKG)",
+    color = "Population\nSize"
   ) +
   theme_bw() +
   theme(legend.position = "bottom")
 ```
 
-## 4. Conclusión
+## 4. Conclusion
 
-Al utilizar esta metodología en dos fases junto con las 5 repeticiones de bloques experimentales:
-1. **Evitamos la trampa de la multicolinealidad** que invalida los modelos de energía estándar de una sola fase.
-2. **Aislamos el macro-ruido** del entorno de hardware en un vector ortogonal (`residual_seconds`).
-3. Aseguramos **intervalos de confianza estrechos** para las interacciones complejas a 3 bandas, lo que nos permite demostrar definitivamente cómo la geometría del algoritmo y la densidad de búsqueda se combinan para consumir energía física en el servidor.
+By utilizing this two-stage methodology alongside 5 blocks of experimental replications:
+1. We **avoided the multicollinearity trap** that invalidates standard single-stage energy models.
+2. We **isolated the macro-noise** of the hardware environment into an orthogonal vector (`residual_seconds`).
+3. We secured **narrow confidence intervals** for complex 3-way interactions, allowing us to definitively prove how algorithm geometry and search density combine to consume physical server energy.
 
 ---
 
-## Referencias
+## References
 
 * **Gelman, A., & Hill, J. (2006).** *Data Analysis Using Regression and Multilevel/Hierarchical Models* (1st ed.). Cambridge University Press. DOI: [10.1017/CBO9780511790942](https://doi.org/10.1017/CBO9780511790942)
 * **McCullagh, P., & Nelder, J. A. (1989).** *Generalized Linear Models* (2nd ed.). Chapman and Hall/CRC. DOI: [10.1201/9780203753736](https://doi.org/10.1201/9780203753736)
