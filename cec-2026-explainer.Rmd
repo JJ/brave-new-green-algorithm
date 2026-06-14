@@ -249,7 +249,11 @@ certainty_gained <- ((width_single - width_multi) / width_single) * 100
 ```
 
 
-This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
+This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. 
+
+We have used a two-stage model here. Check [this explanation on the two-stage process](cec-two-stage-explainer.html) by which we first model time to separate its dependence on the algorithm variables from the unexplained variance.
+
+The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
 **Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
 
