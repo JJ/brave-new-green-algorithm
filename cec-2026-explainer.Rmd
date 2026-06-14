@@ -209,6 +209,7 @@ ggplot(pred_tiempo, aes(x = seconds, y = estimate)) +
        y = "Predicted Energy (PKG)") +
   theme_minimal() 
 
+# Check how much we have improved
 # 1. Extract 95% Confidence Intervals for both models
 ci_single <- confint(single_run_PKG_model)
 ci_multi  <- confint(multi_run_PKG_model)
@@ -227,6 +228,15 @@ width_multi  <- ci_multi[param, 2] - ci_multi[param, 1]
 # 4. Calculate the ROI of your time investment
 certainty_gained <- ((width_single - width_multi) / width_single) * 100
 # cat("-> By investing 5x the time, we reduced uncertainty regarding the true effect of population size by", round(certainty_gained, 2), "%\n")
+```
+
+This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
+
+**Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
+
+But we already knew that. 
+
+```{r confidence.gained}
 
 
 ### Comparing the two models in an absolute way
@@ -269,9 +279,7 @@ cat("   - Modelo de 1 Bloque: ", round(a_opt_single, 1), "\n")
 cat("   - Modelo de 5 Bloques:", round(a_opt_multi, 1), "\n")
 cat("   -> REDUCCIÓN DE LA VARIANZA TOTAL: ", round(mejora_varianza, 2), "%\n")
 ```
-This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
-**Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
 
 
 What is the relationship between problem complexity and energy variability?
