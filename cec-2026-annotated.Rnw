@@ -1,0 +1,378 @@
+\documentclass[10pt,conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{url}
+
+% ============================================================
+%  ANNOTATION SETUP
+% ============================================================
+\usepackage[a4paper,
+            left=3.8cm, right=3.8cm,
+            top=2.5cm,  bottom=3.5cm,
+            marginparwidth=3.5cm, marginparsep=3mm]{geometry}
+
+\input{lib/annotations.tex}
+% ============================================================
+
+\begin{document}
+
+\title{Can we measure energy consumption in population-based metaheuristics?}
+
+\author{
+\IEEEauthorblockN{JJ Merelo}
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
+University of Granada\\
+Email: jmerelo@ugr.es\\
+CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+\and
+\IEEEauthorblockN{Cecilia Merelo-Molina}
+\IEEEauthorblockA{Zenzorrito, Granada, Spain\\
+ORCID: 0000-0002-5902-0159}
+}
+%
+\maketitle
+%
+\begin{abstract}
+\keyfinding{We propose a two-stage methodology (experimental design + statistical processing) to profile metaheuristic energy usage, overcoming high system-level noise.}
+As we proceed with incorporating energy efficiency into the design of our algorithms, establishing a robust methodology for energy profiling and the eventual comparison of algorithms or implementations is essential for a solid foundation for any further work.
+ The main issue to overcome is the lack of specific per-process measurement of energy consumption, and above that, the fact that we are going to be measuring a system that is actively trying to optimize energy consumption itself, and doing so for the whole system, above and beyond the workload we are trying to measure. In this paper, we propose a two-stage methodology for energy profiling in population-based metaheuristics. The first stage will consist of an experimental design, i.e., how to run a series of experiments to measure the energy consumption of a specific configuration and implementation of the algorithm. The second phase will consist of the statistical processing of these results to obtain a measure of energy consumption with a certain degree of certainty. Finally, we will apply these measurements to a type of evolutionary algorithm, called the Brave New Algorithm, written in the Julia language, to determine the impact of changes at different levels on energy consumption.
+%
+\end{abstract}
+
+\begin{IEEEkeywords}
+Green computing, Energy profiling, Metaheuristics
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\methodstep{See further explanations on baseline variability: \protect\url{https://jj.github.io/brave-new-green-algorithm/cec-2026-explainer.html\#why-a-simple-baseline-is-not-enough}}
+
+For the last few years, metaheuristics and machine learning algorithms have been achieving new levels of performance thanks to the use of more powerful processors, more powerful architectures and a greater amount of on-board memory. We already know that there is no free lunch, and this has been done at the expenses of increasing energy consumption. One of the languages that is more widely used in machine learning and scientific computing in particular, Python, is known to be one of the most energy-consuming ones \cite{a18090593,Pythoncpp,nahrstedt2024empirical}, but there are decisions that need to be taken at many different levels, from algorithm parametrization down to the language and architecture used in it, whose energy consumption needs to be assessed.
+
+
+Whether you want to present the reduction of energy consumption in algorithms implementation as an engineering requirement, as part of a genetic improvement framework \cite{rigorous} or as an ethical objective \cite{MoralDesignandGreenTechnology}, the need of a methodology for comparing different configurations so that a decision can be reached is quite clear. This methodology must take into account that, nowadays, scientists seldom devote exclusive resources to running their experiments, relying on personal systems in most cases. Any measurement methodology should work on these systems giving reliable or at least actionable results.
+
+Additionally to this overhead that should be eliminated to consider only the workload we are interested in, we should take into account that modern computers rely on automatic power management techniques that are applied directly on the processor or the chipset. Their objective is on one hand help reduce energy consumption, but on the other it will make it more difficult to measure it, since it might be working in the same direction as the optimization, or maybe the opposite, if whatever micro-optimization is introduced happens to disconnect the heuristics the system itself is utilizing. Additionally, the system is trying to do several things at the same time: keeping the system temperature below a given safe level, and lowering power consumption without reducing performance \cite{rigorous}. This results in a very high variability.
+
+Experimental design itself can add another source of variability to results. In most cases, we are interested in measuring the energy consumption of a particular workload, related to the algorithm itself. However, energy measurements will yield a quantity E, which can be decomposed as $E=E_{worlkoad}+E_{overheadS}+E_{overheadM}+E_{system}$, where the {\sf overheadS} corresponds to the overhead introduced by the runtime system, that is, JIT-compiling or interpreting and loading the executable or script; {\sf overheadM} corresponds to the measurement overhead, that is, the energy consumed by the measurement system itself. Since we are interested in the workload only, we try to take a baseline measurement $E_{baseline}=E_{overheadM}+E_{system}$ which is then subtracted from $E$ to compute the workload. As it can be seen, the way we obtain this baseline is crucial to the accuracy and variability of these measurements.
+\methodstep{See further details on the issue with separated baseline and workload experiments: \protect\url{https://jj.github.io/brave-new-green-algorithm/cec-2026-explainer.html\#the-issue-with-separated-baseline-and-workload-experiments}}
+On the other hand, we will never be able to measure directly $E_{workload}$; it will always include $E_{overheadS}$
+%\footnote{In practice, however, it is relatively safe to assume that this overhead is constant, so if the same tool is used for comparison, it can simply be ignored}
+. The key here is to use a tool that reduces that overhead to a minimum, but even so, to consider the published overhead of the tool when reporting energy consumption or comparing measurements by different tools that might have a different overhead.
+
+In this paper, we will focus on how to measure $E_{workload}$ in a specific type of evolutionary algorithm called Brave New Algorithm \cite{merelo2022brave,bna25}, although the developed methodology is extensive to all population-based algorithms. We will focus mainly on developing a experimental design methodology so that the workload measures can be extracted successfully from the total energy consumption, avoiding non-factual negative values, as well as reducing variability of measures so that they can be compared in an actionable way so as to take decisions at any level of the algorithm implementation. The main research question is in the title: is there a statistically sound way to measure energy consumption in population-based metaheuristics? We will try to answer this question by designing a methodology that will, effectively, extract these measures in a reliably way so that actionable decisions can be taken based on them.
+
+The rest of the paper is organized as follows: the next Section describes the state of the art in the exploration of energy consumption of evolutionary algorithms and other metaheuristics. Section \ref{sec:bna} describes the algorithm and the parametrization used in this paper. Since there is no fixed methodology for measuring energy consumption, we will show how it was done for this experiment and the trade-offs it implies, together with the results, in Section \ref{sec:results}; these results will be discussed in the last Section \ref{sec:discussion} along with our conclusions.
+
+
+\section{State of the art}
+
+Despite the growing interest in green computing, the challenges of measuring with a certain degree of accuracy the energy consumption of a particular workload, although acknowledged \cite{10549890} have not been addressed in a thorough and methodological way. Von Kistowski et al. \cite{von2018measuring} introduces a methodology, called "SPEC power", which takes into account the CPU load and enables to measure the power consumed by the workload under study. The framework is rather geared towards measuring whole systems, since it uses an external, calibrated, power meter. However, working on a real system, with other processes running, would require a totally different approach. Freina et al. \cite{freina2024survey} present a more comprehensive survey of the challenges involved in using hardware or in-system software APIs to measure the amount of energy consumed by a certain workload, showing all available options with their corresponding precision and overhead. Software solutions that use model-specific registries are shown to be widely available and with a convenient tool support; their error is shown to be inferior to 5\% (citing \cite{6557170}) at a 20 Hz sampling frequency; however, a sampling frequency of 10Hz is advised to achieve a better temporal granularity. The same paper mentions the overhead of around 1\% for most tools.
+
+However, in front of that array of tools, there is no specific methodology or best practices for making energy measurements of specific workloads in real conditions. Von Kistowski et al. \cite{von2018measuring} mention a series of principles: Reproducibility, fairness, verifiability and usability, but what they propose is in the context of whole computers or even data centers, and also focused on hardware power meters. These are, however, guiding principles that should be taken into account in our case too.
+
+As a matter of fact, most methodological work has arrived in this precise area, evolutionary algorithms and metaheuristics in general; Cotta et al. \cite{cotta25} show that measurements have a {\em hysteretic}, with the system staying in a high-energy-consumption state after running the workload, and thus propose a {\em sleep} phase after every measurement. Although a very interesting step, since it is impossible to guarantee the state the rest of the processes have left the system, however, this will not yield the desirable reproducibility in a real environment.
+
+It certainly is if online measurements want to be used for genetic optimization of algorithm implementations, as Bokhari et al proposed in \cite{rigorous}. Since energy measurements are one of the possible criteria for genetic improvement, these four principles need to be applied. However, what they observe is that at least reproducibility is a challenge, since there are big variations over long periods of time. They propose a series of approaches that essentially run a single program after rebooting the system with different battery load levels. What changes is the sequence of the different variants that are under test, finally settling on an approach called R3-validation (Robin and Rotate) that runs cycles of setup plus several runs of the different variants changing the order. The stated objective of this approach is to "mitigate the effect of changing system states", concluding that this approach mitigates the effects of background energy consumption (what we call $E_{system}$), proving that an experimental design approach can be a way to achieve the four principles mentioned above or at least reproducibility.
+
+What we are proposing in this paper is a methodology for measuring energy consumption of population-based algorithms in real-world conditions. We are going to test in a stratified population evolutionary algorithm called Brave New Algorithm, which we will describe next.
+
+\section{A Brave New Algorithm}\label{sec:bna}
+
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary
+algorithm, using the usual mechanism of mutation, crossover and selection to
+find the optimum of a given function, represented as a {\em chromosome}, in this
+case a vector of real numbers. However, how selection and reproduction take
+place is similar to how the novel Brave New World \cite{huxley2022brave}
+organized society: in castes. \begin{itemize} \item $\alpha$ generates new
+members by coupling the best individuals among them, to then undergo mutation
+and crossover.  \item $\beta$ caste needs to reproduce a member of the $\alpha$
+caste, and another member of its own caste, to then undergo mutation and
+crossover.  \item $\delta$ and $\epsilon$ castes generate new individuals by
+mutation. The only difference between them is that those who reproduce are
+chosen among the other members of the population, and that mutation rates can be
+set separately.  \item $\gamma$ generates new members by mutation, but mutation
+might be applied several times while the new individual is better than the
+previous one.  \end{itemize}
+
+The operators used are mutation, that will change 40\% of the elements of the
+vector generating a new, random element, 2-point crossover, and selection via
+binary tournament \cite{blickle1996comparison}. After every generation the
+population is re-ranked again, with the first \%$\alpha$ of the population
+assigned to that caste, and so on; through generations every caste will hold the
+same number of individuals. Since the two {\em upper} castes are mainly devoted
+to exploitation and the rest is devoted to exploration, the proportion of
+individuals in them is the main parameter governing the balance.  There are some
+restrictions in these percentages, due to the way new members are generated: the
+beta caste needs to have twice as many members as the alpha caste; the
+percentage of population in the $\alpha$ caste is, thus, the main parameter for
+this, since we can use it to generate the rest. In practice, what we have done
+is to vary the percentage of the $\gamma$ caste, the "first" that performs local
+search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
+
+The implementation of the algorithm used is available under a free license at \protect\url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}.
+
+\section{Experimental methodology and results}\label{sec:results}
+
+In order to carry out these initial experiments, we have used a methodology proposed in \cite{low-level}. We employ {\sf pinpoint}, \cite{pinpoint}, a command line tool that taps the RAPL interface \cite{rapl} to measure energy consumption of a given process. The version we have used was compiled from commit {\tt dfee658}. This tool was validated in \cite{icsoft} by comparing its output to other energy-measuring tools and finding that it was less error-prone than the rest, and gave measures that were consistent with the tools such as {\tt perf} and {\tt likwid} when they did not fail. In general, software-based power meters offer a free alternative to more precise hardware-based meters, can be used on any system, and have been experimentally validated repeatedly \cite{jay2023experimental}.
+The combination of the RAPL API, which places estimates in a register, and the overhead by the tool cannot be avoided, however, which is why we have to apply a careful experimental design to mitigate adverse effects. The sampling frequency we use for the RAPL counters is 10 Hz, that is, 1 sample every 100 milliseconds.
+
+We carry experiments in an AMD Ryzen 9 9950X 16-Core Processor, with Ubuntu Linux 25.04 with kernel version 6.14.0-29-generic. Please note that AMD implements a version of the RAPL API which only allows the measurement of a single value for the processor, PKG or package, excluding memory and different components within the package. Although useful, diving into memory consumption or the consumption of other parts of the processor would be more interesting for micro-optimization, or explaining the results achieved, than for overall assessment or reduction of energy consumption, which is what we are doing in this paper. Julia version has been $1.11.7$ except when noted.\footnote{Julia has now changed the minor version to 1.12, with $1.12.1$ being the latest released at the moment of writing this paper. However, there are some performance issues with this new version, which has prevented us for using it for the time being.}
+
+We have used the Sphere function \cite{hansen2010comparing}, defined as sum of the squares of the distance to the center minus a fixed value, which is part of the BBOB benchmarks; as a matter of fact, the implementation of this function is taken from the {\sf BlackBoxOptimizationBenchmarking.jl}, also written in Julia. This function is also lightweight enough to allow us to compare the energy profiles of different combinations of genetic operators, which will then have a bigger impact on overall consumption.
+
+Our initial experimental design includes two problem sizes: vectors with 3, 5 and 10 dimensions, to check the impact of the parameters for different problem difficulties. This corresponds to the low end of the BBOB benchmark suites; remember that we are using this suit just for the purpose of profiling the energy for this language and algorithm, so for the time being we did not find it necessary to go into higher dimensions. The function itself is not as important as the fact that it will require several seconds to run, and thus will have enough resolution for the energy sampling to work properly.
+
+\begin{itemize}
+\item Population size: 200 or 400 individuals, which has an impact on the diversity of the population and thus the exploitation capabilities of the algorithm.
+\item Maximum number of generations without improvement: 10 or 25, which is the stopping criterion for the algorithm. In this paper we have made this specific choice for stopping criterion, because if the algorithm tends towards exploration, it will explore in fruitless directions generating (possibly) useless chromosomes that will not allow it to escape a local minimum; in particular, this will have the consequence that depending on the problem dimension the execution might fall well short of an optimum value. We have left it this way, however, due to its direct relationship with exploration.
+\item Percentage of population in the $\alpha$ caste: 10\%, since we have proved in \cite{lion26} that is obtains the best results. The rest of the parameters will be set accordingly: $\beta$ percentage will double that value. $\gamma$ caste will hold a proportion equal to the $\alpha$ and $\beta$ percentages subtracted from 90. $\delta$ and $\epsilon$ castes will always have the same proportion, each equal to 5\%.
+\end{itemize}
+
+By default, every parametrization runs 30 times sequentially in a single core. Results written to standard output are processed and are available from this paper's repository at \protect\url{https://github.com/JJ/brave-new-green-algorithm}.
+
+One of the approaches we have used to separate $E_{workload}$ from the total energy consumption $E$ is to repeat baseline measurements for a number of times, ideally many times so that the result is well characterized statistically. The baseline runs for all experiments were run together, and before the workload measurements.
+
+<<cec.baseline, echo=FALSE, message=FALSE, warnings=FALSE,fig.cap="PKG energy measured vs. time for baseline measurements in two sets of experiments.", fig.height=2.5>>=
+
+# Utility functions
+process_and_plot <- function(file_path, group_name) {
+  data <- read.csv(file_path)
+  data$group <- group_name
+  data$cum_seconds <- cumsum(data$seconds)
+  print( ggplot(data, aes(x = cum_seconds, y = PKG, group=work, color=work)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time -", group_name),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal())
+  return(data)
+}
+
+process_deltas <- function(data) {
+  n <- nrow(data)
+  data$delta_PKG <- rep(NA_real_, n)
+  data$delta_seconds <- rep(NA_real_, n)
+  for (k in seq(from=0,to=n-1,by=61)) {
+    for (i in seq(from=2,to=60,by=2)) {
+      index <- k+i
+      data$delta_seconds[index] <- data$seconds[index] - (data$seconds[index-1]+ data$seconds[index+1])/2
+      data$delta_PKG[index] <- data$PKG[index] - (data$PKG[index-1] + data$PKG[index+1])/2
+
+    }
+  }
+  return(data %>% filter( delta_PKG != 0))
+}
+
+create_summary <- function(data) {
+  data$energy_per_evaluation <- data$delta_PKG / data$evaluations
+  return(
+    data %>%
+      group_by(dimension, population_size, max_gens ) %>%
+      summarise(
+        mean_delta_PKG = mean(delta_PKG),
+        median_delta_PKG = median(delta_PKG),
+        trimmed_mean_delta_PKG = mean(delta_PKG, trim=0.2),
+        trimmed_mean_energy_per_evaluation = mean(energy_per_evaluation, trim=0.2),
+        sd_delta_PKG = sd(delta_PKG),
+        iqr_delta_PKG = IQR(delta_PKG),
+        iqr_PKG = IQR(PKG),
+        conf_interval_delta_PKG = sprintf("[%s, %s]", round(t.test(delta_PKG)$conf.int[1], 2), round(t.test(delta_PKG)$conf.int[2], 2))
+      )
+  )
+}
+
+
+baseline_ola_100s <- read.csv("data/ola-base-ola-baseline-14-Dec-12-06-42.csv")
+baseline_ola_100s$cum_seconds <- cumsum(baseline_ola_100s$seconds)
+baseline_ola_100s$group <- "1"
+baseline_ola_v2_data <- read.csv("data/ola-1.11.7-v2-baseline-v2-14-Dec-20-40-47.csv")
+baseline_ola_v2_data$cum_seconds <- cumsum(baseline_ola_v2_data$seconds)
+baseline_ola_v2_data$group <- "2"
+
+baseline_both <- rbind(baseline_ola_100s, baseline_ola_v2_data)
+
+library(ggplot2)
+ggplot(baseline_both, aes(x = cum_seconds, y = PKG,group=group, color=group)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Baseline Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()
+
+library(dplyr)
+baseline_ola_100s %>%
+      group_by(dimension, population_size ) %>%
+      summarise(
+        mean_PKG = mean(PKG),
+        median_PKG = median(PKG),
+        trimmed_mean_PKG = mean(PKG, trim=0.2),
+        sd_PKG = sd(PKG),
+        iqr_PKG = IQR(PKG),
+        conf_interval_PKG = sprintf("[%s, %s]", round(t.test(PKG)$conf.int[1], 2), round(t.test(PKG)$conf.int[2], 2))
+   ) -> initial_baseline_ola_100s_summary
+
+
+@
+
+What is observed in \ref{fig:cec.baseline}, which represents two different baseline runs, is that there are different levels of background energy consumption; for group 1, up to 2000 seconds it is substantially the same, but then it changes to a higher level (totally unrelated to an actual change in parametrization) and then eventually to a slightly higher one, around 400 Joules, but there are peaks of more than 400 Joules.
+\important{This baseline drift indicates that static baseline measurements are insufficient for capturing the time-varying system state.}
+For group 2 consumption grows at the beginning, and then settles down with variations of up to 50 joules from one run to the next, with peaks of up to 150 joules; being substantially the same code, the average for group 2 is different from the one for group 1.
+
+<<cec.workload, echo=FALSE, fig.cap="PKG energy measured vs. time for workload measurements. Dashed lines correspond to baseline averages for that segment; color = population size", fig.height=2.5>>=
+workload_data_ola <- read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv")
+workload_data_ola$delta_PKG <-0
+workload_data_ola$delta_seconds <- 0
+workload_data_ola$cum_seconds <- cumsum(workload_data_ola$seconds)
+ola_segments <- data.frame( parameters=character(), start_second = numeric(), end_second=numeric(), trimmed_mean_PKG=numeric(), color=character())
+color_index <- 1
+for (dim in c(3,5)) {
+  for ( pop_size in c(200,400)) {
+      number_of_rows <- nrow(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,])
+      workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$delta_PKG <-
+      workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$PKG  -
+      rep(initial_baseline_ola_100s_summary[ initial_baseline_ola_100s_summary$population_size == pop_size & initial_baseline_ola_100s_summary$dimension==dim, ]$trimmed_mean_PKG,number_of_rows)
+
+      ola_segments <- rbind(ola_segments,
+        data.frame(
+          parameters = sprintf("dim=%d, pop=%d", dim, pop_size),
+          start_second = min(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$cum_seconds),
+          end_second = max(workload_data_ola[ workload_data_ola$dimension==dim & workload_data_ola$population_size==pop_size,]$cum_seconds),
+          trimmed_mean_PKG = initial_baseline_ola_100s_summary[ initial_baseline_ola_100s_summary$population_size == pop_size & initial_baseline_ola_100s_summary$dimension==dim, ]$trimmed_mean_PKG,
+          color=ifelse(color_index %% 2 == 0, "red", "blue")
+        )
+      )
+      color_index <- color_index + 1
+
+    }
+  }
+
+plot_with_segments <- ggplot(workload_data_ola, aes(x = cum_seconds, y = PKG)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Workload Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()+
+    ylim(300, 750)
+
+for (i in 1:nrow(ola_segments)) {
+  plot_with_segments <- plot_with_segments +
+    geom_segment( x=ola_segments$start_second[i], y=ola_segments$trimmed_mean_PKG[i],
+                     xend=ola_segments$end_second[i], yend=ola_segments$trimmed_mean_PKG[i], linetype="dashed", color=ola_segments$color[i] )
+}
+
+print(plot_with_segments)
+@
+
+We can observe the effect of using this baseline in Figure \ref{fig:cec.workload}, where the dashed lines represent the trimmed mean of the baseline for that specific configuration; these averages that will be subtracted from the workload have values that are more related to the state of the system when the baseline experiment was run, thus rendering $E_{workload}$ usable, but with a certain degree of uncertainty; in extreme cases this average will be higher than some workload energy measurement, resulting in "negative" energy averages for certain configurations \cite{cpp.vs.zig}. Even if we use the trimmed mean for the baseline to mitigate the effect of outliers, there is still the issue that the system state is changing all the time, which means that effectively subtracting the baseline will not effectively eliminate it. But there are additional issues with this statistical treatment: it maintains the variability of the original measures, with $E_{workload}$ having the same variability as $E$ itself and the same interquartile range. As you can see here, different measurements for the same configuration can have a difference of 200 Joules; subtracting a constant value from it will keep the same variability, thus having more or less the same reproducibility as the $E$ measurements.
+
+We can mitigate this effect of baseline and workload experiments finding the system in different states by using a {\em sequential mixed} strategy: one baseline measurement, one workload measurement with the same parameters. We are still keeping the same configuration of dimensions and population size
+
+<<cec.sequential, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="PKG energy measured vs. time for sequential baseline and workload measurements, shown in different colors.", fig.height=2.5>>=
+ola_mixed_no0 <- read.csv("data/ola-1.11.8-ola-no0-16-Dec-17-43-49.csv" )
+ola_mixed_no0$cumulative_time <- cumsum(ola_mixed_no0$seconds)
+for (i in 2:nrow(ola_mixed_no0)) {
+  if (ola_mixed_no0$work[i] == "ola-no0") {
+    ola_mixed_no0$delta_seconds[i] <- ola_mixed_no0$seconds[i] - ola_mixed_no0$seconds[i-1]
+    ola_mixed_no0$delta_PKG[i] <- ola_mixed_no0$PKG[i] - ola_mixed_no0$PKG[i-1]
+  }
+}
+ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work)) +
+    geom_line() +
+    labs(
+      title = paste("Energy Consumption Over Time - Sequential Baseline and Workload Measurement"),
+      x = "Time",
+      y = "Energy Consumption "
+    ) +
+    theme_minimal()
+@
+
+The graph shown in Figure \ref{fig:cec.sequential} shows how baseline and workload measurements follow more or less the same pattern, thus mitigating the issue of the experiments finding the underlying system in different states. In this specific case, which was run for Julia version 1.11.8, the workload measurements are shown in Table \ref{tab:cec.sequential.table}.
+
+<<cec.sequential.table, echo=FALSE, message=FALSE>>=
+ola_mixed_no0 %>%
+  filter(work == "ola-no0") %>%
+  group_by(dimension, population_size, max_gens) %>%
+  summarise(
+    mean_delta_PKG = mean(delta_PKG, na.rm=TRUE),
+    trimmed_mean_delta_PKG = mean(delta_PKG, trim=0.2, na.rm=TRUE),
+    sd_delta_PKG = sd(delta_PKG, na.rm=TRUE),
+    iqr_delta_PKG = IQR(delta_PKG, na.rm=TRUE),
+    iqr_PKG = IQR(PKG, na.rm=TRUE),
+    conf_interval_delta_PKG = sprintf("[%s, %s]", round(t.test(delta_PKG)$conf.int[1], 2), round(t.test(delta_PKG)$conf.int[2], 2))
+  ) -> sequential_summary
+
+library(kableExtra)
+kable(sequential_summary,
+      col.names=c("D","P","max gens", "Delta PKG (J): Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for sequential mixed baseline and workload measurements.", table.env='table*')
+@
+
+Besides showing the $E_{workload}$ (represented as Delta PKG in the table), the most interesting columns are labeled IQR (for interquartile range). Two such columns are shown: for computed $E_{workload}$ and for $E$. Since we are subtracting variable values to compute $E_{workload}$, the IQRs are different. However, it is not always contracted: in some cases it becomes bigger (although not by much), while in some cases it is actually reduced (for instance, D=3, P=200, max gens = 25). We are increasing reproducibility by reducing this variability, but it will depend on the underlying conditions of the system.
+% ...
+\methodstep{Sandwich strategy: Interleaving workload runs between two baseline measurements reduces the impact of temporal drift.}
+Since the variability we observe has that saw-tooth effect, we can try and reduce additionally that variability by using a {\em sandwich strategy}: for every parameter, we will use two baseline measurements, subtracting the average of both from the workload. For every parameter, we will run 1 baseline experiment more than workload experiments. While we were doing 30 x 2 experiments for every parameter value, we will do now 30 x 2 +1, with every parameter combination run starting and ending with a baseline measurement.
+
+
+<<cec.sandwich, echo=FALSE, message=FALSE, warning=FALSE >>=
+cec_sandwich_1 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv" )
+sandwich_processed_1 <- process_deltas(cec_sandwich_1)
+summary_sandwich_1 <- create_summary(sandwich_processed_1)
+summary_sandwich_1$trimmed_mean_energy_per_evaluation <- NULL
+summary_sandwich_1$median_delta_PKG <- NULL
+kable(summary_sandwich_1,
+      col.names=c("D","P","max gens", "Delta PKG (J): Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for sandwich baseline and workload measurements.", table.env='table*')
+@
+
+In this case, we have also expanded the parameters we are testing to include 10 dimensions, showing the result in Table \ref{tab:cec.sandwich}. What we were looking for, a reduction in variability, is observed in the IQR columns, where in most cases it is cut almost in half. There are some exceptions, however. For D=3, P=400, max gens = 25 the standard deviation is very high and the initial IQR too, but it is slightly increased when the delta PKG, that is, $E_{workload}$ is computed. In general, for any run, it can happen that the variability in a segment of the experiment is too high, which will make impossible to reduce it via subtraction of two baselines.
+
+In order to avoid this, we propose the repetition of experiments in different moments, including after rebooting the machine. We have performed 5 experimental runs of the whole set of experiments, with some reboots.
+
+<<cec.reboots, echo=FALSE, message=FALSE, warning=FALSE>>=
+cec_sandwich_2 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv" )
+sandwich_processed_2 <- process_deltas(cec_sandwich_2)
+cec_sandwich_3  <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv" )
+sandwich_processed_3 <- process_deltas(cec_sandwich_3)
+cec_sandwich_4 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv")
+sandwich_processed_4 <- process_deltas(cec_sandwich_4)
+cec_sandwich_5 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv" )
+sandwich_processed_5 <- process_deltas(cec_sandwich_5)
+
+cec_sandwich_all <- rbind(sandwich_processed_1, sandwich_processed_2, sandwich_processed_3, sandwich_processed_4, sandwich_processed_5)
+summary_cec_sandwich_all <- create_summary(cec_sandwich_all)
+
+summary_cec_sandwich_all$trimmed_mean_energy_per_evaluation <- NULL
+summary_cec_sandwich_all$median_delta_PKG <- NULL
+kable(summary_cec_sandwich_all,
+      col.names=c("D","P","max gens", "Delta PKG (J):
+ Mean", "Trimmed Mean", "SD", "IQR", "PKG: IQR", "Delta PKG: CI"),
+      caption = "Summary statistics for multi-run sandwich baseline and workload measurements",
+      table.env='table*')
+@
+
+The experimental data summarized in Table \ref{tab:cec.reboots}, which includes the run included in Table \ref{tab:cec.sandwich}, shows that, in all cases, the variability (which is obviously much higher in this case) is reduced almost 1/3rd of the original. As indicated in the introduction, due to the combination of different factors affecting $E_{system}$, it cannot be avoided; however, by trying to make different runs in different moments, and using robust indicators, such as the trimmed mean and 95\% confidence intervals, we can finally approach a degree of reproducibility that allows us to compare different parameter configurations and take decisions based on them. In this case we can conclude that for every problem dimension using the smaller population and a maximum number of generations without change equal to 10 will consume the least energy for all problem dimensions examined. Since these measure were taken for the latest stable Julia version (1.12.4) and Linux kernel ({\tt 6.17.0-8}), we can use them as baseline for examining different versions, or to check the effect of other optimizations and genetic operator change.
+
+\section{Conclusion and discussion}
+\label{sec:discussion}
+
+Creating a methodology that allows a more precise comparison of the energy consumption of different implementation of population based mechanisms open the gates to applying hyperheuristics such as {\sf irace} \cite{irace}. Even if methods such as R3-validation \cite{rigorous} were promising first steps by trying to mitigate system variability via repetition and permutation of the configurations that are going to be compared, underlying states in the system are persistent and different enough to need further experimentation. In this paper we have proposed such a methodology for comparing energy consumption of different population-based algorithms parametrization which consists in using a {\em sandwich} method that puts workload experiments between two baseline measurements, and then repeating the whole set of experiments several times, five in our case. With these combined measures we have proved that the variability is mitigated, reducing the confidence intervals, and thus yielding actionable information that can be used to take decisions on parametrizations, framework versions, or even genetic operator micro-optimizations. The issue here is that, due to the circumstances needed to run a single experiment, which even if it is not long needs machine reboots to ensure the machine being in different states, its use for online meta-optimization needs to follow a different approach, for instance considering energy a {\em noisy} fitness and dealing with it statistically, as proposed, for instance, in \cite{merelo2016statistical}.
+
+At any rate, we have answered here the main research question by proposing a statistically sound methodology, based on the reduction of variability and thus the improvement of reproducibility, for measuring energy consumption of different parametrization of population based algorithms, that focuses on the energy spent by the workload itself, eliminating to the the extent that is possible the effects of the rest of the system and the language or framework overhead. This methodology, in turn, will be used to craft the Brave New Algorithm at different levels (language, implementation, algorithm parametrization) so that it reduces its carbon footprint, at the same time it keeps or improves the fitness levels reached.
+
+\section*{Acknowledgements}
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
+
+\bibliographystyle{IEEEtran}
+\bibliography{ours,energy,ga-energy,GAs,julia,metaheuristics}
+
+\end{document}
