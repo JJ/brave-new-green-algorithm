@@ -15,9 +15,11 @@ Annotated versions highlight core contributions and implementation details for p
    - `\codelink`: Provide direct links to code blocks, R chunks, or external repository files.
    - `\important`: Call out critical caveats, reproducibility notes, or warnings.
    - `\reference`: Cite the original publication or venue.
-5. **LaTeX Syntax Safety**: Annotations are LaTeX commands. You MUST escape
+5. **The key findings is the most important part of the annotation**. It is
+   mandatory that these key findings are identified and marked as such in the paper.
+6. **LaTeX Syntax Safety**: Annotations are LaTeX commands. You MUST escape
    special characters like underscores (`_`) or wrap technical terms in
    `\texttt{}` to avoid compilation errors (e.g., use `max\_gens` or
    `\texttt{max_gens}`). Use `\protect` for URLs to avoid Latex errors when urls
    are used or other commands that will break in a moving environment.
-6. **Mandatory Standard**: Do not redefine these commands locally; use the shared `lib/annotations.tex` to maintain a consistent look across the project.
+7. **Mandatory Standard**: Do not redefine these commands locally; use the shared `lib/annotations.tex` to maintain a consistent look across the project.
