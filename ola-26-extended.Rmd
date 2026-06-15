@@ -246,9 +246,9 @@ This motivates the *sequential mixed* approach described in the paper, where eac
 
 ## About
 
-This document is a companion to the OLA-26 paper
+This document is a companion to the [OLA-26 paper
 *"Best practices in measuring energy consumption in population-based metaheuristics"*
-by Merelo & Merelo-Molina.
+by Merelo & Merelo-Molina](/https://jj.github.io/brave-new-green-algorithm/#ola26-conference).
 All data and code are available at <https://github.com/JJ/brave-new-green-algorithm>.
 
 *Research supported by the Ministerio español de Economía y Competitividad under project PID2023-147409NB-C21.*
