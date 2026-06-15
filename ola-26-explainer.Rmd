@@ -27,6 +27,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+> Part of the additional content for the [OLA'26 paper *Best practices in measuring energy consumption in population-based metaheuristics*](Best practices in measuring energy consumption in population-based metaheuristics)
+
 ```{r libraries}
 library(ggplot2)
 library(dplyr)
