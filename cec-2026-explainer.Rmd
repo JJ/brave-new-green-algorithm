@@ -251,13 +251,13 @@ certainty_gained <- ((width_single - width_multi) / width_single) * 100
 
 This is a plot of the dependence of energy consumption on running time. Running time is important, because it is one of the variables where system state shows; as frequency shifts the workload will take more or less time; that might be a consequence of the system moving workload to lower-frequency cores or a dynamic change in voltage that shifts frequency. 
 
-We have used a two-stage model here. Check [this explanation on the two-stage process](cec-two-stage-explainer.html) by which we first model time to separate its dependence on the algorithm variables from the unexplained variance.
+We have used a two-stage model here. Check [this explanation on the two-stage process](cec-two-stage-explainer.html) by which we first model time to separate its dependence on the algorithm variables from the unexplained variance, and then energy.
 
 The created model (you can check it out by clicking on the show code button) points towards that direction, with a positive coefficient on the `seconds` term and a negative one on the squared seconds term; this is clearly shown in this chart. There is still some confusion between problems of different dimensions and population sizes, but this is also because one of the most significant variables, `max_gens` is not represented. 
 
 **Takeaway**: Since running time is the most important factor in energy consumption, even if an important part is governed by operating conditions, there is still a part we can act on to reduce energy consumption: increase performance by making the algorithm run faster.
 
-But we already knew that. The main thing is that by making 5 experiment blocks, we have reduced undertainty
+But we already knew that. The main thing is that by making 5 experiment blocks, we have reduced uncertainty
 
 ```{r confidence.gained}
 
@@ -289,27 +289,14 @@ a_opt_multi  <- sum(se_multi_shared^2)
 mejora_incertidumbre <- ((incertidumbre_global_single - incertidumbre_global_multi) / incertidumbre_global_single) * 100
 mejora_varianza <- ((a_opt_single - a_opt_multi) / a_opt_single) * 100
 
-# --- IMPRIMIR RESULTADOS LISTOS PARA EL PAPER ---
-cat("--- INCERTIDUMBRE GLOBAL DEL MODELO (Basado en términos compartidos) ---\n\n")
-
-cat("1. Error Estándar Promedio (Incertidumbre Lineal):\n")
-cat("   - Modelo de 1 Bloque: ", round(incertidumbre_global_single, 3), " PKG units\n")
-cat("   - Modelo de 5 Bloques:", round(incertidumbre_global_multi, 3), " PKG units\n")
-cat("   -> REDUCCIÓN DEL MARGEN DE ERROR: ", round(mejora_incertidumbre, 2), "%\n\n")
-
-cat("2. A-Optimalidad (Varianza Total de los Coeficientes):\n")
-cat("   - Modelo de 1 Bloque: ", round(a_opt_single, 1), "\n")
-cat("   - Modelo de 5 Bloques:", round(a_opt_multi, 1), "\n")
-cat("   -> REDUCCIÓN DE LA VARIANZA TOTAL: ", round(mejora_varianza, 2), "%\n")
 ```
 
+With a single experiment block, the precision we could achieve was `r round(incertidumbre_global_single, 2)` Joules. No change under that could be detected. With 5 blocks, we have boosted it to `r round(mejora_incertidumbre, 2)` Joules. Even if the difference between the energy spent by two values of the parameter is this small, we'll be able to detect it.
 
+We can look at it from another point of view, looking at the total variance of coefficients. From the 1-block model we used before to this one we have achieved an improvement of `r round(mejora_varianza, 2)` %.
 
-What is the relationship between problem complexity and energy variability?
+**Takeaway**: Since the operating context is unstable, a single experiment block is not enough to achieve enough precision to detect the impact of different variable values on energy. We need several experiment blocks.
 
-As shown in Table 1, the Interquartile Range (IQR) of the delta measurements is consistently lower than the raw PKG IQR in most cases. For example, in 10-dimensional problems, the methodology successfully reduces the uncertainty associated with background noise, narrowing the confidence intervals for the energy cost per run.
-
-**Takeaway:** Combining the sandwich strategy with multi-session runs (including reboots) significantly enhances reproducibility and provides actionable energy metrics.
 
 # Analyzing Energy Distribution
 
