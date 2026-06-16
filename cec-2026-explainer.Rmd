@@ -174,7 +174,7 @@ We some more differentiation still, a few runs occupying the "negative" area, bu
 
 Can multiple runs across different system states yield an energy profile that allows us to compare between different algorithm configurations and representations?
 
-Let us try and repeat the experiments *five* times; measurements of energy for every parameter configuration are then repeated *30 x 5* times. 
+Let us try and repeat the experiments *five* times; measurements of energy for every parameter configuration are then repeated *30 x 5* times. We will be also using a *sandwich* strategy: every workload experiment will be *sandwiched* between two baseline experiments.
 
 ```{r multi-run-results, fig.cap="Energy consumption still depends on time"}
 files <- c("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv",
@@ -202,7 +202,6 @@ library(marginaleffects)
 library(ggplot2)
 library(marginaleffects)
 
-# 1. Generar predicciones usando la variable exacta del modelo
 pred_tiempo <- predictions(multi_run_PKG_model, 
                            newdata = datagrid(residual_seconds = seq(-1, 4.8, by = 0.2)))
 
@@ -312,21 +311,10 @@ ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
   theme_minimal()
 ```
 
-**Takeaway:** The ridgeline plot highlights the spread and modality of energy consumption, allowing us to identify stable versus highly variable configurations.
+The main difference is how different population sizes fall across the two "energy peaks". In the cases where energy distribution fall across two peaks, we will see higher energy consumption. The peaks, however, are slightly displaced with respect to each other to this higher precision achieved gives us a bit of leeway to choose among different configurations for the same problem size, or to distinguish among different algorithm implementations.
 
-# We can still do a bit better: sandwich protocol
+**Takeaway:** Since we have a good amount of data, we can distinguish now between relatively small energy deltas, giving us more leverage to configure our algorithms in a *greener* way.
 
-```{r cec.sandwich}
-cec_sandwich <- rbind(read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv" ),
-                      read.csv("data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv" ),
-                      read.csv("data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv" ),
-                      read.csv("data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv"),
-                      read.csv("data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv" ) )
-
-sandwich_data <-  process_deltas(cec_sandwich)
-
-
-```
 
 # Practical Implications
 
