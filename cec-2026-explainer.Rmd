@@ -13,6 +13,7 @@ library(dplyr)
 library(kableExtra)
 
 source("energyR/R/process_deltas.R") # Our own utility library
+source("energyR/R/process_normal_deltas.R") # Our own utility library
 
 create_summary <- function(data) {
   return(
@@ -116,7 +117,7 @@ But this effectively leads to a confusion of the energy measured for different p
 
 ```{r workload-delta, fig.cap="Figure 3: Workload measurements (processed delta energy)."}
 # Process the data to get the delta PKG
-workload_data_delta <- process_deltas(read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv"))
+workload_data_delta <- process_normal_deltas(read.csv("data/ola-1.11.7-ola-14-Dec-13-02-30.csv"))
 ggplot(workload_data_delta, 
        aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
       geom_point() +
@@ -149,7 +150,7 @@ The correlation between the energy yielded by baseline and workload runs is now 
 Our initial assumption is that this would dampen noise. Let's see
 
 ```{r workload, fig.cap="Workload distribution in this case"}
-mixed_workload_delta <- process_deltas(read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv"))
+mixed_workload_delta <- process_normal_deltas(read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv"))
 ggplot(mixed_workload_delta, 
        aes(x = delta_seconds, y = delta_PKG, color=interaction(dimension,population_size))) +
       geom_point( alpha=0.5) +
@@ -312,6 +313,17 @@ ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
 ```
 
 **Takeaway:** The ridgeline plot highlights the spread and modality of energy consumption, allowing us to identify stable versus highly variable configurations.
+
+# We can still do a bit better: sandwich protocol
+
+```{ r cec.sandwich}
+cec_sandwich_1 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv" )
+cec_sandwich_2 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v2-26-Jan-12-20-59.csv" )
+cec_sandwich_3  <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v3-26-Jan-17-42-27.csv" )
+cec_sandwich_4 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v4-27-Jan-08-09-20.csv")
+cec_sandwich_5 <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v5-27-Jan-10-16-05.csv" )
+
+```
 
 # Practical Implications
 
