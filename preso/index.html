@@ -56,6 +56,21 @@
                     <aside class="notes"></aside>
                 </section>
 
+                <section data-background="img/fall-of-icarus.jpg">
+                    <h1>Measuring <em>only</em> energy spent by our
+                        workload</h1>
+
+                    <h2 class="fragment">E(Workload) = E(measured) -
+                        E(baseline)</h2>
+
+                    <h3 class="fragment">Baseline includes operating context +
+                        runtime overhead</h3>
+
+                    <aside class="notes">In principle, we can only measure the
+                    energy of the whole system while our program is running,
+                        this is why we need to do this</aside>
+                </section>
+                        
                 <section data-background="img/barcos-zozobrando.jpg ">
                     <section>
                         <h1>Maybe not?</h1>
@@ -70,8 +85,9 @@
                     </section>
 
                     <section><h1>Baseline is a fleeting thing...</h1>
-                        <img scr="img/cec-fig-2.png" alt="comparison of
-                                  baseline and actual workload">
+                        <img src="img/cec-fig-2.png"
+                             style="height:900px"
+                             alt="comparison of baseline and actual workload">
 
                         <aside class="notes">This baseline, which was run before
                 all other experiments, should have been very similar. Since a
