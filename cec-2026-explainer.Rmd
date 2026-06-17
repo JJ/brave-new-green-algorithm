@@ -137,10 +137,10 @@ ggplot(ola_mixed_no0, aes(x = cumulative_time, y = PKG, group=work, color=work))
     geom_line() +
     labs(x = "Cumulative Time (s)", y = "Energy Consumption (Joules)") +
     theme_minimal()
-
 ola_no0_base_PKG <- ola_mixed_no0[ ola_mixed_no0$work == "base-ola-no0",]$PKG
 ola_no0_workload_PKG <- ola_mixed_no0[ ola_mixed_no0$work == "ola-no0",]$PKG
 initial_correlation = cor(ola_no0_base_PKG, ola_no0_workload_PKG, use = "complete.obs")
+
 ```
 
 The correlation between the energy yielded by baseline and workload runs is now `r initial_correlation`, which is a moderate correlation. In general, baseline and workload will change in the same way, implying that they are tracking system state. 
