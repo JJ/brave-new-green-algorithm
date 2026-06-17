@@ -87,6 +87,7 @@ built from both datasets):
   model parameters, show how energy consumption varies with time, and how it is
   modulated by problem size (dimension) and algorithm parameters (population
   size and max number of generations to stop).
+- There's an [abridged and enhanced](cec-2026-explainer.html) version of the paper which includes a different view at experimental data and how we can explain variability in operating conditions.
 
 ## Bibliography
 
