@@ -289,6 +289,9 @@ a_opt_multi  <- sum(se_multi_shared^2)
 mejora_incertidumbre <- ((incertidumbre_global_single - incertidumbre_global_multi) / incertidumbre_global_single) * 100
 mejora_varianza <- ((a_opt_single - a_opt_multi) / a_opt_single) * 100
 
+ggplot( data.frame(methodology=c("Sequential, single block", "Sandwich, multi-block"),uncertainty=c(incertidumbre_global_single,incertidumbre_global_multi)),aes(x=methodology,y=uncertainty,fill=uncertainty,color=methodology))+labs(x="Methodology",y="Uncertainty (J)")+
+  geom_bar(stat="identity")+theme_minimal()
+
 ```
 
 With a single experiment block, the precision we could achieve was `r round(incertidumbre_global_single, 2)` Joules. No change under that could be detected. With 5 blocks, we have boosted it to `r round(incertidumbre_global_multi, 2)` Joules. Even if the difference between the energy spent by two values of the parameter is this small, we'll be able to detect it.
