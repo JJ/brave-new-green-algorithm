@@ -317,6 +317,11 @@ How does the distribution of delta energy differ across configurations?
 ```{r ridgeline-delta, fig.cap="Distribution of delta energy for different configurations."}
 library(ggridges)
 all_data$config <- paste(all_data$dimension, "D, P=", all_data$population_size)
+all_data$config <- factor(all_data$config, 
+                            levels = c( "3 D, P= 200",  "3 D, P= 400",  
+                                        "5 D, P= 200",  "5 D, P= 400",
+                                        "10 D, P= 200", "10 D, P= 400" )
+                          )
 ggplot(all_data, aes(x = delta_PKG, y = config, fill = config)) +
   geom_density_ridges() +
   labs(x = "Delta Energy (Joules)", y = "Configuration") +
