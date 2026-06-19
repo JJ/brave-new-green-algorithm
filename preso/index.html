@@ -42,7 +42,7 @@
                     <h2 class="fragment">Literature-inspired metaphor</h2>
                 </section>
 
-                <section data-background=""><h1>Stratified population evolutionary algorithm</h1>
+                <section data-background="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Mondriaan_-_No._11.jpg/1280px-Mondriaan_-_No._11.jpg"><h1>Stratified population evolutionary algorithm</h1>
                     <h2 class="fragment">α caste → with itself, crossover +
                         mutation</h2>
                     <h2 class="fragment">β only with α → crossover +
@@ -113,19 +113,109 @@
 
                 <section>
                     <section><h1>We need to avoid variability</h1>
-                    <h2 class="fragment">Or rather to track it</h2>
-                    <h1 class="fragment">Sequential mixed strategy → 1 Baseline, 1 Workload</h2>
-
+                        <h2 class="fragment">Or rather to track it</h2>
+                        <h1 class="fragment">Sequential mixed strategy → 1 Baseline, 1 Workload</h1>
                     </section>
 
                     <section><h1>Again choppy waters... But at least the ships keep together</h1>
                         <img src="img/cec-fig-3.png"
                              style="height:750px"
                              alt="comparison of baseline and actual workload">
+                    </section>
+
+                    <section><h1>Still not ideal for measuring small or medium
+                        differences</h1>
+                        <h2 class="fragment">Algorithm configuration would be
+                            out</h2>
+                    </section>
+                </section>
+
+                <section>
+
+                    <section data-background="https://www.essentialvermeer.com/dutch-painters/netherlands/netherlands-images/solomon-van-ruisdael-river.jpg">
+                        <h1>Let's go for a sandwich</h1>
+                        <h1 class="fragment">Baseline <em>sandwich</em> ⇒ a
+                                workload between 2 baseline runs</h1>
+                        <h2 class="fragment">E(Workload) = E(measured) -
+                                (E(baseline-before)-E(baseline-after))/2</h2>
+
+                        <aside class="notes">The ships that go first create
+                                waves that will alter the speed of those that arrive
+                                later. Any program will change the temperature of the
+                                processor so that the operating conditions for the next
+                                experiment will change. If we only use the one before,
+                                we might be missing part of the context. This is
+                                one of the innovations we have introduced in
+                                this paper, which allows to reduce
+                                inter-quartile range and thus have a more
+                                precise estimation of the energy consumed.</aside>
+                    </section>
+
+                    <section><h1>Also, we make 5 blocks of experiments</h1>
+                        <h2 class="fragment">To avoid changing operating
+                            context, or rather span several</h2>
+                    </section>
+
+                    <section><h1>Even so, this is what we have</h1>
+                        <img src="img/tutorial-cloud-points.png"
+                             style="height:750px"
+                             alt="comparison of baseline and actual workload">
+                    </section>
+
+                    <section><h2>Is there different consumption for different
+                        population sizes?</h2>
+
+                        <img src="img/cec-fig-ridges.png"
+                             style="height:750px"
+                             alt="comparison of baseline and actual workload">
+
+                        <aside class="notes">Well, there's certainly a small
+                    difference, but the difference is in the distribution of
+                    "bumps" in this configuration: more bumps, more to the
+                            right, it means that it's going to consume, on
+                    average, more energy. But with this setup it's the best we
+                            can do.</aside>
+                    </section>
+                </section>
+
+                <section data-background="https://krollermuller.nl/media/cache/collection_item_detail_large/media/collectionitempage/tmsImage/ontbijt-floris-van-schooten-51927-copyright-kroller-muller-museum.jpg?500909865b6e"><h1>Can we measure energy consumption in
+                    population-based metaheuristics?</h1>
+                    <h2 class="fragment">We can certainly try</h2>
+                    <h2 class="fragment">Boost statistical significance by
+                        experimental repetition + <em>sandwich</em>
+                        protocol</h2>
+
+                    <aside class="fragment">The Earl of Sandwich invented it in
+                Aachen, a few kilometes from here, when they were negotiationg
+                the Treaty with the same name. It's a local tradition, which is
+                        probably false, because, let's face it, it's putting
+                        stuff between pieces of bread</aside>
+                </section>
 
 
-                    </section>
-                    </section>
+                <section><h1>There's a bonus track!</h1>
+                    <h1 class="notes">Open science!</h1>
+                    <h3 class="fragment">Go to <a
+                    href="https://jj.github.io/brave-new-green-algorithm"><code>https://jj.github.io/brave-new-green-algorithm</code></a>
+                    for an annotated version of the paper, additional
+                        explanations and paper source!</h2>
+                </section>
+                
+                <section
+                            data-background="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Aert_van_der_Neer_-_Riviergezicht_bij_maanlicht_-_Google_Art_Project.jpg/1920px-Aert_van_der_Neer_-_Riviergezicht_bij_maanlicht_-_Google_Art_Project.jpg">
+                        <h1 class="fragment"><img
+                                style="height:1em;vertical-align:middle; margin 0 0.25em"
+                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Flag_of_Limburg_%28Netherlands%29.svg/1920px-Flag_of_Limburg_%28Netherlands%29.svg.png" 
+                                alt="Flag of Limburg"> Merci! Nog vraoge?</h1>
+                        <h1 class="fragment"> Thanks you very much!
+                            Questions?</h1>
+                        <h1 class="fragment">🇳🇱 Hartelijk dank. Zijn er nog
+                            vragen?</h1>
+
+                        <aside class="fragment">Dutch also invented landscape,
+                            and aert van der Neer was one of the specialists</aside>
+                </section>
+                                    
 
 	    </div>
 	</div>
