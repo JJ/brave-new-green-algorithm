@@ -33,7 +33,7 @@ Check out the source code at [`ola-26.Rnw`](ola-26.Rnw). This was created for th
 
 - [`ola-26.R`](ola-26.R) contains just the code used to generate tables
   and graphs.
-- Check out [the presentation](preso/index.html).
+- Check out [the presentation](preso/ola-26.html).
 
 - Additional content has been created:
   [`ola-26-explainer.Rmd`](ola-26-explainer.Rmd) is a summary of the main
@@ -80,6 +80,7 @@ built from both datasets):
       after cloning the repository.
 
 ### CEC'26 conference
+Content for this papers is included in [this release](https://github.com/JJ/brave-new-green-algorithm/releases/tag/v1.1CEC).
 
 - In this paper we started to repeat the experiments multiple times looking for
   statistical significance of the dependence on the algorithm parameters,
@@ -87,7 +88,15 @@ built from both datasets):
   model parameters, show how energy consumption varies with time, and how it is
   modulated by problem size (dimension) and algorithm parameters (population
   size and max number of generations to stop).
-- There's an [abridged and enhanced](cec-2026-explainer.html) version of the paper which includes a different view at experimental data and how we can explain variability in operating conditions.
+- There's an [abridged and enhanced](cec-2026-explainer.html) version of the
+  paper which includes a different view at experimental data and how we can
+  explain variability in operating conditions.
+
+- Get the [annotated version of the
+  paper](https://github.com/JJ/brave-new-green-algorithm/releases/download/v1.1CEC/cec-2026-annotated.pdf)
+  from the release.
+  
+- Here's the [presentation](preso/index.html)
 
 ## Bibliography
 
