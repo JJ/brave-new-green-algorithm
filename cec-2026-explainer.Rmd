@@ -189,6 +189,15 @@ all_data$dimension <- as.factor( all_data$dimension)
 all_data$population_size <- as.factor( all_data$population_size)
 all_data$max_gens <- as.factor(all_data$max_gens)
 
+
+ggplot(all_data, aes(x = seconds, y = PKG, color = interaction(dimension, population_size))) +
+  geom_point(alpha = 0.3) + 
+  labs(title = "Marginal time effect in PKG over raw data",
+       x = "Time",
+       y = "Energy consumption (PKG)",
+       color = "Dimension x Population size") +
+  theme_minimal()
+
 multi_run_time_model <- glm( seconds ~ dimension*population_size*max_gens, data = all_data)
 all_data$residual_seconds <- residuals( multi_run_time_model)
 
@@ -221,7 +230,7 @@ ggplot(pred_tiempo, aes(x = residual_seconds, y = estimate)) +
   # Línea predictiva del modelo
   geom_line(color = "darkblue", linewidth = 1.2) + 
   
-  labs(title = "Marginal time effect in PKG over raw data",
+  labs(title = "Raw PKG vs time",
        x = "Time (residual seconds)",
        y = "Energy consumption (PKG)",
        color = "Dimension x Population size") +
