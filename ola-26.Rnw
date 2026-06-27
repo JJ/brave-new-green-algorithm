@@ -185,7 +185,7 @@ kable(initial_baseline_table, "latex",
 
 Results for measurement of baseline runs (which generate the initial population) are shown in Table \ref{tab:ola.base.frequency}. Differences are significant for most rows; despite measuring the same system and parameters, using a lower sampling rate is able to appreciate differences in energy consumption that go in different directions. But baseline measurements are mainly used to differentiate the actual workload energy consumption.
 
-<<ola.deltas, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for the initial configuration vs. measurements with sampling period = 100 ms", fig.height=3>>=
+<<ola.deltas, echo=FALSE, warning=F, message=F,fig.cap="Workload-exclusive (delta) energy spent vs. delta  for the initial configuration vs. measurements with sampling period = 100 ms", fig.height=3>>=
 compute_deltas <- function( baseline_summary, workload ) {
   workload$delta_PKG <-0
   workload$delta_seconds <- 0
@@ -286,7 +286,7 @@ kable(initial_vs_v2_baseline_table, "latex",
 
 What we see in Table \ref{tab:ola.micro}, computed for the baseline runs, can lead to relatively important improvements for some combination of dimensions and population sizes, but also to some regressions. But this is just the baseline; we need to compute the actual workload energy consumption.
 
-<<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators",fig.height=4, fig.pos="h!tb">>=
+<<ola.micro.plot, echo=FALSE, warning=F, message=F,fig.cap="Boxplot comparing different implementation of genetic operators for different problem (Dim) and population sizes.",fig.height=4, fig.pos="h!tb">>=
 workload_ola_v2_data <- read.csv("data/ola-1.11.7-v2-ola-v2-15-Dec-13-18-43.csv")
 
 baseline_ola_v2_data %>% group_by(population_size, dimension) %>% summarise(
@@ -323,7 +323,7 @@ ggplot(initial_vs_v2_workload, aes(x=work, y=delta_PKG, color=as.factor(work))) 
 
 We see in Figure \ref{fig:ola.micro.plot} that the scenario is mixed: microoptimization can result in some improvements, but also in regressions. The fact that these go in opposite directions than the baseline makes us think that there could be some hysteresis effects at work. here
 
-<<ola.micro.hysteresis, echo=FALSE, warning=F, message=F,fig.cap="PKG energy data vs. accumulated time for the two baseline runs we are examining", fig.pos="h!tb", fig.height=3>>=
+<<ola.micro.hysteresis, echo=FALSE, warning=F, message=F,fig.cap="PKG energy data vs. accumulated time for the two baseline runs we are examining. Baseline runs should have a very small variation; this plot of an example shows that is not the case.", fig.pos="h!tb", fig.height=3>>=
 baseline_data_ola_100s$cumulative_time <- cumsum(baseline_data_ola_100s$seconds)
 baseline_data_ola_100s$work <- "Baseline v1"
 workload_data_ola$cumulative_time <- cumsum(workload_data_ola$seconds)
@@ -344,7 +344,7 @@ ggplot( rbind(baseline_data_ola_100s, baseline_ola_v2_data), aes(x=cumulative_ti
 
 What we see in Figure \ref{fig:ola.micro.hysteresis} is a a plot of the PKG energy measured before and after the optimization but plotted vs. accumulated time. The time-related effects can clearly be observed, as well as the fact that the optimized version optimizes time rather than energy. But you can also see that the energy spent by the initial experiment is divided into two areas; after 2000 seconds there seems to be a new regime, caused by something external to the experiment itself. This is inherent to this kind of measurements; since experiments are not made in a machine devoted exclusively to them, we cannot measure energy consumption in this kind of machine, either. However, this causes a real issue in the reproducibility of results, but overall, when we compute the real energy consumption of the workload. This "second area" would correspond to experiments with chromosome dimension 5, which in part explains results in Table \ref{tab:ola.micro} and Figure \ref{fig:ola.micro.plot}.
 
-<<ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent vs. time for different implementations of the genetic operators after mitigating hysteresis effects",fig.height=3, fig.pos="h!tb">>=
+<<ola.mixed, echo=FALSE, warning=F, message=F,fig.cap="Energy spent and delta energy (workload - baseline) in an interleaved workload (ola-mixed) and baseline (base-ola-mixed) chart in a specific run.",fig.height=3, fig.pos="h!tb">>=
 ola_mixed_v11_7 <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
 ola_mixed_v11_7$cumulative_time <- cumsum(ola_mixed_v11_7$seconds)
 
@@ -510,7 +510,7 @@ This paper, whose development can be also checked at the GitHub repository \url{
 
 All these population-based optimization algorithms need also to include one-shot computations such as the generation of the initial population in the baseline runs; that way, the actual energy consumed from running the different population operators such as mutation and crossover will be pinpointed with higher precision; besides, energy consumption and how it varies with the {\em chromosome} and population size almost never has a straightforward relationship; this is especially true in languages, such as Julia, which have a garbage-collection mechanism that might be triggered at specific memory occupation levels, and thus might not change linearly with them.
 
-With these new methodologies in hand, we have been able to reach conclusions on two optimizations performed on our implementation of the BNA: one at the implementation level, making population and individual generation more efficient, which has resulted in a small improvement of around 10\% in energy consumption in some cases, and another at the language version level, bumping up the patchlevel from 1.11.7 to 1.11.8, which has resulted in a small but significant improvement of around the same size. Incidentally, we have also been examining the influence of the maximum number of generations without change on energy consumption; looking at Figure \ref{fig:ola.v11_8} we can see that, even with the updated version, energy consumption increases with the number of generations with no improvement before stopping the algorithm. We would have to check this against the actual improvements in fitness achieved, but that is not the main point of the paper; from our point of view, what is interesting is that, as is shown in Figure \ref{fig:ola.no0}, with the new methodology we can achieve levels of precision that allow us to examine relatively small improvements (or regressions) in energy consumption, with added reproducibility in any other computing platform.
+With these new methodologies we have introduced, we have been able to reach conclusions on two optimizations performed on our implementation of the BNA: one at the implementation level, making population and individual generation more efficient, which has resulted in a small improvement of around 10\% in energy consumption in some cases, and another at the language version level, bumping up the patchlevel from 1.11.7 to 1.11.8, which has resulted in a small but significant improvement of around the same size. Incidentally, we have also been examining the influence of the maximum number of generations without change on energy consumption; looking at Figure \ref{fig:ola.v11_8} we can see that, even with the updated version, energy consumption increases with the number of generations with no improvement before stopping the algorithm. We would have to check this against the actual improvements in fitness achieved, but that is not the main point of the paper; from our point of view, what is interesting is that, as is shown in Figure \ref{fig:ola.no0}, with the new methodology we can achieve levels of precision that allow us to examine relatively small improvements (or regressions) in energy consumption, with added reproducibility in any other computing platform.
 
 \section*{Acknowledgements}
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
