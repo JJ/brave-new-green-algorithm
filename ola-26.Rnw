@@ -366,7 +366,7 @@ ggplot( ola_mixed_v11_7, aes(x=cumulative_time, y=PKG, color=as.factor(work)), g
 There are many possible ways of mitigating the effect of external factors on measurements.
 In Figure \ref{fig:ola.mixed} we have mixed baseline and workload runs making the workload run right after the baseline run; instead of averaging baseline runs and then subtracting it from the individual workload runs, we subtract the baseline run that has been made before the workload run from it; these are represented as blue bars in the figure. As it can be seen, even with some variability (and some negative values with which we will deal later) there seems to be a better fit, since, as the smoothed line shows, when the underlying system changes its energy profile it does so for both, mitigating to a certain extent the system overhead effect.
 
-<<ola.mixed.comparison, echo=FALSE, warning=F, message=F,fig.cap="Workload energy spent compared with different ways of measuring the workload effect; we also compare two values of the maximum number of generations run without improving fitness.",fig.height=3, fig.pos="h!tb", fig.height=4>>=
+<<ola.mixed.comparison, echo=FALSE, warning=F, message=F,fig.cap="Comparing separated  vs. interleaved  layout of baseline and workload runs; workload-exclusive energy (Delta PKG) is compared for different problem sizes, as well as population (Pop. size) and maximum number of generations without improving fitness.",fig.height=3, fig.pos="h!tb", fig.height=4>>=
 ola_mixed_v11_7_summary_data <- ola_mixed_v11_7 %>%
   group_by(work,population_size, dimension, max_gens) %>%
   summarise(
@@ -412,12 +412,17 @@ mixed_vs_separated_workload$population_dimension <- paste0(
   ", Dim.: ", mixed_vs_separated_workload$dimension
 )
 
+mixed_vs_separated_workload %>%
+  mutate(work = factor(work,
+                       levels = c("ola-mixed", "Workload v2"), # Valores originales en tu dataset
+                       labels = c("Interleaved", "Separate"))) -> mixed_vs_separated_workload
+
 ggplot(mixed_vs_separated_workload, aes(x=population_dimension, y=delta_PKG, color=as.factor(work))) +
   geom_violin(position="dodge") +
   theme_minimal() +
   xlab("Version") +
   ylab("Delta Package energy (Joules)") +
-  labs(color="Implementation version") + # x ticks rotated
+  labs(color="Implementation version",labels=c("Interleaved","Separate")) + # x ticks rotated
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap( ~ max_gens )
 
