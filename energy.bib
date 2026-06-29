@@ -1,3 +1,60 @@
+@article{https://doi.org/10.1155/2019/5284645,
+author = {Ardito, Luca and Coppola, Riccardo and Morisio, Maurizio and Torchiano, Marco},
+title = {Methodological Guidelines for Measuring Energy Consumption of Software Applications},
+journal = {Scientific Programming},
+volume = {2019},
+number = {1},
+pages = {5284645},
+doi = {https://doi.org/10.1155/2019/5284645},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1155/2019/5284645},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1155/2019/5284645},
+abstract = {Energy consumption information for devices, as available in the literature, is typically obtained with ad hoc approaches, thus making replication and consumption data comparison difficult. We propose a process for measuring the energy consumption of a software application. The process contains four phases, each providing a structured deliverable that reports the information required to replicate the measurement. The process also guides the researcher on a threat to validity analysis to be included in each deliverable. This analysis ensures better reliability, trust, and confidence to reuse the collected consumption data. Such a process produces a structured consumption data for any kind of electronic device (IoT devices, mobile phones, personal computers, servers, etc.), which can be published and shared with other researchers fostering comparison or further investigations. A real case example demonstrates how to apply the process and how to create the required deliverables.},
+year = {2019}
+}
+
+@misc{castor2024estimatingenergyfootprintsoftware,
+      title={Estimating the Energy Footprint of Software Systems: a Primer}, 
+      author={Fernando Castor},
+      year={2024},
+      eprint={2407.11611},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2407.11611}, 
+}
+
+@inproceedings{10.1145/3661167.3661203,
+author = {Nahrstedt, Felix and Karmouche, Mehdi and Bargie\l{}, Karolina and Banijamali, Pouyeh and Nalini Pradeep Kumar, Apoorva and Malavolta, Ivano},
+title = {An Empirical Study on the Energy Usage and Performance of Pandas and Polars Data Analysis Python Libraries},
+year = {2024},
+isbn = {9798400717017},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3661167.3661203},
+doi = {10.1145/3661167.3661203},
+abstract = {Context. Python’s growing popularity in data analysis and the contemporary emphasis on energy-efficient software tools necessitate an investigation into the energy implications of data operations, particularly in resource-intensive domains like data science. Goal. We aim to assess the energy usage of Pandas, a widely-used Python data manipulation library, and Polars, a Rust-based library known for its performance. The study aims to provide insights for data scientists by identifying scenarios where one library outperforms the other in terms of energy usage, while exploring the possible correlations between energy and performance metrics. Method. We performed four separate experiment blocks including 8 Data Analysis Tasks (DATs) from an official TPCH Benchmark done by Polars and 6 Synthetic DATs. Both DATs groups are run with small and large dataframes and for both libraries. Results. Polars is more energy-efficient than Pandas when manipulating large dataframes. For small dataframes, the TPCH Benchmarking DATs does not show significant differences, while for the Synthetic DATs, Polars performs significantly better. We identified strong positive correlations between energy usage and execution time, as well as memory usage for Pandas, while Polars did not show significant memory usage correlations for the majority of runs. There is a significantly negative correlation between energy usage and CPU usage for Pandas. Conclusions. We recommend using Polars for energy-efficient and fast data analysis, emphasizing the importance of CPU core utilization in library selection.},
+booktitle = {Proceedings of the 28th International Conference on Evaluation and Assessment in Software Engineering},
+pages = {58–68},
+numpages = {11},
+location = {Salerno, Italy},
+series = {EASE '24}
+}
+
+@inproceedings{10.1109/ICSE55347.2025.00118,
+author = {Roque, Enrique Barba and Cruz, Luis and Durieux, Thomas},
+title = {Unveiling the Energy Vampires: A Methodology for Debugging Software Energy Consumption},
+year = {2025},
+isbn = {9798331505691},
+publisher = {IEEE Press},
+url = {https://doi.org/10.1109/ICSE55347.2025.00118},
+doi = {10.1109/ICSE55347.2025.00118},
+abstract = {Energy consumption in software systems is becoming increasingly important, especially in large-scale deployments. However, debugging energy-related issues remains challenging due to the lack of specialized tools. This paper presents an energy debugging methodology for identifying and isolating energy consumption hotspots in software systems. We demonstrate the methodology's effectiveness through a case study of Redis, a popular in-memory database. Our analysis reveals significant energy consumption differences between Alpine and Ubuntu distributions, with Alpine consuming up to 20.2\% more power in certain operations. We trace this difference to the implementation of the memcpy function in different C standard libraries (musl vs. glibc). By isolating and benchmarking memcpy, we confirm it as the primary cause of the energy discrepancy. Our findings highlight the importance of considering energy efficiency in software dependencies and demonstrate the capability to assist developers in identifying and addressing energy-related issues. This work contributes to the growing field of sustainable software engineering by providing a systematic approach to energy debugging and using it to unveil unexpected energy behaviors in Alpine.},
+booktitle = {Proceedings of the IEEE/ACM 47th International Conference on Software Engineering},
+pages = {2406–2418},
+numpages = {13},
+location = {Ottawa, Ontario, Canada},
+series = {ICSE '25}
+}
+
 @Article{ecp-article,
   title = {{ecp}: An {R} Package for Nonparametric Multiple Change Point Analysis of Multivariate Data},
   author = {{Nicholas A. James} and {David S. Matteson}},
