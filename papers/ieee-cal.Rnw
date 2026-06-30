@@ -72,8 +72,8 @@ The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We use {\s
 % I do not know if other hardware and BIOS settings should be mentioned.
 % For instance, a Noctua CPU Fan, or BIOS settings for the Mother Board (Performance vs Low Noise). But again this is the type of variables that the method is trying to bypass. - Mario
 % I don't think so... Maybe for a more extensive paper - JJ
-All source code and experimental data are hosted in a public GitHub repository: \url{https://github.com/hidd/en}
-%\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
+All source code and experimental data are hosted in a public GitHub repository:
+\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
 <<icsme.base, echo=FALSE, fig.cap="Baseline energy consumption over running time, including average temperature", fig.pos="h!tb", fig.height=4>>=
 load("../data/joint_base_taskset_with_die2.rds")
