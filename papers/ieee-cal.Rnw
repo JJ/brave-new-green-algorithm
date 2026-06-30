@@ -20,23 +20,14 @@
 
 \begin{document}
 
-\title{An efficient protocol for energy consumption measurement and minimization of algorithm implementations in multi-die systems}
+\title{The Hot-First Protocol: Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
 
 \author{
-\IEEEauthorblockN{A. N. Onymous-Authors}
-\IEEEauthorblockA{Affiliation\\
-Email:
-Hidden place and ORCID}
-
-% \IEEEauthorblockN{JJ Merelo}
-% \IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
-% University of Granada\\
-% Email: jmerelo@ugr.es\\
-% CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
-% \and
-% \IEEEauthorblockN{Cecilia Merelo-Molina}
-% \IEEEauthorblockA{Zenzorrito, Granada, Spain\\
-% ORCID: 0000-0002-5902-0159}
+\IEEEauthorblockN{JJ Merelo}
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
+University of Granada\\
+Email: jmerelo@ugr.es\\
+CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
 }
 %
 \maketitle
@@ -218,12 +209,20 @@ combined_workload_time_model <- glm( delta_seconds ~  work*initial_temp_1*initia
 anova_combined_workload_time_model <- anova(combined_workload_time_model)
 icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
 
-icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work, data=icsme_combined)
-icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work, data=icsme_combined)
+icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work*dimension*population_size, data=icsme_combined)
+icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work*dimension*population_size, data=icsme_combined)
 
-icsme_combined_workload_model <- glm( delta_PKG ~  work*initial_temp_1*initial_temp_2+dimension*population_size*evaluations+residual_delta_seconds+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
+icsme_combined$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
+icsme_combined$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
+
+icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+work*dimension*population_size*evaluations+residual_delta_seconds+I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2) , data= icsme_combined)
 
 anova_combined_workload_model <- anova( icsme_combined_workload_model )
+
+# Testing the new one
+icsme_combined$model_resid <- residuals(icsme_combined_workload_model)
+library(car)
+leveneTest(model_resid ~ work, data = icsme_combined)
 
 ggplot(icsme_combined, aes(x = initial_temp_1, fill = work)) +
   geom_density(alpha = 0.6) +
@@ -334,9 +333,8 @@ From the fact that in most models running time is an important, or determinant, 
 We will not claim that this conclusion is generalizable to all possible processors of all possible brands and all possible operating systems. However, it has been proved that a protocol that tries to make workload and baseline runs in operating conditions that are as close as possible, as well as a sound, repeated measurement, followed by modeling the dependence of energy on operating conditions, is a good way to approach the issue of greener algorithm implementations. A methodology should first look at mitigating the impact of operating conditions and then understand the impact of different algorithm configurations on energy consumption in such a way that the optimal one, under probable operating conditions, can be chosen.
 
 \section*{Acknowledgements}
-% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
-Supported by a project\\
-taking this much space
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA.
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{../ours,../energy,../ga-energy}
