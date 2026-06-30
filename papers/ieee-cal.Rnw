@@ -28,6 +28,12 @@
 University of Granada\\
 Email: jmerelo@ugr.es\\
 CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+\and
+\IEEEauthorblockN{Mario García-Valdez}
+\IEEEauthorblockA{Instituto Tecnológico Nacional de México\\
+Tijuana, México\\
+Email: mario@tectijuana.edu.mx\\
+ORCID: 0000-0002-2593-1114}
 }
 %
 \maketitle
@@ -36,12 +42,8 @@ CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
 Energy efficiency is increasingly regarded as a requirement in the implementation of algorithms. Understanding better how energy is spent in a system is a prerequisite from which methodologies that effectively compare different configurations and provide actionable insights to software developers can be built. In this paper, we will investigate how the system operating environment, specifically temperature and CPU core choice, along with system measures for keeping temperature in check, influence energy measurements in a population-based optimization algorithm, establish a model of this influence and, from this understanding, create a system that makes the influence of algorithm parameters on energy spent clearer, while, if possible, minimizing energy spent in the experiment runs. We find that, in a two-die system, accounting for silicon die temperatures during launch processes enables us to achieve this goal.
 \end{abstract}
 
-% Maybe use 'silicon die' the first time? - Mario
-% What do yo mean? -JJ
-% The first time I read it I thought of die (dado) or die (muere), then after reading some more I remembered dies as silicon dies. Just to remember readers like me. - Mario
-
 \begin{IEEEkeywords}
-Green computing, Energy profiling
+Green computing, energy profiling, measuring methodologies
 \end{IEEEkeywords}
 
 \section{Introduction and state of the art}
