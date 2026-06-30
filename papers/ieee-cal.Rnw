@@ -23,13 +23,13 @@
 \title{The Hot-First Protocol: Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
 
 \author{
-\IEEEauthorblockN{JJ Merelo}
+\IEEEauthorblockN{JJ Merelo}\\
 \IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
 University of Granada\\
 Email: jmerelo@ugr.es\\
-CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741}
+CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741\\}
 \and
-\IEEEauthorblockN{Mario García-Valdez}
+\IEEEauthorblockN{Mario García-Valdez}\\
 \IEEEauthorblockA{Instituto Tecnológico Nacional de México\\
 Tijuana, México\\
 Email: mario@tectijuana.edu.mx\\
@@ -82,13 +82,13 @@ load("../data/europar_taskset_die2_processed.rds")
 initial_workload <- rbind( europar_die1_workload, europar_taskset_die2_processed )
 @
 
-As a baseline, we have run a series of experiments, in three different batches: one using a {\em natural} assignment of process to dies, the other two restricting the process either to die 1 (which would have the $P$-cores) or 2 (with the $E$ cores). For the initial analysis we will consider the $B$ and $W$ runs different workloads: the energy consumption of the $B$ runs should have a minimal dependence on algorithm parameters or problem size. This is intended as an initial exploration of the statistical models with a workload with a very small dependence on the algorithm parameters. We chart energy consumed vs. time in Figure \ref{fig:icsme.base}.
+As a baseline, we have run a series of experiments, in three different batches: one using a {\em natural} assignment of process to dies, the other two restricting the process either to die 1 (which would have the $P$-cores) or 2 (with the $E$ cores). For the initial analysis we will consider the $B$ and $W$ runs different workloads: the energy consumption of the $B$ runs should have a minimal dependence on algorithm parameters or problem size. This is intended as an initial exploration of the statistical models with a workload with a very small dependence on the algorithm parameters.
 
 Our stated objective is, as indicated, to find a way to constrain the dependence of our energy measurements on the operating conditions so that we can measure, with a higher precision, the consumption of two different configurations and present it in an actionable way. And this first model allows us to understand better how the operational context works; there are two negative terms on the square of temperatures: the system will be actively trying to turn down the amount of energy spent when the temperature is going up, and it will do so depending on the die: if the temperature of the second die goes up, it will more actively act to reduce it. This can be seen also on the positive dependence on the linear temperature term: the coefficient is bigger for $T_2$, the temperature of the second die: if it is higher, it is because more processes are running on it, and it will spend more energy because it takes longer. Time is always important: every second more will consume around 200 Joules (without taking into account other temperature terms, of course). We can already affirm that if the system temperature goes up, over all if it does in the second die, the system will act so that it eventually consumes less; however, the analysis of variance implies that in this admittedly very small workload algorithm parameters are two orders of magnitude less important than the operating context.
 
 Although this model of the baseline runs might give us an initial idea of how temperature and power/frequency shape energy consumption, our interest is really in examining how much the workload actually spends.
 
-We process experimental workload data by subtracting $(B_n + B_{n+1})/2$ from every $W_n$ run. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. The result is plotted in Figure \ref{fig:icsme.baseline.workload}, again using color to represent average initial temperature for the two dies. We perform again the model in two phases: first, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
+We process experimental workload data by subtracting $(B_n + B_{n+1})/2$ from every $W_n$ run. This would be the actual energy (Delta or $\Delta$ E) spent by the workload, that is, our algorithm, eliminating (to a certain extent) system and framework overhead. We do the same for the time spent by these runs. First, we model $\Delta R$ as a function of the other parameters, extract the residual $\Delta R$ unexplained by the model, and use it to model $\Delta E$. This model shows significant coefficients for the operating conditions, as above, and is also significantly dependent on problem size $D$. However, it is not significant on the number of evaluations, thus being unable to distinguish two variations of the algorithm that differ only in that area. What we will need is a way of giving some {\em breathing room} to algorithm parameters by creating an experimental protocol that is able to reduce dependence on operating conditions.
 
 <<icsme.hot, echo=FALSE, message=FALSE, warning=F, fig.cap="Workload delta E vs. delta R, colorized by average initial temperature for the {\\protect\\em hot-first strategy}.", fig.height=3 >>=
 load("../data/icsm_hot_first.rds")
@@ -97,7 +97,6 @@ library(dplyr)
 icsme_hot_workload <- process_deltas(icsm_hot_first)
 icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
 icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
-
 
 @
 %
