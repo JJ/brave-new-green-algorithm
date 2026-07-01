@@ -105,9 +105,152 @@ icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work*dimension*population_s
 icsme_combined$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
 icsme_combined$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
 
-icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+work*dimension*population_size*evaluations+residual_delta_seconds+I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2) , data= icsme_combined)
+icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+work*dimension*population_size+evaluations+residual_delta_seconds+I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2)+I(residual_delta_seconds^2) , data= icsme_combined)
 
 anova_combined_workload_model <- anova( icsme_combined_workload_model )
+
+###
+###
+# ============================================================
+# Visualizing BOTH sources of the hot-first energy reduction
+# in a single ggplot2 figure (residual_delta_seconds removed)
+# ------------------------------------------------------------
+# Source 1 ("coefficient effect"): holding every other variable
+#   fixed, hot-first sits on a lower delta_PKG curve than baseline.
+#   -> shown as two predicted-response lines (+ 95% CI ribbons),
+#      one per protocol, swept across each covariate's range.
+#
+# Source 2 ("distributional effect"): the values that
+#   residual_initial_temp_1 / _2 actually take are shifted lower
+#   under hot-first.
+#   -> shown as a shaded density sitting under each curve.
+#
+# The two covariates are shown as facets of ONE ggplot object.
+# ============================================================
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# --- 0. Your fitted model ---------------------------------------
+# Keeps residual_delta_seconds IN the model (it belongs there);
+# we just won't sweep/facet on it below — it stays held constant
+# at its reference value so predict() has what it needs.
+mod <- icsme_combined_workload_model
+
+# --- 1. Reference values for everything we are NOT sweeping -----
+# Numeric -> median; factors -> first observed level (check this
+# matches the level R actually dropped when fitting `mod`).
+# NOTE: residual_delta_seconds IS included here (held at its
+# median) even though it won't appear as its own facet.
+work_levels <- levels(factor(icsme_combined$work))
+
+ref_grid <- icsme_combined %>%
+  summarise(
+    dimension               = levels(factor(dimension))[1],
+    population_size         = levels(factor(population_size))[1],
+    evaluations              = median(evaluations, na.rm = TRUE),
+    residual_delta_seconds   = median(residual_delta_seconds, na.rm = TRUE),
+    residual_initial_temp_1  = median(residual_initial_temp_1, na.rm = TRUE),
+    residual_initial_temp_2  = median(residual_initial_temp_2, na.rm = TRUE)
+  )
+
+# --- 2. Prediction grid: sweep each covariate of interest across
+#        its observed range, for BOTH protocols, rest held fixed ---
+build_grid <- function(var, n = 100) {
+  rng  <- range(icsme_combined[[var]], na.rm = TRUE)
+  vals <- seq(rng[1], rng[2], length.out = n)
+  grid <- ref_grid[rep(1, n * length(work_levels)), ]
+  grid[[var]]   <- rep(vals, times = length(work_levels))
+  grid$work     <- rep(work_levels, each = n)
+  grid$variable <- var
+  grid$x        <- grid[[var]]
+  grid
+}
+
+pred_grid <- bind_rows(
+  build_grid("residual_initial_temp_1"),
+  build_grid("residual_initial_temp_2")
+)
+
+# --- 3. Model-based predictions = the "coefficient effect" -------
+pr <- predict(mod, newdata = pred_grid, se.fit = TRUE)
+pred_grid$fit <- pr$fit
+pred_grid$lwr <- pr$fit - 1.96 * pr$se.fit
+pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
+
+# --- 4. Observed distributions per protocol = "distributional effect"
+raw_long <- icsme_combined %>%
+  select(work, residual_initial_temp_1, residual_initial_temp_2) %>%
+  pivot_longer(-work, names_to = "variable", values_to = "x")
+
+dens_df <- raw_long %>%
+  group_by(variable, work) %>%
+  group_modify(~{
+    d <- density(.x$x, na.rm = TRUE, n = 512)
+    tibble(x = d$x, d = d$y)
+  }) %>%
+  ungroup()
+
+# Rescale each density into the bottom ~20% of its facet's y-range,
+# so it reads as a "shadow" under the curve rather than a separate axis
+y_range <- pred_grid %>%
+  group_by(variable) %>%
+  summarise(y_min = min(lwr), y_max = max(upr), .groups = "drop")
+
+dens_df <- dens_df %>%
+  left_join(y_range, by = "variable") %>%
+  group_by(variable) %>%
+  mutate(d_scaled = y_min + (d / max(d)) * (y_max - y_min) * 0.2) %>%
+  ungroup()
+
+# --- 5. Labels & colors ------------------------------------------
+nice_labels <- c(
+  residual_initial_temp_1 = "Initial temp — component 1",
+  residual_initial_temp_2 = "Initial temp — component 2"
+)
+
+pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches your labels
+
+# --- 6. The combined plot ------------------------------------------
+p <- ggplot() +
+  geom_area(data = dens_df,
+            aes(x = x, y = d_scaled, fill = work),
+            alpha = 0.25, position = "identity") +
+  geom_ribbon(data = pred_grid,
+              aes(x = x, ymin = lwr, ymax = upr, fill = work),
+              alpha = 0.15) +
+  geom_line(data = pred_grid,
+            aes(x = x, y = fit, colour = work),
+            linewidth = 1) +
+  facet_wrap(~variable, scales = "free",
+             labeller = as_labeller(nice_labels)) +
+  scale_colour_manual(values = pal, name = "Protocol") +
+  scale_fill_manual(values = pal, name = "Protocol") +
+  labs(
+    x = NULL,
+    y = expression(paste("Predicted ", Delta, "PKG (energy)")),
+    title = "Two sources of the hot-first energy reduction",
+    subtitle = paste(
+      "Lines: model-predicted energy at a given covariate value (coefficient effect).",
+      "Shaded area under each line: where that protocol's actual values sit (distributional effect).",
+      sep = "\n"
+    )
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top", plot.subtitle = element_text(size = 10))
+
+p
+
+# ggsave("energy_reduction_plot.png", p, width = 9, height = 4.2, dpi = 300)
+
+# ------------------------------------------------------------
+# OPTIONAL simpler alternative: swap the density-area layer for
+# a plain rug if you don't want the extra visual weight:
+#
+# + geom_rug(data = raw_long, aes(x = x, colour = work),
+#            sides = "b", alpha = .4, length = unit(0.03, "npc"))
+# ------------------------------------------------------------
 
 # Testing the new one
 icsme_combined$model_resid <- residuals(icsme_combined_workload_model)
