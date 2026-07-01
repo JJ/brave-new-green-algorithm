@@ -236,7 +236,7 @@ p <- ggplot() +
   ) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.subtitle = element_text(size = 10))
-
+p
 @
 
 In order to isolate the operating context from the algorithm configuration, we will perform the model in 4 stages:\begin{itemize}
@@ -351,6 +351,94 @@ library(emmeans)
 # significantly reduce energy WITHIN each dimension x population_size
 # combination?
 emmeans(icsme_combined_workload_model, pairwise ~ work | dimension * population_size)$contrasts
+
+## Testing what happens with higher dimesions
+
+# ============================================================
+# Is the steeper hot-first slope (energy per second of runtime)
+# real, or an artifact of a few long-runtime, high-leverage points?
+# ============================================================
+
+library(dplyr)
+
+cell_data <- icsme_combined %>%
+  filter(dimension == "10", population_size == "400")
+
+# --- 5. Robust regression as a cross-check (down-weights outliers
+#        automatically instead of excluding them by hand) -----------
+library(MASS)
+rlm_fit <- rlm(delta_PKG ~ residual_delta_seconds * work, data = cell_data)
+summary(rlm_fit)
+
+rlm_fit_full <- rlm(delta_PKG ~ residual_delta_seconds * work +
+                       residual_initial_temp_1 + residual_initial_temp_2,
+                     data = cell_data)
+summary(rlm_fit_full)
+
+# are temp1/temp2 themselves different between protocols in this cell?
+# (checks whether "work" above is really picking up a temp difference)
+cell_data %>%
+  group_by(work) %>%
+  summarise(
+    n = n(),
+    mean_temp1 = mean(residual_initial_temp_1, na.rm = TRUE),
+    mean_temp2 = mean(residual_initial_temp_2, na.rm = TRUE)
+  )
+
+t.test(residual_initial_temp_1 ~ work, data = cell_data)
+t.test(residual_initial_temp_2 ~ work, data = cell_data)
+
+## Last check (probably delete)
+library(dplyr)
+library(ggplot2)
+library(diptest)
+
+# --- 1. Is the "shelf" concentrated in the heaviest workload cell? --
+# If dim10 x pop400 runs sit disproportionately in the flat elevated
+# region (rather than the sharp near-zero spike), that directly
+# implicates workload-driven thermal carryover.
+icsme_combined %>%
+  mutate(heaviest = dimension == "10" & population_size == "400") %>%
+  ggplot(aes(x = residual_initial_temp_1, fill = heaviest)) +
+  geom_density(alpha = 0.45, position = "identity") +
+  labs(x = "residual initial temp - component 1", fill = "dim10 x pop400") +
+  theme_minimal()
+
+icsme_combined %>%
+  mutate(heaviest = dimension == "10" & population_size == "400") %>%
+  ggplot(aes(x = residual_initial_temp_2, fill = heaviest)) +
+  geom_density(alpha = 0.45, position = "identity") +
+  labs(x = "residual initial temp - component 2", fill = "dim10 x pop400") +
+  theme_minimal()
+
+# --- 2. Formal test: is this actually bimodal, or does it just look
+#        that way? Hartigan's dip test against the null of unimodality.
+dip.test(icsme_combined$residual_initial_temp_1)
+dip.test(icsme_combined$residual_initial_temp_2)
+# small p-value (< .05) = reject unimodality, i.e. there really is a
+# mixture of two (or more) regimes, not one noisy distribution.
+
+# --- 3. If you have ANY of: run order / timestamp / batch id /
+#        machine or node id / die id -- this is where to look next.
+#        Uncomment and adapt the column name once you confirm it exists.
+
+# ggplot(icsme_combined, aes(x = run_order, y = residual_initial_temp_1,
+#                            colour = dimension == "10" & population_size == "400")) +
+#   geom_point(alpha = 0.3) +
+#   labs(colour = "dim10 x pop400") +
+#   theme_minimal()
+
+# icsme_combined %>% count(machine_id) # or node_id / host / cpu_id
+# ggplot(icsme_combined, aes(x = residual_initial_temp_1, fill = machine_id)) +
+#   geom_density(alpha = 0.4)
+
+# lag-1 check: does a run's starting temp correlate with the
+# PRECEDING run's duration (evidence of incomplete cooldown)?
+# icsme_combined %>%
+#   arrange(run_order) %>%
+#   mutate(prev_duration = lag(residual_delta_seconds)) %>%
+#   summarise(cor_with_prev_duration =
+#               cor(residual_initial_temp_1, prev_duration, use = "complete.obs"))
 
 @
 
