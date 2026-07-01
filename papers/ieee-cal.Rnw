@@ -92,9 +92,9 @@ icsme_combined <- rbind(icsme_hot_workload,initial_workload)
 
 What we propose and are going to evaluate in this paper is to use a {\em hot-first} scheduling strategy, instead of the default OS strategy for assigning processes to cores: We will set up the running script so that the next process is always run in the die that has the {\em highest} temperature using the {\sf taskset} command. Temperature is one of the factors that influence energy consumption: higher temperature will make the system consume more energy due to thermal leakage. However, by hitting the hotter processor die (hence the {\em hot-first} strategy) we would  help the dies cool themselves through the differences in temperature; in general, in heterogeneous architectures such as the Ryzen the hotter die will be the one with the highest performance, making it a {\em run-to-idle} strategy that will spend less energy simply by being less time in the processor.
 
-We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
+We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core the program is running be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
 
-<<icsme.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing temperature of the second die for the baseline and hot-first strategy">>=
+<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. residualized temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).">>=
 
 combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
 icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
@@ -106,8 +106,6 @@ icsme_combined$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
 icsme_combined$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
 
 icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+work*dimension*population_size+evaluations+residual_delta_seconds+I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2)+I(residual_delta_seconds^2) , data= icsme_combined)
-
-anova_combined_workload_model <- anova( icsme_combined_workload_model )
 
 ###
 ###
@@ -232,15 +230,131 @@ p <- ggplot() +
     y = expression(paste("Predicted ", Delta, "PKG (energy)")),
     title = "Two sources of the hot-first energy reduction",
     subtitle = paste(
-      "Lines: model-predicted energy at a given covariate value (coefficient effect).",
-      "Shaded area under each line: where that protocol's actual values sit (distributional effect).",
+
       sep = "\n"
     )
   ) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.subtitle = element_text(size = 10))
 
-p
+@
+
+In order to isolate the operating context from the algorithm configuration, we will perform the model in 4 stages:\begin{itemize}
+\item A first model of time as a function of the temperature of the two dies, and the interaction among the intervention (baseline or hot-first) and the algorithm parameters (dimension and population size). Residuals for this time component are extracted to be used in subsequent models.
+\item Models of the initial temperatures of dies 1 and 2 as a function of the interaction among the intervention and algorithm parameters. Residuals are extracted for both models
+\item A final model that includes the operating context variables, which have been residualized, lineal and squared, as well as the intervention factor interacting with algorithm variables.
+\end{itemize}
+
+We represent in Figure \ref{fig:ieecal.hot.combined} the results for two of the context variables, representing energy consumed as a function of the (residuals of the ) initial temperatures for the two dies, as well as the distribution of initial temperatures in both datasets. Using the hot-first protocol might lower energy consumption in two different ways: all other parameters being equal, negative coefficients will result in lower energy consumption; this is represented in the lines in the graph, ad we see how the (fitted) line is effectively lower in both cases; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context, which has been residualized. If, using the protocol, programs take less time or the overall temperature at which the program is running is lower, that will result in additional gain. An additional, and probably less important, factor is that there are more runs for the hot-first blocks where the initial temperature is beyond the point where the negative squared temperature term starts to act. All in all, this proves our claim that scheduling the process in an energy-measurement experiment to run in the hottest die in a two-die processor like the AMD Ryzen will result in lower consumption that using regular, OS scheduling.
+
+<<ieeecal.other.2, echo=F, messages=F>>=
+# ============================================================
+# Coefficient plot: category + significance + highlighted
+# intervention effect, all in one ggplot2 figure
+# ============================================================
+
+library(dplyr)
+library(stringr)
+library(broom)
+library(ggplot2)
+
+mod <- icsme_combined_workload_model
+
+# --- 1. Tidy the model, drop the intercept ----------------------
+coef_df <- broom::tidy(mod) %>%
+  filter(term != "(Intercept)")
+
+# --- 2. Categorize each term ------------------------------------
+# work*        -> Intervention (protocol)
+# residual_*   -> Operating context
+# everything else -> Algorithm parameters
+coef_df <- coef_df %>%
+  mutate(
+    category = case_when(
+      str_detect(term, "^work")     ~ "Intervention (protocol)",
+      str_detect(term, "residual_") ~ "Operating context",
+      TRUE                          ~ "Algorithm parameters"
+    ),
+    category = factor(category, levels = c(
+      "Intervention (protocol)", "Operating context", "Algorithm parameters"
+    )),
+    significant = p.value < 0.05
+  )
+
+# --- 3. Human-readable term labels -------------------------------
+coef_df <- coef_df %>%
+  mutate(
+    term_label = term %>%
+      str_replace_all("residual_initial_temp_1", "temp1") %>%
+      str_replace_all("residual_initial_temp_2", "temp2") %>%
+      str_replace_all("residual_delta_seconds", "time") %>%
+      str_replace_all("workhot-first", "hot-first") %>%
+      str_replace_all("dimension", "dim") %>%
+      str_replace_all("population_size", "pop") %>%
+      str_replace_all("I\\((.*?)\\^2\\)", "\\1\u00b2") %>%
+      str_replace_all(":", " \u00d7 "),
+    term_label = if_else(term == "workhot-first",
+                          paste("\u2605", term_label), term_label)
+  )
+
+# --- 4. Order terms within each category by strength of evidence -
+coef_df <- coef_df %>%
+  arrange(category, abs(statistic)) %>%
+  mutate(term_label = factor(term_label, levels = unique(term_label)))
+
+# --- 5. Plot -------------------------------------------------------
+highlight_df <- filter(coef_df, term == "workhot-first")
+
+ggplot(coef_df, aes(x = statistic, y = term_label,
+                     fill = category, alpha = significant)) +
+  geom_col(width = 0.65, colour = "grey25", linewidth = 0.2) +
+  geom_col(data = highlight_df, fill = NA, colour = "black",
+           linewidth = 1, width = 0.65) +
+  geom_vline(xintercept = 0, colour = "grey30") +
+  geom_vline(xintercept = c(-1.96, 1.96), linetype = "dashed",
+             colour = "grey55") +
+  geom_text(aes(label = signif(estimate, 3),
+                hjust = if_else(statistic >= 0, -0.15, 1.15)),
+            size = 3, alpha = 1, show.legend = FALSE) +
+  facet_wrap(~category, scales = "free_y", ncol = 1) +
+  scale_fill_manual(values = c(
+    "Intervention (protocol)" = "#DD8452",
+    "Operating context"       = "#4C72B0",
+    "Algorithm parameters"    = "#55A868"
+  ), guide = "none") +
+  scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.3), guide = "none") +
+  expand_limits(x = c(min(coef_df$statistic) * 1.25,
+                       max(coef_df$statistic) * 1.25)) +
+  labs(
+    x = "t-statistic (standardized effect / evidence strength)",
+    y = NULL,
+    title = "What drives delta_PKG: context, intervention, algorithm",
+    subtitle = "Faded bars are not statistically significant (p \u2265 .05). Dashed lines mark |t| \u2248 1.96.
+Labels show the raw coefficient estimate. \u2605 hot-first is outlined \u2014 it lowers energy, all else equal.",
+    caption = "Bar direction: right = increases delta_PKG, left = decreases delta_PKG."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    plot.subtitle = element_text(size = 9.5),
+    panel.grid.minor = element_blank()
+  )
+
+# ============================================================
+# Simple-effect tests: is X significant WITHIN a given level
+# of the other factors? (answers what raw coefficients can't)
+# ============================================================
+
+library(emmeans)
+
+# The one that matters most for your hypothesis: does hot-first
+# significantly reduce energy WITHIN each dimension x population_size
+# combination?
+emmeans(icsme_combined_workload_model, pairwise ~ work | dimension * population_size)$contrasts
+
+@
+
+<<ieeecal.other, fig.cap="Temperature distribution">>=
 
 # ggsave("energy_reduction_plot.png", p, width = 9, height = 4.2, dpi = 300)
 
