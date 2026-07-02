@@ -71,6 +71,14 @@ All source code and experimental data are hosted in a public GitHub repository:
 \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 
 <<ieeecal.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments" >>=
+get_ref_val <- function(x) {
+    if (is.numeric(x)) {
+      median(x, na.rm = TRUE) # Snaps to the median/middle value for numeric inputs
+    } else {
+      levels(factor(x))[1]    # Grabs the first level for categorical/factor inputs
+    }
+}
+
 plot_distributions <- function(mod, data ) {
   # --- 1. Reference values for everything we are NOT sweeping -----
   # Numeric -> median; factors -> first observed level (check this
@@ -82,7 +90,7 @@ plot_distributions <- function(mod, data ) {
   ref_grid <- data %>%
     summarise(
       dimension               = levels(factor(dimension))[1],
-      population_size         = levels(factor(population_size))[1],
+      population_size         = get_ref_val(population_size),
       evaluations              = median(evaluations, na.rm = TRUE),
       residual_delta_seconds   = median(residual_delta_seconds, na.rm = TRUE),
       residual_initial_temp_1  = median(residual_initial_temp_1, na.rm = TRUE),
@@ -164,10 +172,6 @@ pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches you
     labs(
       x = NULL,
       y = expression(paste("Predicted ", Delta, "PKG (energy)")),
-      title = "Two sources of the hot-first energy reduction",
-      subtitle = paste(
-        sep = "\n"
-      )
     ) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", plot.subtitle = element_text(size = 10))
@@ -348,42 +352,27 @@ ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
     y = "Energy Consumption (delta_PKG)"
   )
 
-# Keep this for additional content when the paper is approved
-# library(plotly)
-# library(MASS)
-#
-# # 1. Split the data by work factor
-# df_baseline <- subset(icsme_combined, work == "baseline")
-# df_hot <- subset(icsme_combined, work == "hot-first")
-#
-# # 2. Calculate the 2D Kernel Density Estimate (the "height" of the peaks)
-# # 'n=50' controls the grid resolution (smoothness of the 3D surface)
-# kde_base <- kde2d(df_baseline$delta_seconds, df_baseline$delta_PKG, n = 50)
-# kde_hot  <- kde2d(df_hot$delta_seconds, df_hot$delta_PKG, n = 50)
-#
-# # 3. Render the interactive 3D plot
-# plot_ly() %>%
-#   # Add the baseline surface (reds)
-#   add_surface(x = kde_base$x, y = kde_base$y, z = kde_base$z,
-#               colorscale = "Reds", opacity = 0.8, name = "Baseline", showscale = FALSE) %>%
-#   # Add the hot-first surface (blues/teals)
-#   add_surface(x = kde_hot$x, y = kde_hot$y, z = kde_hot$z,
-#               colorscale = "Blues", opacity = 0.8, name = "Hot-First", showscale = FALSE) %>%
-#   layout(
-#     title = "3D Density of Workloads",
-#     scene = list(
-#       xaxis = list(title = "delta_seconds"),
-#       yaxis = list(title = "delta_PKG"),
-#       zaxis = list(title = "Density")
-#     )
-#   )
-
 @
 
 What we see in Figure \ref{fig:ieeecal.model.coeffs} is that the operating context variable that influences the most energy consumed is time. In figure \ref{fig:ieeecal.hot.combined.chart} is a density plot of the workload-only energy $E_w$ ({\tt delta\_PKG}) vs. running time ({\tt delta\_seconds}) with or without the hot-first intervention. And the interesting result is that while baseline (OS-scheduled) has two peaks, one at the more running-time/energy area, hot-first has a single one; the hot-first intervention has influenced the operating context, lowering measured energy consumed, by keeping the operating context in an area (lower temperature for the two dies, higher frequency/wattage resulting in less running time) where there is less thermal leakage and, with less overall energy consumed. As proved, this achieves the stated objective of working in a regime where more precise measurements of energy consumed by different algorithm configurations can be taken.
 
-This proves that the protocol works for thsi specific setup and function. However, there are several moving parts that could change this. While we used Ubuntu kernel version 6.17, recently version 7 was released, and it might change the way processes are scheduled to reach a better energy/performance balance. We can also use a different, more heavy-duty, BBOB function such as Schaffer's F7; this function is known to spend more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3,5 and 10, population size = 400, 800 and 1200 and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling.
+This proves that the protocol works for this specific setup and function. However, there are several moving parts that could change this. While we used Ubuntu kernel version 6.17, recently version 7 was released, and it might change the way processes are scheduled to reach a better energy/performance balance. We can also use a different, more heavy-duty, BBOB function such as Schaeffer's F7; this function is known to spend more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3,5 and 10, population size = 400, 800 and 1200 and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling.
 
+<<ieeecal.schaeffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaeffer's F7 function.", fig.height=4, fig.pos="h!tb">>=
+schaffer_v7_workload <- readRDS("../data/schaffer_v7_workload.rds")
+schaffer_v7_workload$residual_initial_temp_1 <- NULL
+schaffer_v7_workload$residual_initial_temp_2 <- NULL
+schaffer_v7_workload$residual_seconds <- NULL
+
+staged_model_results <- staged_model( schaffer_v7_workload )
+
+schaffer_workload_model <- staged_model_results$model
+schaffer_workload_data <- staged_model_results$augmented_data
+
+plot_distributions( schaffer_workload_model, schaffer_workload_data)
+@
+
+If we compare Figure \ref{fig:ieeecal.schaeffer} with Figure \ref{fig:ieeecal.hot.combined} it looks totally different: the energy consumption curves for the hot-first experiments are {\em over} the baseline, and the distribution of experiment temperature does not look so different.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
