@@ -303,9 +303,10 @@ time_model <- glm(
 lion_model_data$residual_seconds <- residuals(time_model)
 
 ```
-These `residual_seconds` isolate operating-context and implementation influences, not affected by the algorithm parameters.
+These `residual_seconds` (click on "Show") isolate operating-context and implementation influences, not affected by the algorithm parameters.
+
 ```{r lion-expanded-energy-model}
-energy_model <- lm(
+energy_model <- glm(
   PKG ~ dimension + population_size + generations + evaluations + residual_seconds,
   data = lion_model_data
 )
@@ -323,7 +324,7 @@ energy_coef_table <- data.frame(
   arrange(p_value)
 
 energy_sig_table <- energy_coef_table %>%
-  filter(p_value < 0.05) %>%
+  filter(p_value < 0.10) %>%
   mutate(
     estimate = signif(estimate, 4),
     std_error = signif(std_error, 3),
@@ -341,7 +342,7 @@ if (nrow(energy_sig_table) == 0) {
 knitr::kable(
   energy_sig_table,
   col.names = c("Term", "Estimate", "Std. error", "t", "p-value"),
-  caption = "Stage 2 (energy model): statistically significant coefficients influencing PKG."
+  caption = "Stage 2 (energy model): statistically significant (90% level) coefficients influencing PKG."
 )
 ```
 
@@ -349,13 +350,13 @@ knitr::kable(
 energy_anova <- anova(energy_model)
 energy_variance <- data.frame(
   term = rownames(energy_anova),
-  sum_sq = energy_anova$"Sum Sq",
+  deviance = energy_anova$"Deviance",
   p_value = energy_anova$"Pr(>F)",
   row.names = NULL
 ) %>%
-  filter(!is.na(sum_sq), term != "Residuals") %>%
+  filter(!is.na(deviance), term != "Residuals") %>%
   mutate(
-    variance_pct = 100 * sum_sq / sum(sum_sq),
+    variance_pct = 100 * deviance / sum(deviance),
     term = factor(term, levels = term[order(variance_pct)])
   )
 
