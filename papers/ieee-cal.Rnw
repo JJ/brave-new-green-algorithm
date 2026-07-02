@@ -24,16 +24,12 @@
 
 \author{
 \IEEEauthorblockN{JJ Merelo}\\
-\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics\\
-University of Granada\\
-Email: jmerelo@ugr.es\\
-CITIC, UGR, Spain\\ORCID:0000-0002-1385-9741\\}
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and  and CITIC, University of Granada, Spain\\
+Email: jmerelo@ugr.es; ORCID:0000-0002-1385-9741\\}
 \and
 \IEEEauthorblockN{Mario García-Valdez}\\
-\IEEEauthorblockA{Instituto Tecnológico Nacional de México\\
-Tijuana, México\\
-Email: mario@tectijuana.edu.mx\\
-ORCID: 0000-0002-2593-1114}
+\IEEEauthorblockA{Instituto Tecnológico Nacional de México, Tijuana, México\\
+Email: mario@tectijuana.edu.mx; ORCID: 0000-0002-2593-1114}
 }
 %
 \maketitle
@@ -60,7 +56,7 @@ So far, research in this area has been significant; to mitigate these thermal an
 
 \section{Experimental methodology and results}\label{sec:results}
 
-Our workload in this paper is an implementation of the Brave New Algorithm \cite{merelo2022brave}. It is a stochastic, population-based optimization algorithm. All experiments are executed as single-threaded processes, which are then run on a single core of the processor at a time. The algorithm is configured to minimize the Sphere function across several parameter configurations, with
+Our workload in this paper is an implementation of the Brave New Algorithm \cite{merelo2022brave}. It is a stochastic, population-based optimization algorithm. All experiments are executed as single-threaded processes, which are then run on a single core of the processor at a time. The algorithm is configured to minimize the Sphere function, part of the BBOB benchmark \cite{hansen2010comparing} across several parameter configurations, with
 problem dimension ($D$) equal to 3, 5, or 10, population size ($N$): 200 or 400, and a termination criteria ($G$) equal to 10 or 25 generations without improvement. This last parameter is irrelevant to the measurements, but has been used in the experiments, which is why we list it here. Population size, however, could potentially have an influence on the energy consumption of the algorithm. The algorithm ends when an optimum is found, or when a series of iterations without any change occurs. The energy spent by the implementation will depend on \begin{itemize}
 \item The operating environment, represented by die temperature $T$ and, as indicated above, running time $R$.
 \item Algorithm parameters: different problem dimensions $D$ and population size $P$
@@ -393,6 +389,9 @@ ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
 
 What we see in Figure \ref{fig:ieeecal.model.coeffs} is that the operating context variable that influences the most energy consumed is time. In figure \ref{fig:ieeecal.hot.combined.chart} is a density plot of the workload-only energy $E_w$ ({\tt delta\_PKG}) vs. running time ({\tt delta\_seconds}) with or without the hot-first intervention. And the interesting result is that while baseline (OS-scheduled) has two peaks, one at the more running-time/energy area, hot-first has a single one; the hot-first intervention has influenced the operating context, lowering measured energy consumed, by keeping the operating context in an area (lower temperature for the two dies, higher frequency/wattage resulting in less running time) where there is less thermal leakage and, with less overall energy consumed. As proved, this achieves the stated objective of working in a regime where more precise measurements of energy consumed by different algorithm configurations can be taken.
 
+This proves that the protocol works for thsi specific setup and function. However, there are several moving parts that could change this. While we used Ubuntu kernel version 6.17, recently version 7 was released, and it might change the way processes are scheduled to reach a better energy/performance balance. We can also use a different, more heavy-duty, BBOB function such as Schaffer's F7; this function is known to spend more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3,5 and 10, population size = 400, 800 and 1200 and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling.
+
+
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
@@ -409,6 +408,6 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 
 
 \bibliographystyle{IEEEtran}
-\bibliography{../ours,../energy,../ga-energy}
+\bibliography{../ours,../energy,../ga-energy,../GAs}
 
 \end{document}
