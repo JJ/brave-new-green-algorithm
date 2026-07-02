@@ -340,8 +340,7 @@ ggplot(coef_df, aes(x = statistic, y = term_label,
 
 Figure \ref{fig:ieeecal.model.coeffs} shows the value of the model coefficients, with or without the intervention, whose main objective was to make said coefficients more significant, giving you leverage to assess whether different values have an influence in energy consumption or not. And what we see is that there are more combinations that are effectively significant than in its absence; for instance, we can see that while most factor values for this intervention lower the amount of energy consumed, the combination dimension == 10 and population size == 400 will, in fact, increase energy consumption, all other factors being equal.
 
-
-<<icsme.hot.combined.chart, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing energy consumption for the baseline and hot-first strategy">>=
+<<ieeecal.hot.combined.chart, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing energy consumption for the baseline and hot-first strategy", fig.height=4>>=
 library(ggExtra)
 
 ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
@@ -392,9 +391,7 @@ ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
 
 @
 
-We can see the effect on energy consumption in Figure \ref{fig:icsme.hot.combined.chart}, which plots execution time vs. energy consumption. Without the {\sf hot-first} strategy, there are two different {\em regimes} in the operating conditions, leading to a peak with (as we have seen in Figure \ref{fig:icsme.hot.combined}) higher temperature in the second die, longer execution time resulting in more energy consumption; this peak is around 170J and 2.5 seconds. The {\sf hot-first} intervention eliminates this peak; even if a priori it will imply longer execution times for a certain temperature according to the model, the overall effect is that energy consumption in this measurement phase is effectively reduced.
-
-This means that this experimental protocol will help us differentiate better between different configurations of our algorithm; although still a considerable part of the energy consumption will be explained by the operating conditions (temperature and power represented by its proxy running time), the fact that temperature and running time are lowered will allow differences due to algorithm configuration to gather more significance and thus be used as actionable decisions by the researcher.
+What we see in Figure \ref{fig:ieeecal.model.coeffs} is that the operating context variable that influences the most energy consumed is time. In figure \ref{fig:ieeecal.hot.combined.chart} is a density plot of the workload-only energy $E_w$ ({\tt delta\_PKG}) vs. running time ({\tt delta\_seconds}) with or without the hot-first intervention. And the interesting result is that while baseline (OS-scheduled) has two peaks, one at the more running-time/energy area, hot-first has a single one; the hot-first intervention has influenced the operating context, lowering measured energy consumed, by keeping the operating context in an area (lower temperature for the two dies, higher frequency/wattage resulting in less running time) where there is less thermal leakage and, with less overall energy consumed. As proved, this achieves the stated objective of working in a regime where more precise measurements of energy consumed by different algorithm configurations can be taken.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
