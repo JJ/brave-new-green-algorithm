@@ -174,6 +174,28 @@ pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches you
   print(p)
 }
 
+staged_model <- function( data ) {
+  combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= data)
+  data$residual_delta_seconds <- residuals(combined_workload_time_model)
+
+  icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work*dimension*population_size, data=data)
+  icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work*dimension*population_size, data=data)
+
+  data$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
+  data$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
+
+  icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+
+                                          work*dimension*population_size+
+                                          evaluations+residual_delta_seconds+
+                                          I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2)+I(residual_delta_seconds^2),
+                                        data= data)
+
+  return(list(
+    model = icsme_combined_workload_model,
+    augmented_data = data
+  ))
+}
+
 # Load data
 load("../data/europar_die1_workload.rds")
 load("../data/europar_taskset_die2_processed.rds")
@@ -188,6 +210,10 @@ icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_si
 icsme_hot_workload$work <- "hot-first"
 initial_workload$work <- "baseline"
 icsme_combined <- rbind(icsme_hot_workload,initial_workload)
+staged_model_results <- staged_model( icsme_combined )
+
+icsme_combined_workload_model <- staged_model_results$model
+icsme_combined <- staged_model_results$augmented_data
 @
 
 What we propose and are going to evaluate in this paper is to use a {\em hot-first} scheduling strategy, instead of the default OS strategy for assigning processes to cores: We will set up the running script so that the next process is always run in the die that has the {\em highest} temperature using the {\sf taskset} command. Temperature is one of the factors that influence energy consumption: higher temperature will make the system consume more energy due to thermal leakage. However, by hitting the hotter processor die (hence the {\em hot-first} strategy) we would  help the dies cool themselves through the differences in temperature; in general, in heterogeneous architectures such as the Ryzen the hotter die will be the one with the highest performance, making it a {\em run-to-idle} strategy that will spend less energy simply by being less time in the processor.
@@ -195,17 +221,6 @@ What we propose and are going to evaluate in this paper is to use a {\em hot-fir
 We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core the program is running be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
 
 <<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. residualized temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).", fig.height=4, fig.pos="h!tb">>=
-
-combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
-icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
-
-icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work*dimension*population_size, data=icsme_combined)
-icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work*dimension*population_size, data=icsme_combined)
-
-icsme_combined$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
-icsme_combined$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
-
-icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+work*dimension*population_size+evaluations+residual_delta_seconds+I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2)+I(residual_delta_seconds^2) , data= icsme_combined)
 
 library(dplyr)
 library(tidyr)
