@@ -126,4 +126,4 @@ This is open science. A bit of orientation
 
 ## License
 
-(c) Authors, 2025, released under the Affero GPL Please read the [`LICENSE`](LICENSE/)
+(c) Authors, 2025, 2026 released under the Affero GPL Please read the [`LICENSE`](LICENSE/)
