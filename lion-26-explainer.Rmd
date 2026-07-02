@@ -19,7 +19,7 @@ output:
     code_folding: hide
 ---
 
-```{r setup, include=FALSE}
+```{r setup_and_libraries, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
   warning = FALSE,
@@ -29,9 +29,7 @@ knitr::opts_chunk$set(
   fig.height = 5,
   dpi = 150
 )
-```
 
-```{r libraries}
 library(ggplot2)
 library(dplyr)
 
@@ -251,38 +249,17 @@ This section applies the later-paper multi-stage modeling workflow directly to t
 ```{r lion-expanded-model-data}
 lion_model_data <- read.csv("data/lion-1.11.8-bna-fix-rand.csv") %>%
   mutate(
-    dimension = as.numeric(dimension),
-    population_size = as.numeric(population_size),
-    generations = as.numeric(generations),
-    evaluations = as.numeric(evaluations),
     max_gens = factor(max_gens),
-    alpha = factor(alpha)
+    alpha = factor(alpha),
+    population_size = factor(population_size),
+    dimension = factor(dimension)
   )
 
-parameter_levels <- data.frame(
-  parameter = c("dimension", "population_size", "max_gens", "alpha"),
-  levels_in_dataset = c(
-    dplyr::n_distinct(lion_model_data$dimension),
-    dplyr::n_distinct(lion_model_data$population_size),
-    dplyr::n_distinct(lion_model_data$max_gens),
-    dplyr::n_distinct(lion_model_data$alpha)
-  )
-)
-
-knitr::kable(
-  parameter_levels,
-  col.names = c("Parameter", "Observed levels in data"),
-  caption = "Observed support of key algorithm parameters in the final LION dataset."
-)
-```
-
-In this specific file, `alpha` appears with a single observed value, so it has no within-dataset variance for coefficient estimation; `max_gens` appears with two levels and is reflected through realized `generations` and `evaluations` in the multi-stage modeling path above.
-
-```{r lion-expanded-time-model}
 time_model <- lm(
-  seconds ~ dimension + population_size + generations + evaluations,
+  seconds ~ dimension*population_size*generations*evaluations,
   data = lion_model_data
 )
+
 lion_model_data$residual_seconds <- residuals(time_model)
 
 time_coef <- summary(time_model)$coefficients
