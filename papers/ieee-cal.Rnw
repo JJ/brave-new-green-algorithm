@@ -94,7 +94,7 @@ What we propose and are going to evaluate in this paper is to use a {\em hot-fir
 
 We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core the program is running be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
 
-<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. residualized temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).">>=
+<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. residualized temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).", fig.height=4, fig.pos="h!tb">>=
 
 combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= icsme_combined)
 icsme_combined$residual_delta_seconds <- residuals(combined_workload_time_model)
@@ -245,9 +245,9 @@ In order to isolate the operating context from the algorithm configuration, we w
 \item A final model that includes the operating context variables, which have been residualized, lineal and squared, as well as the intervention factor interacting with algorithm variables.
 \end{itemize}
 
-We represent in Figure \ref{fig:ieecal.hot.combined} the results for two of the context variables, representing energy consumed as a function of the (residuals of the ) initial temperatures for the two dies, as well as the distribution of initial temperatures in both datasets. Using the hot-first protocol might lower energy consumption in two different ways: all other parameters being equal, negative coefficients will result in lower energy consumption; this is represented in the lines in the graph, ad we see how the (fitted) line is effectively lower in both cases; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context, which has been residualized. If, using the protocol, programs take less time or the overall temperature at which the program is running is lower, that will result in additional gain. An additional, and probably less important, factor is that there are more runs for the hot-first blocks where the initial temperature is beyond the point where the negative squared temperature term starts to act. All in all, this proves our claim that scheduling the process in an energy-measurement experiment to run in the hottest die in a two-die processor like the AMD Ryzen will result in lower consumption that using regular, OS scheduling.
+We represent in Figure \ref{fig:ieeecal.hot.combined} the results for two of the operational context variables, representing energy consumed as a function of the (residuals of the ) initial temperatures for the two dies, as well as the distribution of initial temperatures in both datasets. Using the hot-first protocol might lower energy consumption in two different ways: all other parameters being equal, negative coefficients will result in lower energy consumption; this is represented in the lines in the graph, ad we see how the (fitted) line is effectively lower in both cases; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context, which has been residualized. If, using the protocol, programs take less time or the overall temperature at which the program is running is lower, that will result in additional gain. An additional, and probably less important, factor is that there are more runs for the hot-first blocks where the initial temperature is beyond the point where the negative squared temperature term starts to act. All in all, this proves our claim that scheduling the process in an energy-measurement experiment to run in the hottest die in a two-die processor like the AMD Ryzen will result in lower consumption that using regular, OS scheduling.
 
-<<ieeecal.other.2, echo=F, messages=F>>=
+<<ieeecal.model.coeffs, echo=F, messages=F, fig.cap="Representation of model coefficients, split by the type of variable/intervention they represent. The bar indicates how it changes t, that is, the influence on the dependent variable, $E_w$", fig.height=5>>=
 # ============================================================
 # Coefficient plot: category + significance + highlighted
 # intervention effect, all in one ggplot2 figure
@@ -329,9 +329,6 @@ ggplot(coef_df, aes(x = statistic, y = term_label,
     x = "t-statistic (standardized effect / evidence strength)",
     y = NULL,
     title = "What drives delta_PKG: context, intervention, algorithm",
-    subtitle = "Faded bars are not statistically significant (p \u2265 .05). Dashed lines mark |t| \u2248 1.96.
-Labels show the raw coefficient estimate. \u2605 hot-first is outlined \u2014 it lowers energy, all else equal.",
-    caption = "Bar direction: right = increases delta_PKG, left = decreases delta_PKG."
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -339,7 +336,11 @@ Labels show the raw coefficient estimate. \u2605 hot-first is outlined \u2014 it
     plot.subtitle = element_text(size = 9.5),
     panel.grid.minor = element_blank()
   )
+@
 
+Figure \ref{fig:ieeecal.model.coeffs} shows the value of the model coefficients, with or without the intervention, whose main objective was to make said coefficients more significant, giving you leverage to assess whether different values have an influence in energy consumption or not. And what we see is that there are more combinations that are effectively significant than in its absence; for instance, we can see that while most factor values for this intervention lower the amount of energy consumed, the combination dimension == 10 and population size == 400 will, in fact, increase energy consumption, all other factors being equal.
+
+<<ieeecal.differences, echo=F, message=F>>=
 # ============================================================
 # Simple-effect tests: is X significant WITHIN a given level
 # of the other factors? (answers what raw coefficients can't)
