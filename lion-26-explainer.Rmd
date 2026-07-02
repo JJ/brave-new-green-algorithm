@@ -1,5 +1,5 @@
 ---
-title: "LION 2026 in 4 Visuals"
+title: "LION 2026 in a few Visuals"
 subtitle: "Energy and fitness trade-offs in the Brave New Algorithm"
 author: "JJ Merelo & Cecilia Merelo-Molina & Pablo García Sánchez & Mario García Valdez & Juan Luis Jiménez-Laredo"
 date: "`r format(Sys.Date(), '%B %Y')`"
