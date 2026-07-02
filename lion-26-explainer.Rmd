@@ -346,6 +346,8 @@ knitr::kable(
 )
 ```
 
+What you see is what you get: only two of the coefficients are significant, and at the 10% level; most changes that can be attributed to algorithm parameters are drowned by the operating context. This is what led us to improve the experimental protocol, something you can check in [this paper published at CEC](cec-2026-explainer.html).
+
 ```{r lion-expanded-variance, fig.cap="Variance decomposition for the multi-stage energy model (percent of model sum of squares by term)."}
 energy_anova <- anova(energy_model)
 energy_variance <- data.frame(
@@ -391,6 +393,8 @@ knitr::kable(
   caption = "ANOVA-based variance share by term for the multi-stage energy model."
 )
 ```
+
+Again, as you see in the table, only one of the coefficients (population size) explains variance at a 95% significance level, and one (evaluations) at a 90% level.
 
 ## Discussion highlights from the paper
 
