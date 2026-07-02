@@ -295,48 +295,15 @@ lion_model_data <- read.csv("data/lion-1.11.8-bna-fix-rand.csv") %>%
     dimension = factor(dimension)
   )
 
-time_model <- lm(
+time_model <- glm(
   seconds ~ dimension*population_size*generations*evaluations,
   data = lion_model_data
 )
 
 lion_model_data$residual_seconds <- residuals(time_model)
 
-time_coef <- summary(time_model)$coefficients
-time_coef_table <- data.frame(
-  term = rownames(time_coef),
-  estimate = time_coef[, "Estimate"],
-  std_error = time_coef[, "Std. Error"],
-  statistic = time_coef[, "t value"],
-  p_value = time_coef[, "Pr(>|t|)"],
-  row.names = NULL
-) %>%
-  filter(term != "(Intercept)") %>%
-  arrange(p_value)
-
-time_sig_table <- time_coef_table %>%
-  filter(p_value < 0.05) %>%
-  mutate(
-    estimate = signif(estimate, 4),
-    std_error = signif(std_error, 3),
-    statistic = signif(statistic, 3),
-    p_value = signif(p_value, 3)
-  )
-
-if (nrow(time_sig_table) == 0) {
-  time_sig_table <- data.frame(
-    term = "No coefficient with p < 0.05",
-    estimate = NA, std_error = NA, statistic = NA, p_value = NA
-  )
-}
-
-knitr::kable(
-  time_sig_table,
-  col.names = c("Term", "Estimate", "Std. error", "t", "p-value"),
-  caption = "Stage 1 (runtime model): statistically significant coefficients."
-)
 ```
-
+These `residual_seconds` isolate operating-context and implementation influences, not affected by the algorithm parameters.
 ```{r lion-expanded-energy-model}
 energy_model <- lm(
   PKG ~ dimension + population_size + generations + evaluations + residual_seconds,
