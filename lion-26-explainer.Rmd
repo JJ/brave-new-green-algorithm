@@ -19,7 +19,7 @@ output:
     code_folding: hide
 ---
 
-```{r setup, include=FALSE}
+```{r setup_and_libraries, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
   warning = FALSE,
@@ -29,9 +29,7 @@ knitr::opts_chunk$set(
   fig.height = 5,
   dpi = 150
 )
-```
 
-```{r libraries}
 library(ggplot2)
 library(dplyr)
 
@@ -186,59 +184,217 @@ ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
 ## Compact configuration summary
 
 ```{r summary-table}
-wilcoxon_flags <- lion_workload %>%
+# 1. Create a table of pairwise Wilcoxon tests
+pairwise_comparisons <- lion_workload %>%
   filter(is.finite(delta_PKG)) %>%
   group_by(dimension, population_size) %>%
   group_modify(~{
     gens <- sort(unique(.x$max_gens))
+    
+    # If there's nothing to compare, return an empty template
     if (length(gens) < 2) {
-      return(data.frame(max_gens = numeric(0)))
+      return(data.frame(
+        max_gens_A = numeric(0), 
+        max_gens_B = numeric(0), 
+        p_value = numeric(0), 
+        sig_mark = character(0)
+      ))
     }
+    
+    # Generate all unique pairs of max_gens
     pair_tests <- utils::combn(gens, 2, simplify = FALSE)
-    sig_rows <- lapply(pair_tests, function(pair) {
+    
+    # Calculate the test for each pair and keep them in separate columns
+    res <- lapply(pair_tests, function(pair) {
       x <- .x$delta_PKG[.x$max_gens == pair[1]]
       y <- .x$delta_PKG[.x$max_gens == pair[2]]
       p_value <- stats::wilcox.test(x, y, exact = FALSE)$p.value
-      if (is.finite(p_value) && p_value < 0.05) {
-        data.frame(max_gens = pair)
-      } else {
-        NULL
-      }
+      
+      data.frame(
+        max_gens_A = pair[1],
+        max_gens_B = pair[2],
+        p_value = p_value,
+        sig_mark = if (is.finite(p_value) && p_value < 0.05) "*" else ""
+      )
     })
-    sig_rows <- sig_rows[!vapply(sig_rows, is.null, logical(1))]
-    if (length(sig_rows) == 0) {
-      return(data.frame(max_gens = numeric(0)))
-    }
-    dplyr::bind_rows(sig_rows) %>% distinct(max_gens)
+    
+    dplyr::bind_rows(res)
   }) %>%
-  ungroup() %>%
-  distinct(dimension, population_size, max_gens) %>%
-  mutate(sig_mark = "*")
+  ungroup()
 
-lion_summary_table <- create_summary(lion_workload) %>%
+# 2. Compute the base summary metrics (assuming create_summary returns one row per config)
+base_summary <- create_summary(lion_workload)
+
+# 3. Join the summary metrics for both A and B to the pairwise table
+lion_summary_table <- pairwise_comparisons %>%
+  # Join metrics for max_gens_A
   left_join(
-    wilcoxon_flags,
-    by = c("dimension", "population_size", "max_gens")
+    base_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation),
+    by = c("dimension", "population_size", "max_gens_A" = "max_gens")
   ) %>%
-  arrange(trimmed_mean_delta_PKG) %>%
+  rename(
+    delta_PKG_A = trimmed_mean_delta_PKG,
+    energy_eval_A = trimmed_mean_energy_per_evaluation
+  ) %>%
+  # Join metrics for max_gens_B
+  left_join(
+    base_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation),
+    by = c("dimension", "population_size", "max_gens_B" = "max_gens")
+  ) %>%
+  rename(
+    delta_PKG_B = trimmed_mean_delta_PKG,
+    energy_eval_B = trimmed_mean_energy_per_evaluation
+  ) %>%
+  # Clean up and arrange
   mutate(
-    setting = paste0(
-      "D=", dimension, ", P=", population_size, ", max_gens=", max_gens,
-      ifelse(is.na(sig_mark), "", sig_mark)
-    ),
-    trimmed_mean_delta_PKG = round(trimmed_mean_delta_PKG, 2),
-    trimmed_mean_energy_per_evaluation = signif(trimmed_mean_energy_per_evaluation, 3)
+    delta_PKG_A = round(delta_PKG_A, 2),
+    delta_PKG_B = round(delta_PKG_B, 2),
+    energy_eval_A = signif(energy_eval_A, 3),
+    energy_eval_B = signif(energy_eval_B, 3),
+    p_value = signif(p_value, 3)
   ) %>%
-  select(setting, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation)
+  # Select final columns in a logical reading order
+  select(
+    dimension, population_size, 
+    max_gens_A, delta_PKG_A, energy_eval_A,
+    max_gens_B, delta_PKG_B, energy_eval_B, 
+    p_value, sig_mark
+  ) %>%
+  arrange(dimension, population_size, p_value)
 
+# 4. Render the table
 knitr::kable(
   lion_summary_table,
-  col.names = c("Setting", "Trimmed mean delta PKG (J)", "Trimmed mean J/evaluation"),
-  caption = "Lower values are better for energy-only efficiency. * marks configurations with Wilcoxon-significant (p < 0.05) delta-PKG differences versus at least one other max_gens in the same (dimension, population) group."
+  col.names = c(
+    "Dimension", "Pop. Size", 
+    "Max Gens A", "Delta PKG A (J)", "J/eval A",
+    "Max Gens B", "Delta PKG B (J)", "J/eval B", 
+    "p-value", "Sig."
+  ),
+  caption = "Pairwise comparisons of energy-only efficiency between max_gens settings. Lower values are better. * marks a statistically significant difference (p < 0.05) in delta-PKG between the specific pair in the row."
+)
+
+```
+
+The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above. We can see, however, that the only significant differences in energy expenses for different values of `max_gens` are in the top rows, with dimension 5 and population 400.
+
+## Expanded analysis: multi-stage model on the final LION dataset
+
+This section applies the later-paper multi-stage modeling workflow directly to the final LION workload file `data/lion-1.11.8-bna-fix-rand.csv` [@lion26; @cotta24]:
+
+1. model runtime (`seconds`) from algorithm covariates (`dimension`, `population_size`, `generations`, `evaluations`);
+2. residualize runtime;
+3. model energy (`PKG`) on the same covariates plus residualized runtime.
+
+```{r lion-expanded-model-data}
+lion_model_data <- read.csv("data/lion-1.11.8-bna-fix-rand.csv") %>%
+  mutate(
+    max_gens = factor(max_gens),
+    alpha = factor(alpha),
+    population_size = factor(population_size),
+    dimension = factor(dimension)
+  )
+
+time_model <- glm(
+  seconds ~ dimension*population_size*generations*evaluations,
+  data = lion_model_data
+)
+
+lion_model_data$residual_seconds <- residuals(time_model)
+
+```
+These `residual_seconds` (click on "Show") isolate operating-context and implementation influences, not affected by the algorithm parameters.
+
+```{r lion-expanded-energy-model}
+energy_model <- glm(
+  PKG ~ dimension + population_size + generations + evaluations + residual_seconds,
+  data = lion_model_data
+)
+
+energy_coef <- summary(energy_model)$coefficients
+energy_coef_table <- data.frame(
+  term = rownames(energy_coef),
+  estimate = energy_coef[, "Estimate"],
+  std_error = energy_coef[, "Std. Error"],
+  statistic = energy_coef[, "t value"],
+  p_value = energy_coef[, "Pr(>|t|)"],
+  row.names = NULL
+) %>%
+  filter(term != "(Intercept)") %>%
+  arrange(p_value)
+
+energy_sig_table <- energy_coef_table %>%
+  filter(p_value < 0.10) %>%
+  mutate(
+    estimate = signif(estimate, 4),
+    std_error = signif(std_error, 3),
+    statistic = signif(statistic, 3),
+    p_value = signif(p_value, 3)
+  )
+
+if (nrow(energy_sig_table) == 0) {
+  energy_sig_table <- data.frame(
+    term = "No coefficient with p < 0.05",
+    estimate = NA, std_error = NA, statistic = NA, p_value = NA
+  )
+}
+
+knitr::kable(
+  energy_sig_table,
+  col.names = c("Term", "Estimate", "Std. error", "t", "p-value"),
+  caption = "Stage 2 (energy model): statistically significant (90% level) coefficients influencing PKG."
 )
 ```
 
-The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above.
+What you see is what you get: only two of the coefficients are significant, and at the 10% level; most changes that can be attributed to algorithm parameters are drowned by the operating context. This is what led us to improve the experimental protocol, something you can check in [this paper published at CEC](cec-2026-explainer.html).
+
+```{r lion-expanded-variance, fig.cap="Variance decomposition for the multi-stage energy model (percent of model sum of squares by term)."}
+energy_anova <- anova(energy_model)
+energy_variance <- data.frame(
+  term = rownames(energy_anova),
+  deviance = energy_anova$"Deviance",
+  p_value = energy_anova$"Pr(>F)",
+  row.names = NULL
+) %>%
+  filter(!is.na(deviance), term != "Residuals") %>%
+  mutate(
+    variance_pct = 100 * deviance / sum(deviance),
+    term = factor(term, levels = term[order(variance_pct)])
+  )
+
+ggplot(energy_variance, aes(x = term, y = variance_pct, fill = term)) +
+  geom_col(width = 0.72, alpha = 0.9) +
+  geom_text(
+    aes(label = paste0(round(variance_pct, 1), "%")),
+    hjust = -0.1,
+    size = 3.8
+  ) +
+  coord_flip() +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none") +
+  labs(
+    title = "Energy variance explained by each modeled term",
+    subtitle = "Computed from ANOVA sum-of-squares in the Stage 2 model",
+    x = "Model term",
+    y = "Share of explained variance (%)"
+  )
+
+energy_variance_table <- energy_variance %>%
+  mutate(
+    variance_pct = round(variance_pct, 2),
+    p_value = signif(p_value, 3)
+  ) %>%
+  arrange(desc(variance_pct)) %>%
+  select(term, variance_pct, p_value)
+
+knitr::kable(
+  energy_variance_table,
+  col.names = c("Term", "Explained variance (%)", "p-value"),
+  caption = "ANOVA-based variance share by term for the multi-stage energy model."
+)
+```
+
+Again, as you see in the table, only one of the coefficients (population size) explains variance at a 95% significance level, and one (evaluations) at a 90% level.
 
 ## Discussion highlights from the paper
 
