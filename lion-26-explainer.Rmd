@@ -184,59 +184,99 @@ ggplot(version_compare, aes(x = julia, y = delta_PKG, fill = julia)) +
 ## Compact configuration summary
 
 ```{r summary-table}
-wilcoxon_flags <- lion_workload %>%
+# 1. Create a table of pairwise Wilcoxon tests
+pairwise_comparisons <- lion_workload %>%
   filter(is.finite(delta_PKG)) %>%
   group_by(dimension, population_size) %>%
   group_modify(~{
     gens <- sort(unique(.x$max_gens))
+    
+    # If there's nothing to compare, return an empty template
     if (length(gens) < 2) {
-      return(data.frame(max_gens = numeric(0)))
+      return(data.frame(
+        max_gens_A = numeric(0), 
+        max_gens_B = numeric(0), 
+        p_value = numeric(0), 
+        sig_mark = character(0)
+      ))
     }
+    
+    # Generate all unique pairs of max_gens
     pair_tests <- utils::combn(gens, 2, simplify = FALSE)
-    sig_rows <- lapply(pair_tests, function(pair) {
+    
+    # Calculate the test for each pair and keep them in separate columns
+    res <- lapply(pair_tests, function(pair) {
       x <- .x$delta_PKG[.x$max_gens == pair[1]]
       y <- .x$delta_PKG[.x$max_gens == pair[2]]
       p_value <- stats::wilcox.test(x, y, exact = FALSE)$p.value
-      if (is.finite(p_value) && p_value < 0.05) {
-        data.frame(max_gens = pair)
-      } else {
-        NULL
-      }
+      
+      data.frame(
+        max_gens_A = pair[1],
+        max_gens_B = pair[2],
+        p_value = p_value,
+        sig_mark = if (is.finite(p_value) && p_value < 0.05) "*" else ""
+      )
     })
-    sig_rows <- sig_rows[!vapply(sig_rows, is.null, logical(1))]
-    if (length(sig_rows) == 0) {
-      return(data.frame(max_gens = numeric(0)))
-    }
-    dplyr::bind_rows(sig_rows) %>% distinct(max_gens)
+    
+    dplyr::bind_rows(res)
   }) %>%
-  ungroup() %>%
-  distinct(dimension, population_size, max_gens) %>%
-  mutate(sig_mark = "*")
+  ungroup()
 
-lion_summary_table <- create_summary(lion_workload) %>%
+# 2. Compute the base summary metrics (assuming create_summary returns one row per config)
+base_summary <- create_summary(lion_workload)
+
+# 3. Join the summary metrics for both A and B to the pairwise table
+lion_summary_table <- pairwise_comparisons %>%
+  # Join metrics for max_gens_A
   left_join(
-    wilcoxon_flags,
-    by = c("dimension", "population_size", "max_gens")
+    base_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation),
+    by = c("dimension", "population_size", "max_gens_A" = "max_gens")
   ) %>%
-  arrange(trimmed_mean_delta_PKG) %>%
+  rename(
+    delta_PKG_A = trimmed_mean_delta_PKG,
+    energy_eval_A = trimmed_mean_energy_per_evaluation
+  ) %>%
+  # Join metrics for max_gens_B
+  left_join(
+    base_summary %>% select(dimension, population_size, max_gens, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation),
+    by = c("dimension", "population_size", "max_gens_B" = "max_gens")
+  ) %>%
+  rename(
+    delta_PKG_B = trimmed_mean_delta_PKG,
+    energy_eval_B = trimmed_mean_energy_per_evaluation
+  ) %>%
+  # Clean up and arrange
   mutate(
-    setting = paste0(
-      "D=", dimension, ", P=", population_size, ", max_gens=", max_gens,
-      ifelse(is.na(sig_mark), "", sig_mark)
-    ),
-    trimmed_mean_delta_PKG = round(trimmed_mean_delta_PKG, 2),
-    trimmed_mean_energy_per_evaluation = signif(trimmed_mean_energy_per_evaluation, 3)
+    delta_PKG_A = round(delta_PKG_A, 2),
+    delta_PKG_B = round(delta_PKG_B, 2),
+    energy_eval_A = signif(energy_eval_A, 3),
+    energy_eval_B = signif(energy_eval_B, 3),
+    p_value = signif(p_value, 3)
   ) %>%
-  select(setting, trimmed_mean_delta_PKG, trimmed_mean_energy_per_evaluation)
+  # Select final columns in a logical reading order
+  select(
+    dimension, population_size, 
+    max_gens_A, delta_PKG_A, energy_eval_A,
+    max_gens_B, delta_PKG_B, energy_eval_B, 
+    p_value, sig_mark
+  ) %>%
+  arrange(dimension, population_size, p_value)
 
+# 4. Render the table
 knitr::kable(
   lion_summary_table,
-  col.names = c("Setting", "Trimmed mean delta PKG (J)", "Trimmed mean J/evaluation"),
-  caption = "Lower values are better for energy-only efficiency. * marks configurations with Wilcoxon-significant (p < 0.05) delta-PKG differences versus at least one other max_gens in the same (dimension, population) group."
+  col.names = c(
+    "Dimension", "Pop. Size", 
+    "Max Gens A", "Delta PKG A (J)", "J/eval A",
+    "Max Gens B", "Delta PKG B (J)", "J/eval B", 
+    "p-value", "Sig."
+  ),
+  caption = "Pairwise comparisons of energy-only efficiency between max_gens settings. Lower values are better. * marks a statistically significant difference (p < 0.05) in delta-PKG between the specific pair in the row."
 )
+
 ```
 
-The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above.
+The table is useful as an at-a-glance ranking, but it should be read as a screening tool. Final decisions should combine this with fitness outcomes and with the platform/version context highlighted above. We can see, however, that the only significant differences in energy expenses for different values of `max_gens` are in the top rows, with dimension 5 and population 400.
 
 ## Expanded analysis: multi-stage model on the final LION dataset
 
