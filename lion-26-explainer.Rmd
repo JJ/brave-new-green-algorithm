@@ -417,4 +417,13 @@ if (knitr::is_html_output()) {
 }
 ```
 
+## See also
+
+You can go ahead to [this expanded version of the paper, using the same data](lion-26-extended.html), which applies statistical models to understand what these measurements reveal about energy consumption (and what they don't).
+
+## Questions? Suggestions?
+
+You can use [GitHub issues](https://github.com/JJ/brave-new-green-algorithm/issues) to make them. PRs encouraged and welcome!
+
+
 ## References
