@@ -427,9 +427,23 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
   scale_x_continuous(breaks=c(400,800,1600))
 
 print(plot_slopes_temp_focused)
+
+
+mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
+mediator_final_temp1 <- lm(final_temp_1 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
+mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
+mediator_final_temp2 <- lm(final_temp_2 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
 @
 
-Since we are interested in lowering the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the energy consumed is affected by the intervention (different shapes). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["residual_initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. Except in some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature.
+Since we are interested in lowering the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the energy consumed is affected by the intervention (different shapes). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["residual_initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. Except in some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
