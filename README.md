@@ -12,7 +12,7 @@ The Brave New Algorithm is an evolutionary algorithm that constraints
 reproduction according to a system of *castes* inspired in the Brave New World
 novel by Aldous Huxley. That way it can control more effectively the
 exploration-exploitation balance. It is fully described in [this
-paper](https://link.springer.com/chapter/10.1007/978-3-031-08266-5_20) 
+paper](https://link.springer.com/chapter/10.1007/978-3-031-08266-5_20).
 
 ## Source for papers
 
@@ -95,8 +95,8 @@ Content for this papers is included in [this release](https://github.com/JJ/brav
 - Get the [annotated version of the
   paper](https://github.com/JJ/brave-new-green-algorithm/releases/download/v1.1CEC/cec-2026-annotated.pdf)
   from the release.
-  
-- Here's the [presentation](preso/index.html)
+
+- Here's the [presentation](preso/index.html) we used at the conference.
 
 ## Bibliography
 
