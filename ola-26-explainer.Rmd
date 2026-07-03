@@ -408,8 +408,8 @@ Repeating failed measurements improves not only accuracy but also *reproducibili
 
 | # | Practice | Why it helps |
 |---|----------|--------------|
-| 1 | Use 100 ms RAPL sampling | Reduces polling overhead; extends the measurement range |
-| 2 | Beware of hardware drift | Measurements taken hours apart are not directly comparable |
+| 1 | Use 100 ms RAPL sampling | Reduces polling overhead incrementing precision; extends the measurement range |
+| 2 | Beware of operating context drift | Measurements taken hours apart are not directly comparable |
 | 3 | Interleave baseline & workload | Drift affects both equally, cancelling out in the delta |
 | 4 | Stay current with your runtime | Free, significant energy savings from compiler improvements |
 | 5 | Discard zero-energy sensor readings | Improves accuracy and reproducibility |
