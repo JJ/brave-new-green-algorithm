@@ -24,7 +24,7 @@
 
 \author{
 \IEEEauthorblockN{JJ Merelo}\\
-\IEEEauthorblockA{Department of Computer Engineering, Automatics and  and CITIC, University of Granada, Spain\\
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics / CITIC, University of Granada, Spain\\
 Email: jmerelo@ugr.es; ORCID:0000-0002-1385-9741\\}
 \and
 \IEEEauthorblockN{Mario García-Valdez}\\
@@ -50,7 +50,7 @@ Standard practice involves taking baseline measurements that include program loa
 
 In modern Linux x86 based systems we can rely on several sensors in order to measure energy and the operating conditions, besides the aforementioned time. Per-die temperature can be measured via system sensors; energy is measured via command-line utilities such as {\sf pinpoint} \cite{pinpoint} that rely on the RAPL power-and-energy measurement API \cite{rapl}. Core voltage and frequency cannot be measured directly; we will use running time as a proxy for these two quantities, since the effect of reducing voltage and frequency will increment it.
 
-In this paper we will introduce a methodology with the main objective of reducing energy consumed by algorithm implementations by acting on the operating conditions. Two subobjectives are to decrease the variance of measurements and, finally, to be able to measure more precisely the incidence of algorithm configuration and outcomes so that we can make operative decisions about how to make the algorithm more energy efficient.
+In this paper we will introduce a methodology with the main objective of reducing energy consumed by algorithm implementations by acting on the operating conditions. our final objective is to be able to measure more precisely the incidence of algorithm configuration and outcomes so that we can make operative decisions about how to make the algorithm more energy efficient. We can only achieve this objective if we boost the signal-to-noise ratio by reducing overhead due to the operating context.
 
 So far, research in this area has been significant; to mitigate these thermal and state-based biases, several experimental strategies have been proposed; for instance, implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control. The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption without requiring a system reboot between every run. Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core election, directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order but explicitly account for the non-linear influence of thermal states on the resulting energy data.
 
@@ -396,7 +396,7 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
   # --- LAYER 2: The Points ---
   geom_point(
     aes(shape = work, color = initial_temp_2, group = work),
-    position = position_jitterdodge(jitter.width = 0.25, dodge.width = 120),
+    position = position_jitterdodge(jitter.width = 0.25, dodge.width = 220),
     size = 1.8,
     alpha = 0.8
   ) +
@@ -448,13 +448,11 @@ Since we are interested in lowering the energy consumed by algorithm implementat
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Evolving software towards more energy-thrifty versions requires a sound methodology that is able to differentiate the effects of the software under study from the operating context. What we have introduced here is a temperature-conscious experimental protocol for measuring energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to minimize the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these different configurations.
-
-As far as we can tell, this is the first attempt to heuristically model the behavior of a system so that it can be used as the foundation for a measuring protocol and methodology that can be used by software engineers to compare different configurations in order to create more energy-efficient versions of their applications, specifically of the parts that implement algorithms as business logic. Our methodology tries to separate workload measurements from baseline by using a {\em sandwich} protocol that puts a workload run between two baseline runs, so that the operating environment for the workload is as close as possible to the baseline. We conclude that we can leverage the differential of temperature in a two-die package to reduce its influence in a measurement methodology and achieve at the same time lower energy consumption in the measuring phase. This also certifies the need to study models of energy measurements and how different parameters affect energy measurements in this model. In no case a single statistical measure like an average or median can be used to compare two configurations, since in most cases they will behave differently depending on the operating conditions: again, we need to use statistics and be conscious of the operating environment to decide, at the point of running a model, which configuration is better for a specific scenario.
+Evolving software towards more energy-thrifty versions requires a sound methodology that is able to differentiate the effects of the software under study from the operating context. What we have introduced here is a temperature-conscious experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to minimize the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these different configurations. By using temperature-conscious process scheduling, always hitting first the hottest die in a multi-die architecture, we have managed to boost the significance of the different coefficients related to our population-based optimization algorithm. This has been proved across two different workloads with different kernel versions, showing that this intervention reduces the overall temperature of the two dies, but mainly that of the second die, thus reducing thermal leakage and overall energy consumption.
 
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA.
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA. Source and data for this paper is available from \url{https://github.com/JJ/brave-new-green-algorithm}.
 
 
 \bibliographystyle{IEEEtran}
