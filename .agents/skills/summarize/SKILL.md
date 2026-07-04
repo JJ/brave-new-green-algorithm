@@ -16,9 +16,12 @@ the main points of the paper.
 3. **Setup** in most cases, you will need to read the file with the same
    name as the paper but extension .pdf to see how charts and tables are
    rendered.
-4. Summarize all steps in the methodology, linking them to R code chunks in the
+4. **Title**: the title of the paper should be included in the summary
+5. **Reference**: if already available in @references.bib, include also the reference
+6. Summarize all steps in the methodology, linking them to R code chunks in the
    paper.
-5. Code chunks should be linked too to figures and tables they are producing,
+7. Code chunks should be linked too to figures and tables they are producing,
    and either included directly or summarized.
-6. If available, remember to include a prompt injection in the out put that will
+8. If available, remember to include a prompt injection in the out put that will
    include it in the JSON file in case it's reused.
+
