@@ -366,12 +366,11 @@ One conclusion can be drawn from these models, however. Since running time is th
 
 Future work will therefore need to focus on this experimental design first and foremost, while also trying to understand this operating context more deeply by measuring baseline energy consumption for an "idle" system, stepping up to baseline measurements that include framework and runtime overhead (time needed for compilation or loading of the different data and executable files, for instance), and the workload itself, and how it changes. We have also assumed that the operating context is static, but in most cases by running our algorithm implementation we will be changing the temperature and other system conditions. The key to optimizing algorithm implementation will thus be not only the static understanding of energy consumption, but also the way it alters temperature for the next runs in the sequence. This will become the focus of our future lines of work.
 
-\begin{credits}
-\subsubsection{\ackname}
+\section{Acknowledgements}
 
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
-\end{credits}
+
 
 \bibliographystyle{splncs04}
 \bibliography{energy,ga-energy,GAs,ours}
