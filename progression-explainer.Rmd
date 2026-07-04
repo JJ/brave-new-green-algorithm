@@ -1,0 +1,120 @@
+---
+title: "Progression of BNA Energy Measurement Methodologies"
+author: "JJ Merelo & Cecilia Merelo Molina"
+bibliography: ["energy.bib"]
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+library(reshape2)
+library(ggridges)
+```
+
+# Introduction: Progression of BNA Energy Measurement Methodologies
+
+This report outlines the evolution of our methodology for measuring the energy consumption of the Brave New Algorithm (BNA), a population-based metaheuristic. We utilize Intel RAPL to measure package-level energy in Joules, tracking the progression of our experimental and statistical approaches across four key studies.
+
+Initially, a `baseline` energy measurement (the energy consumed by the system without the algorithm running) is established to isolate the `delta` energy, which is the specific workload energy. The algorithm's termination criterion, `max_gens` (maximum generations), serves as a proxy for workload intensity.
+
+## Visual 1: The LION and OLA Foundations
+
+*How did our understanding of baseline subtraction evolve from static means to sequential pairs?*
+
+Our initial approach in LION used a static baseline, applying a robust trimmed mean to account for measurement variance. However, applying a deeper understanding in OLA, we recognized that the system's thermal state causes measurement hysteresis. A static subtraction preserved the raw workload spread and produced unrealistic negative energy deltas. To mitigate this, OLA introduced a sequential mixed methodology—subtracting the baseline from the immediately following workload run. This operational change significantly reduces distribution dispersion compared to static subtraction.
+
+```{r visual1-ola-sequential, echo=FALSE, fig.cap="Comparison of raw workload energy and sequential deltas.", fig.align='center'}
+ola_data <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
+
+# Ensure ordering
+ola_data$id <- 1:nrow(ola_data)
+
+base_runs <- ola_data %>% filter(grepl("base", work)) %>% mutate(pair_id = ceiling(id/2))
+work_runs <- ola_data %>% filter(!grepl("base", work)) %>% mutate(pair_id = ceiling(id/2))
+
+paired_data <- inner_join(work_runs, base_runs, by="pair_id", suffix=c("_work", "_base")) %>%
+  mutate(delta_PKG = PKG_work - PKG_base)
+
+# Plot distributions: Raw Workload PKG vs Delta PKG
+plot_data <- data.frame(
+  Type = c(rep("Raw Workload PKG", nrow(paired_data)), rep("Sequential Delta PKG", nrow(paired_data))),
+  Energy = c(paired_data$PKG_work, paired_data$delta_PKG)
+)
+
+ggplot(plot_data, aes(x = Energy, y = Type, fill = Type)) +
+  geom_density_ridges(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Energy Distribution: Raw Workload vs. Sequential Delta",
+       x = "Energy (Joules)", y = "") +
+  scale_fill_brewer(palette = "Set2") +
+  theme(legend.position = "none")
+```
+
+**Takeaway:** In this setup, pairing workloads with their immediate baselines rather than a static global average often mitigates thermal hysteresis and eliminates negative energy artifacts.
+
+## Visual 2: The Multi-Run Sandwich Methodology (CEC)
+
+*Can we further isolate workload energy from non-stationary background system drift?*
+
+Building upon the sequential approach, the CEC research demonstrated that system background drift is non-stationary and varies between sessions. A multi-run sandwich strategy was developed, calculating the delta by subtracting the average of the preceding and succeeding baselines from each workload run. This approach proved that static measurements fail to capture time-varying system states.
+
+```{r visual2-cec-drift, echo=FALSE, fig.cap="Baseline drift over time highlighting non-stationary system states.", fig.align='center'}
+cec_data <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv")
+cec_base <- cec_data %>% filter(grepl("base", work))
+cec_base$run_id <- 1:nrow(cec_base)
+
+ggplot(cec_base, aes(x = run_id, y = PKG)) +
+  geom_line(color = "darkgrey", alpha = 0.6) +
+  geom_point(aes(color = as.factor(dimension)), alpha = 0.8) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  theme_minimal() +
+  labs(title = "CEC Baseline Drift Over Successive Runs",
+       x = "Measurement Sequence", y = "Baseline PKG (Joules)",
+       color = "Dimension")
+```
+
+**Takeaway:** The multi-run sandwich strategy reliably reduces energy measurement variability to one-third of the original, enabling highly actionable parameter comparisons.
+
+## Visual 3: Thermodynamic Context and Core Pinning (PECS)
+
+*What role do operational parameters like CPU temperature and core allocation play in energy models?*
+
+Our PECS analysis revealed that the operational context—specifically CPU temperature and core scheduling—is the primary driver of variation in package-level energy consumption. While algorithm parameters matter, execution time acts as the dominant predictor in our generalized linear models. Interestingly, pinning tasks to efficiency cores unexpectedly increased baseline energy, as longer execution times allowed the base power draw to dominate.
+
+```{r visual3-pecs-time, echo=FALSE, fig.cap="Execution time correlates strongly with energy consumption across configurations.", fig.align='center'}
+if(file.exists("data/europar_test.rds")){
+  load("data/europar_test.rds")
+  
+  ggplot(europar_test, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", se = FALSE) +
+    theme_minimal() +
+    labs(title = "Energy Consumption vs Execution Time",
+         x = "Execution Time (Seconds)", y = "PKG (Joules)",
+         color = "Pop Size")
+} else {
+  # Fallback to CEC data if RDS is problematic in this rendering env
+  cec_work <- cec_data %>% filter(!grepl("base", work))
+  ggplot(cec_work, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", se = FALSE) +
+    theme_minimal() +
+    labs(title = "Energy Consumption vs Execution Time (CEC fallback)",
+         x = "Execution Time (Seconds)", y = "PKG (Joules)",
+         color = "Pop Size")
+}
+```
+
+**Takeaway:** Because execution time dominates, performance optimization (the "run-to-idle" strategy) often remains the most effective method for metaheuristic energy reduction.
+
+## Practical Implications & Reproducibility
+
+These progressive refinements—from static baselines to sequential pairing, sandwiching, and finally thermodynamic modeling—highlight that system-level noise must be actively managed in green algorithm research. The "run-to-idle" paradigm suggests that the fastest algorithm is typically the greenest, as base power draw punishes longer executions. 
+
+**Reproducibility Notes:** 
+All datasets (`data/`) remain read-only. For consistent results, experiments should employ the sandwich strategy and capture initial CPU temperatures. The `energyR` package centralizes the `process_deltas()` logic to apply the sandwich subtraction automatically.
