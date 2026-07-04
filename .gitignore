@@ -51,3 +51,6 @@ auto/
 index.html
 
 cache/
+
+# Agent stuff
+.agents/rules
