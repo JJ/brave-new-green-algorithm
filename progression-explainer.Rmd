@@ -87,27 +87,15 @@ ggplot(cec_base, aes(x = run_id, y = PKG)) +
 Our PECS analysis revealed that the operational context—specifically CPU temperature and core scheduling—is the primary driver of variation in package-level energy consumption. While algorithm parameters matter, execution time acts as the dominant predictor in our generalized linear models. Interestingly, pinning tasks to efficiency cores unexpectedly increased baseline energy, as longer execution times allowed the base power draw to dominate.
 
 ```{r visual3-pecs-time, echo=FALSE, fig.cap="Execution time correlates strongly with energy consumption across configurations.", fig.align='center'}
-if(file.exists("data/europar_test.rds")){
-  load("data/europar_test.rds")
+load("data/europar_test.rds")
   
-  ggplot(europar_test, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
+ggplot(europar_test, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
     geom_point(alpha = 0.6) +
     geom_smooth(method = "lm", se = FALSE) +
     theme_minimal() +
     labs(title = "Energy Consumption vs Execution Time",
          x = "Execution Time (Seconds)", y = "PKG (Joules)",
          color = "Pop Size")
-} else {
-  # Fallback to CEC data if RDS is problematic in this rendering env
-  cec_work <- cec_data %>% filter(!grepl("base", work))
-  ggplot(cec_work, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
-    geom_point(alpha = 0.6) +
-    geom_smooth(method = "lm", se = FALSE) +
-    theme_minimal() +
-    labs(title = "Energy Consumption vs Execution Time (CEC fallback)",
-         x = "Execution Time (Seconds)", y = "PKG (Joules)",
-         color = "Pop Size")
-}
 ```
 
 **Takeaway:** Because execution time dominates, performance optimization (the "run-to-idle" strategy) often remains the most effective method for metaheuristic energy reduction.
