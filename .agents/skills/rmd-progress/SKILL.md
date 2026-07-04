@@ -18,3 +18,4 @@ description: Standard guidelines for compiling R Markdown progression explainers
 - DON'T read data files, simply use the same commands that were used in the papers to load them.
 - ALWAYS include charts in the output that show the improvement from one paper to the next (or to the last in the series)
 - The emphasis should be in applying methodology introduced in paper n+1 to data examined in paper n, showing what did we learn on the subject matter from one paper to the next one.
+- ALWAYS include references to the papers used in the bibliography section.
