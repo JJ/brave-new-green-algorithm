@@ -18,18 +18,14 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{A. N. Onymous \inst{1}}
-\institute{Hidden}
-%
-\authorrunning{N/A}
 
-% \author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
-% \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
-% \and
-% Instituto Tecnológico Nacional de México, Tijuana, México
-% }
-%
-%\authorrunning{Merelo et al.}
+\author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
+\institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
+\and
+Instituto Tecnológico Nacional de México, Tijuana, México
+}
+
+\authorrunning{Merelo et al.}
 %
 \maketitle              % typeset the header of the contribution
 %
@@ -73,10 +69,6 @@ The experiments proceed in a sequence we have called {\em sandwich}: for every c
 
 This whole set of experiments is then repeated several times at different points after booting the system, doing normal work in between. We repeat 4 times every experiment this way, the main idea being to {\em catch} the system in different states during the experiment, so that we can have a more precise model of their dependence.
 
-% JJ, Reviewer #3 asks about 'two distinct dice' dice? we know that dice is the plural of die, but I found this:
-% In semiconductor engineering, the plural of the silicon "die" is typically dies - (Daily writning tips)
-% I think we should leave it like that or add a footnote - M
-% Done
 All measures have been taken on the same system, a desktop system with an AMD Ryzen 9 9950X 16-Core Processor. This is a two-die processor, that has the cores distributed in two distinct dies, each one with its own temperature sensor. We will take into account this fact in the analysis and the experimental design. This machine runs Ubuntu with kernel {\tt 6.17.0-14-generic}. We are using Julia version 1.11.9, initially with the test version and then the stable one, although in this paper we will not be comparing hardware versions. We are using {\sf pinpoint}, a command line tool that reads energy measurements from the RAPL API \cite{rapl}, an API that is easy to use, with adequate accuracy, and readily available in Intel- and AMD- based systems.
 % Is RAPL really very accurate? RAPL's measurements are purely based on a model of the instruction counts. - R #3
 % If we found more space maybe we could clarify this. - M
@@ -84,8 +76,7 @@ All measures have been taken on the same system, a desktop system with an AMD Ry
 % R #3 also asks: In Figure 2, what is Delta PKG? How does this relate to the energy consumption?
 % I think it is the Delta of PKG energy, mentioned below: - M
 Since this is an AMD system, only PKG (package) energy can be measured, without distinguishing between different processor planes or energy spent by DRAM. This is enough, however, to understand the interdependence between temperature and energy spent by our implementation of the algorithm. Finally, the {\sf sensors} command is used to read the temperature from the sensors; a specific sensor, {\sf k10temp-pci-00c3}, yields three measurements, one for maximum allowed temperature and one for each die: {\sf Tccd1} and {\sf Tccd2}. Each run, is executed in superuser mode from a Perl script, that also processes the energy and temperature readings and outputs a CSV file. All data files are available in a public GitHub repository
-%\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
-\url{https://github.com/hidd/en}
+\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
 Experiments are started at random moments from booting the system. In general, experiments will be separated by several hours, but no specific {\em cool down} period is enforced. The intention is, as stated, to perform the experiment in the usual conditions. Experiments are repeated at least four times under these conditions; that is, the whole run of 31$B$+31$W$ for every combination is repeated 4 times; that is, the workload run for a specific combination of parameters is repeated 30 x 4 times (in some cases, 5); we have thus at least 120 measurements of energy consumption (with batches of 30 taken at different moments and after reboots) for every parameter combination.
 
 The whole experimental datasets used here are freely available and can be downloaded from
@@ -303,7 +294,7 @@ wilcox_test_time <- wilcox.test(seconds ~ Experiment, data = joint_base_with_die
 wilcox_test_temperature <- wilcox.test(initial_temp ~ Experiment, data = joint_base_with_die2)
 @
 
-% Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dice; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
+Figure \ref{fig:europar.die2.comparison} shows violin plots for energy consumption, time and average temperature across the two dies; in all cases the difference is significant, showing that this experimental design is able to curb energy demands as well as the use of lower-frequency cores.
 %
 <<europar.die2.table, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Comparison of the models for the baseline experiment with and without taskset on die 2.">>=
 joint_base_with_die2_summary <- joint_base_with_die2 %>%
@@ -382,9 +373,7 @@ Future work will therefore need to focus on this experimental design first and f
 \begin{credits}
 \subsubsection{\ackname}
 
-% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
-Supported by a grant\\
-taking this much space
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
 
 \end{credits}
 
