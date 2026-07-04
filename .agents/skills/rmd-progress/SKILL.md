@@ -11,6 +11,7 @@ description: Standard guidelines for compiling R Markdown progression explainers
 - Use published venue names (e.g., LION), not submission prefixes (e.g., evoapps).
 - Make special emphasis on different treatments or conclusions gathered from the same dataset.
 - Create a brief summary at the end that shows where the state of the art as of the latest paper published is now.
+- Include the common ground for all papers analyzed: common techniques, tools and methodologies.
 
 
 ## Specific rules

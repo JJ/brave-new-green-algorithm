@@ -1,7 +1,7 @@
 ---
 title: "Progression of BNA Energy Measurement Methodologies"
 author: "JJ Merelo & Cecilia Merelo Molina"
-bibliography: ["energy.bib"]
+bibliography: ["references.bib"]
 output:
   html_document:
     df_print: paged
@@ -26,7 +26,7 @@ Initially, a `baseline` energy measurement (the energy consumed by the system wi
 
 *How did our understanding of baseline subtraction evolve from static means to sequential pairs?*
 
-Our initial approach in LION used a static baseline, applying a robust trimmed mean to account for measurement variance. However, applying a deeper understanding in OLA, we recognized that the system's thermal state causes measurement hysteresis. A static subtraction preserved the raw workload spread and produced unrealistic negative energy deltas. To mitigate this, OLA introduced a sequential mixed methodology—subtracting the baseline from the immediately following workload run. This operational change significantly reduces distribution dispersion compared to static subtraction.
+Our initial approach in LION [@lion26] used a static baseline, applying a robust trimmed mean to account for measurement variance. However, applying a deeper understanding in OLA [@merelo26:ola], we recognized that the system's thermal state causes measurement hysteresis. A static subtraction preserved the raw workload spread and produced unrealistic negative energy deltas. To mitigate this, OLA introduced a sequential mixed methodology—subtracting the baseline from the immediately following workload run. This operational change significantly reduces distribution dispersion compared to static subtraction.
 
 ```{r visual1-ola-sequential, echo=FALSE, fig.cap="Comparison of raw workload energy and sequential deltas.", fig.align='center'}
 ola_data <- read.csv("data/ola-1.11.7-mixed-ola-mixed-15-Dec-19-49-11.csv")
@@ -61,7 +61,7 @@ ggplot(plot_data, aes(x = Energy, y = Type, fill = Type)) +
 
 *Can we further isolate workload energy from non-stationary background system drift?*
 
-Building upon the sequential approach, the CEC research demonstrated that system background drift is non-stationary and varies between sessions. A multi-run sandwich strategy was developed, calculating the delta by subtracting the average of the preceding and succeeding baselines from each workload run. This approach proved that static measurements fail to capture time-varying system states.
+Building upon the sequential approach, the CEC research [@cec26] demonstrated that system background drift is non-stationary and varies between sessions. A multi-run sandwich strategy was developed, calculating the delta by subtracting the average of the preceding and succeeding baselines from each workload run. This approach proved that static measurements fail to capture time-varying system states.
 
 ```{r visual2-cec-drift, echo=FALSE, fig.cap="Baseline drift over time highlighting non-stationary system states.", fig.align='center'}
 cec_data <- read.csv("data/cec-1.12.4-25.10-cec-mixed-v1-26-Jan-08-30-26.csv")
@@ -110,3 +110,5 @@ These progressive refinements—from static baselines to sequential pairing, san
 
 **Reproducibility Notes:** 
 All datasets (`data/`) remain read-only. For consistent results, experiments should employ the sandwich strategy and capture initial CPU temperatures. The `energyR` package centralizes the `process_deltas()` logic to apply the sandwich subtraction automatically.
+
+## References
