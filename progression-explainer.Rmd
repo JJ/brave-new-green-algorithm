@@ -88,8 +88,12 @@ Our PECS analysis revealed that the operational context—specifically CPU tempe
 
 ```{r visual3-pecs-time, echo=FALSE, fig.cap="Execution time correlates strongly with energy consumption across configurations.", fig.align='center'}
 load("data/europar_test.rds")
-  
-ggplot(europar_test, aes(x = seconds, y = PKG, color = as.factor(population_size))) +
+europar_test$work <- ifelse( startsWith(europar_test$work,"base"),"baseline","workload" )
+ggplot(europar_test, aes(x = seconds, y = PKG, 
+                         color = as.factor(population_size),
+                        shape=as.factor(work)
+                        )
+       ) +
     geom_point(alpha = 0.6) +
     geom_smooth(method = "lm", se = FALSE) +
     theme_minimal() +
