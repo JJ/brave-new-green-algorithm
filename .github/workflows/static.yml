@@ -54,7 +54,7 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
       - name: Install R dependencies
-        run: install.packages(c("marginaleffects","bookdown", "broom","rmarkdown", "ggplot2", "dplyr", "knitr", "ggridges","kableExtra"))
+        run: install.packages(c("marginaleffects","bookdown", "broom","rmarkdown", "ggplot2", "dplyr", "knitr", "ggridges","kableExtra","reshape2"))
         shell: Rscript {0}
       - name: Render all Rmd and qmd files
         run: |
