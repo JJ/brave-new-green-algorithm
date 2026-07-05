@@ -2,12 +2,38 @@ load("data/europar_test.rds")
 load("data/europar_taskset.rds")
 load("data/europar_taskset_die2.rds")
 
+library(dplyr)
 regular <- rbind(europar_test, europar_taskset, europar_taskset_die2)
+
+regular <- regular %>%
+  # Create a common identifier for the sandwich (e.g., both become "europar-test")
+  mutate(experiment_block = sub("^base-", "", work)) %>%
+  # Group by the unified block
+  group_by(experiment_block) %>%
+  # CRITICAL: Rows must be in chronological order of execution.
+  # If you have an execution index/timestamp, uncomment the line below:
+  # arrange(execution_time, .by_group = TRUE) %>%
+  mutate(
+    prev_temp_1 = lag(initial_temp_1),
+    prev_temp_2 = lag(initial_temp_2),
+    # Capturing the previous work tag is a great sanity check
+    prev_work = lag(work)
+  ) %>%
+  ungroup()
 
 regular_base <- regular[ startsWith(regular$work, "base"),]
 regular_base$work <- "regular"
 
 load("data/icsm_hot_first.rds")
+icsm_hot_first <- icsm_hot_first %>%
+  mutate(experiment_block = sub("^base-", "", work)) %>%
+  group_by(experiment_block) %>%
+  mutate(
+    prev_temp_1 = lag(initial_temp_1),
+    prev_temp_2 = lag(initial_temp_2),
+    prev_work = lag(work)
+  ) %>%
+  ungroup()
 hot_first_base <- icsm_hot_first[ startsWith(icsm_hot_first$work,"base"), ]
 hot_first_base$work <- "hot-first"
 
@@ -22,7 +48,7 @@ regular_vs_hot_first$dimension <- as.factor(regular_vs_hot_first$dimension)
 regular_vs_hot_first$population_size <- as.factor(regular_vs_hot_first$population_size)
 regular_vs_hot_first_time_model <- glm( seconds ~ work*dimension*population_size, data=regular_vs_hot_first)
 
-regular_vs_hot_first_temp1_model <- glm( initial_temp_1 ~ work*dimension*population_size, data=regular_vs_hot_first)
+regular_vs_hot_first_temp1_model <- glm( initial_temp_1 ~ work*dimension*population_size+prev_temp_1*prev_temp_2, data=regular_vs_hot_first)
 regular_vs_hot_first_temp2_model <- glm( initial_temp_2 ~ work*dimension*population_size, data=regular_vs_hot_first)
 
 regular_vs_hot_first$residual_seconds <- residuals(regular_vs_hot_first_time_model)
