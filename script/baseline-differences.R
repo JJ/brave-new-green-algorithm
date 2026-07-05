@@ -114,9 +114,6 @@ library(ggExtra)
 # 1. Create the base plot with a quadratic fit
 p_corrected <- ggplot(regular_vs_hot_first, aes(x = seconds, y = PKG, color = work)) +
   geom_point(alpha = 0.3, stroke = 0) +
-  # Use a 2nd-degree polynomial to match your GLM's quadratic term.
-  # Note: using linewidth instead of size for ggplot2 3.4.0+ compatibility
-  geom_smooth(method = "lm", formula = y ~ poly(x, 2), linewidth = 1.2) +
   theme_minimal() +
   scale_color_manual(values = c("hot-first" = "#e74c3c", "regular" = "#3498db")) +
   # Move legend to the bottom so marginal plots have room
@@ -127,4 +124,4 @@ p_corrected <- ggplot(regular_vs_hot_first, aes(x = seconds, y = PKG, color = wo
        y = "Total Energy Consumed (PKG)")
 
 # 2. Add marginal boxplots to show the true centers of mass
-ggMarginal(p_corrected, type = "violin", groupColour = TRUE, groupFill = TRUE, notch=T, alpha = 0.4)
+ggMarginal(p_corrected, type = "violin", groupColour = TRUE, groupFill = TRUE, alpha = 0.4)
