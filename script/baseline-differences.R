@@ -37,3 +37,20 @@ regular_vs_hot_first_PKG_model <- glm( PKG ~ work*dimension*population_size +
 
 ggplot(regular_vs_hot_first, aes(x=initial_temp_1, y=initial_temp_2, group=work, color=work))+
   geom_point()+theme_minimal()
+
+ggplot(regular_vs_hot_first, aes(x=initial_temp_1, y=initial_temp_2, group=work, color=work)) +
+  geom_point(alpha = 0.3) +
+  geom_density_2d(linewidth = 0.8) +
+  theme_minimal() +
+  labs(title = "Temperature Distribution: Regular vs Hot-First")
+
+library(ggExtra)
+
+# First, assign your ggplot to an object
+p <- ggplot(regular_vs_hot_first, aes(x=initial_temp_1, y=initial_temp_2, color=work)) +
+  geom_point(alpha = 0.4) +
+  theme_minimal() +
+  theme(legend.position = "bottom") # Moving legend prevents squishing the marginal plots
+
+# Add marginal densities grouped by the 'work' variable
+ggMarginal(p, type = "density", groupColour = TRUE, groupFill = TRUE, alpha = 0.3)
