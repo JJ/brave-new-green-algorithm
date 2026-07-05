@@ -12,6 +12,7 @@ description: Standard guidelines for compiling R Markdown progression explainers
 - Make special emphasis on different treatments or conclusions gathered from the same dataset.
 - Create a brief summary at the end that shows where the state of the art as of the latest paper published is now.
 - Include the common ground for all papers analyzed: common techniques, tools and methodologies.
+- ALWAYS make sure that the different sections follow from each other, and are not simply an enumeration of a takeaway of this paper or other paper. Ideally, it would be a data analysis or visualization methodology that was introduced in paper n+1 applied to the experimental data created for paper n. Another alternative is to merge data for both papers and show how, effectively, a result for paper n+1 is better than the result for paper n.
 
 
 ## Specific rules
