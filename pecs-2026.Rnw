@@ -80,8 +80,7 @@ Since this is an AMD system, only PKG (package) energy can be measured, without 
 Experiments are started at random moments from booting the system. In general, experiments will be separated by several hours, but no specific {\em cool down} period is enforced. The intention is, as stated, to perform the experiment in the usual conditions. Experiments are repeated at least four times under these conditions; that is, the whole run of 31$B$+31$W$ for every combination is repeated 4 times; that is, the workload run for a specific combination of parameters is repeated 30 x 4 times (in some cases, 5); we have thus at least 120 measurements of energy consumption (with batches of 30 taken at different moments and after reboots) for every parameter combination.
 
 The whole experimental datasets used here are freely available and can be downloaded from
-%\url{https://github.com/JJ/brave-new-green-algorithm.}
-\url{https://github.com/hidd/en-too.}
+\url{https://github.com/JJ/brave-new-green-algorithm}.
 %
 <<europar.initial, echo=FALSE, fig.cap="Energy spent vs. temperature for the baseline experiment. Workload and baseline runs (base) are represented with different colors, problem dimension is represented with different shapes.", fig.height=3, fig.pos="h!tb", out.width="100%">>=
 load("data/europar_test.rds")
@@ -369,8 +368,6 @@ Future work will therefore need to focus on this experimental design first and f
 \section{Acknowledgements}
 
 This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under project PID2023-147409NB-C21.
-
-
 
 \bibliographystyle{splncs04}
 \bibliography{energy,ga-energy,GAs,ours}
