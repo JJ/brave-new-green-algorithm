@@ -93,8 +93,8 @@ plot_distributions <- function(mod, data ) {
       population_size         = get_ref_val(population_size),
       evaluations              = median(evaluations, na.rm = TRUE),
       residual_delta_seconds   = median(residual_delta_seconds, na.rm = TRUE),
-      residual_initial_temp_1  = median(residual_initial_temp_1, na.rm = TRUE),
-      residual_initial_temp_2  = median(residual_initial_temp_2, na.rm = TRUE)
+      initial_temp_1  = median(initial_temp_1, na.rm = TRUE),
+      initial_temp_2  = median(initial_temp_2, na.rm = TRUE)
     )
 
 # --- 2. Prediction grid: sweep each covariate of interest across
@@ -111,8 +111,8 @@ build_grid <- function(var, n = 100) {
 }
 
 pred_grid <- bind_rows(
-  build_grid("residual_initial_temp_1"),
-  build_grid("residual_initial_temp_2")
+  build_grid("initial_temp_1"),
+  build_grid("initial_temp_2")
 )
 
 # --- 3. Model-based predictions = the "coefficient effect" -------
@@ -123,7 +123,7 @@ pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
 
 # --- 4. Observed distributions per protocol = "distributional effect"
   raw_long <- data %>%
-    select(work, residual_initial_temp_1, residual_initial_temp_2) %>%
+    select(work, initial_temp_1, initial_temp_2) %>%
     pivot_longer(-work, names_to = "variable", values_to = "x")
 
   dens_df <- raw_long %>%
@@ -147,12 +147,12 @@ dens_df <- dens_df %>%
   ungroup()
 
 # --- 5. Labels & colors ------------------------------------------
-nice_labels <- c(
-  residual_initial_temp_1 = "Initial temp - component 1",
-  residual_initial_temp_2 = "Initial temp - component 2"
-)
+  nice_labels <- c(
+    initial_temp_1 = "Initial temp - component 1",
+    initial_temp_2 = "Initial temp - component 2"
+  )
 
-pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches your labels
+  pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches your labels
 
 # --- 6. The combined plot ------------------------------------------
   p <- ggplot() +
@@ -182,16 +182,10 @@ staged_model <- function( data ) {
   combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= data)
   data$residual_delta_seconds <- residuals(combined_workload_time_model)
 
-  icsme_combined_temp_1_model <- glm( initial_temp_1 ~ work*dimension*population_size, data=data)
-  icsme_combined_temp_2_model <- glm( initial_temp_2 ~ work*dimension*population_size, data=data)
-
-  data$residual_initial_temp_1 <- residuals(icsme_combined_temp_1_model)
-  data$residual_initial_temp_2 <- residuals(icsme_combined_temp_2_model)
-
-  icsme_combined_workload_model <- glm( delta_PKG ~  residual_initial_temp_1*residual_initial_temp_2+
+  icsme_combined_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2+
                                           work*dimension*population_size+
                                           evaluations+residual_delta_seconds+
-                                          I(residual_initial_temp_1^2)*I(residual_initial_temp_2^2)+I(residual_delta_seconds^2),
+                                          I(initial_temp_1^2)*I(initial_temp_2^2)+I(residual_delta_seconds^2),
                                         data= data)
 
   return(list(
@@ -277,8 +271,8 @@ coef_df <- coef_df %>%
 coef_df <- coef_df %>%
   mutate(
     term_label = term %>%
-      str_replace_all("residual_initial_temp_1", "temp1") %>%
-      str_replace_all("residual_initial_temp_2", "temp2") %>%
+      str_replace_all("initial_temp_1", "temp1") %>%
+      str_replace_all("initial_temp_2", "temp2") %>%
       str_replace_all("residual_delta_seconds", "time") %>%
       str_replace_all("workhot-first", "hot-first") %>%
       str_replace_all("dimension", "dim") %>%
@@ -441,7 +435,7 @@ mediator_final_temp2 <- lm(final_temp_2 ~ work + dimension * population_size * a
                      data = schaffer_workload_data)
 
 @
-Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triantles). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["residual_initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}.
+Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triangles). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
