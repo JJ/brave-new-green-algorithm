@@ -97,10 +97,10 @@ plot_distributions <- function(mod, data ) {
       initial_temp_2  = median(initial_temp_2, na.rm = TRUE)
     )
 
-# --- 2. Prediction grid: sweep each covariate of interest across
-#        its observed range, for BOTH protocols, rest held fixed ---
-build_grid <- function(var, n = 100) {
-  rng  <- range(data[[var]], na.rm = TRUE)
+  # --- 2. Prediction grid: sweep each covariate of interest across
+  #        its observed range, for BOTH protocols, rest held fixed ---
+  build_grid <- function(var, n = 100) {
+  rng  <- quantile(data[[var]], probs = c(0.01, 0.99), na.rm = TRUE)  # <- was range()
   vals <- seq(rng[1], rng[2], length.out = n)
   grid <- ref_grid[rep(1, n * length(work_levels)), ]
   grid[[var]]   <- rep(vals, times = length(work_levels))
@@ -108,18 +108,18 @@ build_grid <- function(var, n = 100) {
   grid$variable <- var
   grid$x        <- grid[[var]]
   grid
-}
+  }
 
-pred_grid <- bind_rows(
-  build_grid("initial_temp_1"),
-  build_grid("initial_temp_2")
-)
+  pred_grid <- bind_rows(
+    build_grid("initial_temp_1"),
+    build_grid("initial_temp_2")
+  )
 
 # --- 3. Model-based predictions = the "coefficient effect" -------
-pr <- predict(mod, newdata = pred_grid, se.fit = TRUE)
-pred_grid$fit <- pr$fit
-pred_grid$lwr <- pr$fit - 1.96 * pr$se.fit
-pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
+  pr <- predict(mod, newdata = pred_grid, se.fit = TRUE)
+  pred_grid$fit <- pr$fit
+  pred_grid$lwr <- pr$fit - 1.96 * pr$se.fit
+  pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
 
 # --- 4. Observed distributions per protocol = "distributional effect"
   raw_long <- data %>%
@@ -136,16 +136,27 @@ pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
 
 # Rescale each density into the bottom ~20% of its facet's y-range,
 # so it reads as a "shadow" under the curve rather than a separate axis
-y_range <- pred_grid %>%
+  y_range <- pred_grid %>%
+    group_by(variable) %>%
+    summarise(y_min = min(lwr), y_max = max(upr), .groups = "drop")
+
+  dens_df <- dens_df %>%
+    left_join(y_range, by = "variable") %>%
+    group_by(variable) %>%
+    mutate(d_scaled = y_min + (d / max(d)) * (y_max - y_min) * 0.2) %>%
+    ungroup()
+
+  # add this block immediately after the dens_df mutate (line 147),
+# before the nice_labels definition
+
+x_limits <- pred_grid %>%
   group_by(variable) %>%
-  summarise(y_min = min(lwr), y_max = max(upr), .groups = "drop")
+  summarise(x_min = min(x), x_max = max(x), .groups = "drop")
 
 dens_df <- dens_df %>%
-  left_join(y_range, by = "variable") %>%
-  group_by(variable) %>%
-  mutate(d_scaled = y_min + (d / max(d)) * (y_max - y_min) * 0.2) %>%
-  ungroup()
-
+  left_join(x_limits, by = "variable") %>%
+  filter(x >= x_min, x <= x_max) %>%
+  select(-x_min, -x_max)
 # --- 5. Labels & colors ------------------------------------------
   nice_labels <- c(
     initial_temp_1 = "Initial temp - component 1",
@@ -156,9 +167,12 @@ dens_df <- dens_df %>%
 
 # --- 6. The combined plot ------------------------------------------
   p <- ggplot() +
-    geom_area(data = dens_df,
-            aes(x = x, y = d_scaled, fill = work),
-            alpha = 0.25, position = "identity") +
+    # geom_area(data = dens_df,
+    #         aes(x = x, y = d_scaled, fill = work),
+    #         alpha = 0.25, position = "identity") +
+    geom_ribbon(data = dens_df,
+            aes(x = x, ymin = y_min, ymax = d_scaled, fill = work),
+            alpha = 0.35, position = "identity") +
     geom_ribbon(data = pred_grid,
               aes(x = x, ymin = lwr, ymax = upr, fill = work),
               alpha = 0.15) +
@@ -182,7 +196,7 @@ staged_model <- function( data ) {
   combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= data)
   data$residual_delta_seconds <- residuals(combined_workload_time_model)
 
-  icsme_combined_workload_model <- glm( delta_PKG ~  initial_temp_1*initial_temp_2+
+  icsme_combined_workload_model <- glm( delta_PKG ~ initial_temp_1*initial_temp_2+
                                           work*dimension*population_size+
                                           evaluations+residual_delta_seconds+
                                           I(initial_temp_1^2)*I(initial_temp_2^2)+I(residual_delta_seconds^2),
@@ -219,7 +233,7 @@ What we propose and are going to evaluate in this paper is to use a {\em hot-fir
 
 We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core on which the program is running be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
 
-<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. residualized temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).", fig.height=4, fig.pos="h!tb">>=
+<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).", fig.height=4, fig.pos="h!tb">>=
 
 library(tidyr)
 library(ggplot2)
@@ -230,11 +244,10 @@ plot_distributions( icsme_combined_workload_model, icsme_combined)
 
 In order to isolate the operating context from the algorithm configuration, we will perform the model in 4 stages:\begin{itemize}
 \item A first model of time as a function of the temperature of the two dies, and the interaction between the intervention (baseline or hot-first) and the algorithm parameters (dimension and population size). Residuals for this time component are extracted to be used in subsequent models.
-\item Models of the initial temperatures of dies 1 and 2 as a function of the interaction among the intervention and algorithm parameters. Residuals are extracted for both models
-\item A final model that includes the operating context variables, which have been residualized, linear and squared, as well as the intervention factor interacting with algorithm variables.
+\item A final model that includes the operating context variables; linear and squared, as well as the intervention factor interacting with algorithm variables.
 \end{itemize}
 
-We represent in Figure \ref{fig:ieeecal.hot.combined} the results for two of the operational context variables, representing energy consumed as a function of the (residuals of the ) initial temperatures for the two dies, as well as the distribution of initial temperatures in both datasets. Using the hot-first protocol might lower energy consumption in two different ways: all other parameters being equal, negative coefficients will result in lower energy consumption; this is represented in the lines in the graph, and we see how the (fitted) line is effectively lower in both cases; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context, which has been residualized. If, using the protocol, programs take less time or the overall temperature at which they run is lower, this will result in additional gain. An additional, and probably less important, factor is that there are more runs for the hot-first blocks where the initial temperature is beyond the point at which the negative squared temperature term starts to act. All in all, this proves our claim that scheduling the process to run on the hottest die in a two-die processor like the AMD Ryzen during an energy-measurement experimentwill result in lower consumption than using regular OS scheduling.
+We represent in Figure \ref{fig:ieeecal.hot.combined} the results for two of the operational context variables, representing energy consumed as a function of the initial temperatures for the two dies, as well as the distribution of initial temperatures in both datasets. Using the hot-first protocol might lower energy consumption in two different ways: all other parameters being equal, negative coefficients will result in lower energy consumption; this is represented in the lines in the graph, and we see how the (fitted) line is effectively lower in both cases; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context: power/frequency, which we use through the residualized running time, as well as the dies' temperatures.. If, using the protocol, programs take less time or the overall temperature at which they run is lower, this will result in additional gain. An additional, and probably less important, factor is that there are more runs for the hot-first blocks where the initial temperature is beyond the point at which the negative squared temperature term starts to act. All in all, this proves our claim that scheduling the process to run on the hottest die in a two-die processor like the AMD Ryzen during an energy-measurement experimentwill result in lower consumption than using regular OS scheduling.
 
 <<ieeecal.model.coeffs, echo=F, messages=F, fig.cap="Representation of model coefficients, split by the type of variable/intervention they represent. The bar indicates how it changes t, that is, the influence on the dependent variable, $E_w$", fig.height=5>>=
 # ============================================================
@@ -356,6 +369,7 @@ schaffer_v7_workload <- readRDS("../data/schaffer_v7_workload.rds")
 schaffer_v7_workload$residual_initial_temp_1 <- NULL
 schaffer_v7_workload$residual_initial_temp_2 <- NULL
 schaffer_v7_workload$residual_seconds <- NULL
+schaffer_v7_workload$population_size <- as.factor(schaffer_v7_workload$population_size)
 
 staged_model_results <- staged_model( schaffer_v7_workload )
 
@@ -372,7 +386,8 @@ library(ggnewscale) # Required to mix discrete line colors and continuous point 
 library(scales) # Required for the 'squish' function
 
 plot_slopes_temp_focused <- schaffer_workload_data %>%
-  mutate(dimension_num = as.numeric(as.character(dimension))) %>%
+  mutate(dimension_num = as.numeric(as.character(dimension)),
+        population_size = factor(population_size, levels = c(400, 800, 1600))) %>%
   ggplot(aes(x = population_size, y = delta_PKG)) +
 
   # --- LAYER 1: The Fit Lines ---
@@ -389,7 +404,7 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
   # --- LAYER 2: The Points ---
   geom_point(
     aes(shape = work, color = initial_temp_2, group = work),
-    position = position_jitterdodge(jitter.width = 0.25, dodge.width = 220),
+    position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.8),  # <- was 220
     size = 1.8,
     alpha = 0.8
   ) +
@@ -416,8 +431,7 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
     strip.background = element_rect(fill = "grey95"),
     strip.text = element_text(size = 11, face = "bold"),
     panel.spacing = unit(1, "lines")
-  ) +
-  scale_x_continuous(breaks=c(400,800,1600))
+  )
 
 print(plot_slopes_temp_focused)
 
