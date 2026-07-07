@@ -298,25 +298,34 @@ ci_comparison <- function( workload_data ) {
 
 # Pairwise contrasts — the CI width is the key number
   contrasts_base <- confint(pairs(emm_base)) %>%
-  as.data.frame() %>% mutate(work = "baseline")
+    as.data.frame() %>% mutate(work = "baseline")
   contrasts_hot  <- confint(pairs(emm_hot))  %>%
-  as.data.frame() %>% mutate(work = "hot-first")
+    as.data.frame() %>% mutate(work = "hot-first")
 
   comparison <- bind_rows(contrasts_base, contrasts_hot) %>%
-  mutate(ci_width = upper.CL - lower.CL)
+    mutate(ci_width = upper.CL - lower.CL)
 
 # The headline test: are hot-first CIs narrower on average?
-  return( comparison %>%
-    group_by(work) %>%
-    summarise(
-      mean_ci_width   = mean(ci_width),
-      median_ci_width = median(ci_width),
-      n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
-    )
-  )
+  return( list(comparison = comparison %>%
+                group_by(work) %>%
+                summarise(
+                  mean_ci_width   = mean(ci_width),
+                  median_ci_width = median(ci_width),
+                  n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0),  # contrasts that are significant
+                ),
+               test = bind_rows(
+                        contrasts_base %>% mutate(ci_width = upper.CL - lower.CL),
+                        contrasts_hot  %>% mutate(ci_width = upper.CL - lower.CL)
+                      ) %>%
+                      select(contrast, work, ci_width) %>%
+                      tidyr::pivot_wider(names_from = work, values_from = ci_width) %>%
+                      mutate(improvement = baseline - `hot-first`)
+  )  )
 }
 
-kable( ci_comparison( icsme_combined ),
+comparison_sphere <- ci_comparison( icsme_combined )
+
+kable( comparison_sphere$comparison,
        caption="Comparison of confidence intervals of baseline and hot-first datasets for the Sphere experiment, including the number of pairwise contrasts that exclude 0, that is, configurations that are statistically distinguishable." )
 @
 
@@ -324,7 +333,7 @@ Our stated intention, however, is to use these measurements to compare different
 
 Since we have achieved the main objective, but not the subobjective, it becomes necessary to perform additional experiments, with more configurations, to check whether we can actually achieve both. While we used Ubuntu kernel version 6.17 in the previous one, recently version 7 was released, and it might change the way processes are scheduled to reach a better energy/performance balance. We can also use a different, more heavy-duty, BBOB function such as Schaffer's F7; this function is known to require more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3, 5 and 10, population size = 400, 800, and 1200, and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling.
 
-<<ieeecal.schaeffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaeffer's F7 function.", fig.height=3.5, fig.pos="h!tb">>=
+<<ieeecal.schaeffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaffer's F7 function.", fig.height=3.5, fig.pos="h!tb">>=
 schaffer_v7_workload <- readRDS("../data/schaffer_v7_workload.rds")
 schaffer_v7_workload$residual_initial_temp_1 <- NULL
 schaffer_v7_workload$residual_initial_temp_2 <- NULL
@@ -438,15 +447,18 @@ Since we are interested in reducing the energy consumed by algorithm implementat
 #
 
 schaffer_comparison <- ci_comparison(schaffer_workload_data)
-kable(schaffer_comparison, caption="Comparison of confidence intervals, Schaffer experiment.")
+
+kable(schaffer_comparison$comparison, caption="Comparison of confidence intervals, Schaffer experiment.")
+
+ci_ttest <- t.test(schaffer_comparison$test$improvement)
 @
 %
-Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparison that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement; this achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably.
+Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparison that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement; this achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably. This reduction is consistent across all contrasts with a 95\% CI of \Sexpr{round(ci_ttest$conf.int[2], 2)}.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Evolving software towards more energy-efficient versions requires a sound methodology that can differentiate energy spent by different configurations of software under study from the operating context. What we have introduced here is a temperature-aware experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to reduce the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these configurations. By using temperature-aware process scheduling that always hits the hottest die in a multi-die architecture, we have managed to reduce the temperature and thus the energy consumption for different configurations of our population-based optimization algorithm for two different workloads with different kernel versions, showing that this intervention reduces the overall temperature of the two dies, but mainly that of the second die, thus reducing thermal leakage and overall energy consumption. Besides, in an experiment using the heavier workload (Schaffer's function) and more possible configurations we have shown that the confidence interval of energy measurements is shrunk, allowing comparison for all possible configurations measured.
+Evolving software towards more energy-efficient versions requires a sound methodology that can differentiate energy spent by different configurations of software under study from the operating context. What we have introduced here is a temperature-aware experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to reduce the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these configurations. By using temperature-aware process scheduling that always hits the hottest die in a multi-die architecture, we have managed to reduce the temperature and thus the energy consumption for different configurations of our population-based optimization algorithm for two different workloads with different kernel versions, showing that this intervention reduces the overall temperature of the two dies, thus reducing thermal leakage and overall energy consumption. Besides, in an experiment using the heavier workload (Schaffer's function) and more possible configurations we have shown that the confidence interval of energy measurements is shrunk, allowing comparison for all possible configurations measured.
 
 
 \section*{Acknowledgements}
