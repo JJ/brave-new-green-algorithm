@@ -334,9 +334,49 @@ ggplot(coef_df, aes(x = statistic, y = term_label,
     panel.grid.minor = element_blank()
   )
 
+anova_icsme_combined_workload_model <- anova(icsme_combined_workload_model)
+
+library(emmeans)
+
+# Same formula, fit per protocol
+formula_per_protocol <- delta_PKG ~
+  initial_temp_1 * initial_temp_2 +
+  I(initial_temp_1^2) * I(initial_temp_2^2) +
+  dimension * population_size +
+  evaluations + residual_delta_seconds +
+  I(residual_delta_seconds^2)
+
+mod_baseline <- glm(formula_per_protocol,
+                    data = filter(icsme_combined, work == "baseline"))
+mod_hotfirst <- glm(formula_per_protocol,
+                    data = filter(icsme_combined, work == "hot-first"))
+
+# Estimated marginal means for each dimension x population_size cell
+emm_base <- emmeans(mod_baseline, ~ dimension * population_size,
+                    cov.reduce = median)
+emm_hot  <- emmeans(mod_hotfirst, ~ dimension * population_size,
+                    cov.reduce = median)
+
+# Pairwise contrasts — the CI width is the key number
+contrasts_base <- confint(pairs(emm_base)) %>%
+  as.data.frame() %>% mutate(work = "baseline")
+contrasts_hot  <- confint(pairs(emm_hot))  %>%
+  as.data.frame() %>% mutate(work = "hot-first")
+
+comparison <- bind_rows(contrasts_base, contrasts_hot) %>%
+  mutate(ci_width = upper.CL - lower.CL)
+
+# The headline test: are hot-first CIs narrower on average?
+comparison %>%
+  group_by(work) %>%
+  summarise(
+    mean_ci_width   = mean(ci_width),
+    median_ci_width = median(ci_width),
+    n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
+  )
 @
 
-Figure \ref{fig:ieeecal.model.coeffs} shows the value of the model coefficients, with or without the intervention, whose main objective was to make said coefficients more significant, giving you leverage to assess whether different values have an influence on energy consumption or not. And what we see is that there are more combinations that are effectively significant than in its absence; for instance, we can see that while most factor values for this intervention lower the amount of energy consumed, the combination dimension == 10 and population size == 400 will, in fact, increase energy consumption, all other factors being equal.
+Figure \ref{fig:ieeecal.model.coeffs} shows the value of the model coefficients, with or without the intervention, whose main objective was to make coefficients related to algorithm configuration more significant, giving you leverage to assess whether different values have an influence on energy consumption or not.
 
 <<ieeecal.hot.combined.chart, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing energy consumption for the baseline and hot-first strategy", fig.height=4>>=
 library(ggExtra)
@@ -434,6 +474,44 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
 
 print(plot_slopes_temp_focused)
 
+# Contrast
+#
+
+mod_baseline <- glm(formula_per_protocol,
+                    data = filter(schaffer_workload_data, work == "baseline"))
+mod_hotfirst <- glm(formula_per_protocol,
+                    data = filter(schaffer_workload_data, work == "hot-first"))
+
+# Estimated marginal means for each dimension x population_size cell
+emm_base <- emmeans(mod_baseline, ~ dimension * population_size,
+                    cov.reduce = median)
+emm_hot  <- emmeans(mod_hotfirst, ~ dimension * population_size,
+                    cov.reduce = median)
+
+# Pairwise contrasts — the CI width is the key number
+contrasts_base <- confint(pairs(emm_base)) %>%
+  as.data.frame() %>% mutate(work = "baseline")
+contrasts_hot  <- confint(pairs(emm_hot))  %>%
+  as.data.frame() %>% mutate(work = "hot-first")
+
+comparison <- bind_rows(contrasts_base, contrasts_hot) %>%
+  mutate(ci_width = upper.CL - lower.CL)
+
+# The headline test: are hot-first CIs narrower on average?
+comparison %>%
+  group_by(work) %>%
+  summarise(
+    mean_ci_width   = mean(ci_width),
+    median_ci_width = median(ci_width),
+    n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
+  )
+
+#-----------------------------
+
+ci_test <- comparison %>%
+  select(contrast, work, ci_width) %>%
+  tidyr::pivot_wider(names_from = work, values_from = ci_width) %>%
+  mutate(improvement = baseline - `hot-first`)
 
 mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
@@ -448,6 +526,12 @@ mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size
                      data = schaffer_workload_data)
 icsme_mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
                                   data = icsme_combined)
+
+cat("Contrasts where hot-first CI is narrower:",
+    sum(ci_test$improvement > 0), "of", nrow(ci_test), "\n")
+cat("Mean CI reduction:", round(mean(ci_test$improvement), 2), "Joules\n")
+t.test(ci_test$improvement)
+# ---------------------- end new
 
 mediator_coefficients <- data.frame( die=c(1,2),
                                      sphere_coefficients = c(
