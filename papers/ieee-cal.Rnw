@@ -307,12 +307,12 @@ ci_comparison <- function( workload_data ) {
 
 # The headline test: are hot-first CIs narrower on average?
   return( comparison %>%
-  group_by(work) %>%
-  summarise(
-    mean_ci_width   = mean(ci_width),
-    median_ci_width = median(ci_width),
-    n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
-  )
+    group_by(work) %>%
+    summarise(
+      mean_ci_width   = mean(ci_width),
+      median_ci_width = median(ci_width),
+      n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
+    )
   )
 }
 
@@ -441,7 +441,7 @@ schaffer_comparison <- ci_comparison(schaffer_workload_data)
 kable(schaffer_comparison, caption="Comparison of confidence intervals, Schaffer experiment.")
 @
 %
-Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparison that we can perform reliably has increased to cover all of them; this achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably.
+Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparison that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement; this achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
