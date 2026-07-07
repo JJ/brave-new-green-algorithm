@@ -317,14 +317,14 @@ ci_comparison <- function( workload_data ) {
 }
 
 kable( ci_comparison( icsme_combined ),
-       caption="Comparison of confidence intervals of baseline and hot-first datasets, including the number of pairwise contrasts that exclude 0, that is, configurations that are statistically distinguishable." )
+       caption="Comparison of confidence intervals of baseline and hot-first datasets for the Sphere experiment, including the number of pairwise contrasts that exclude 0, that is, configurations that are statistically distinguishable." )
 @
 
 Our stated intention, however, is to use these measurements to compare different algorithm configurations to find the best ones; the two sets of experiments are compared in Table \ref{tab:ieeecal.model.coeffs}. In this sense there would be an issue with the new protocol: although overall we are spending less energy, this decreases our ability to distinguish between different algorithm configurations, and thus we would have to balance one target against the other.
 
 Since we have achieved the main objective, but not the subobjective, it becomes necessary to perform additional experiments, with more configurations, to check whether we can actually achieve both. While we used Ubuntu kernel version 6.17 in the previous one, recently version 7 was released, and it might change the way processes are scheduled to reach a better energy/performance balance. We can also use a different, more heavy-duty, BBOB function such as Schaffer's F7; this function is known to require more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3, 5 and 10, population size = 400, 800, and 1200, and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling.
 
-<<ieeecal.schaeffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaeffer's F7 function.", fig.height=4, fig.pos="h!tb">>=
+<<ieeecal.schaeffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaeffer's F7 function.", fig.height=3.5, fig.pos="h!tb">>=
 schaffer_v7_workload <- readRDS("../data/schaffer_v7_workload.rds")
 schaffer_v7_workload$residual_initial_temp_1 <- NULL
 schaffer_v7_workload$residual_initial_temp_2 <- NULL
@@ -341,9 +341,10 @@ plot_distributions( schaffer_workload_model, schaffer_workload_data)
 
 If we compare Figure \ref{fig:ieeecal.schaeffer} with Figure \ref{fig:ieeecal.hot.combined} it looks totally different: the energy consumption curves for the hot-first experiments are {\em over} the baseline, and the distribution of experiment temperature does not look so different for the hot-first intervention.
 
-<<ieeecal.factors, echo=F, fig.cap="Hot-first intervention vs. baseline for different problem sizes (dimension) and configurations.", fig.height=4>>=
+<<ieeecal.factors, echo=F, fig.cap="Hot-first intervention vs. baseline for different problem sizes (dimension) and configurations.", fig.height=3.5>>=
 library(ggnewscale) # Required to mix discrete line colors and continuous point colors
 library(scales) # Required for the 'squish' function
+library(knitr)
 
 plot_slopes_temp_focused <- schaffer_workload_data %>%
   mutate(dimension_num = as.numeric(as.character(dimension)),
@@ -395,44 +396,7 @@ plot_slopes_temp_focused <- schaffer_workload_data %>%
 
 print(plot_slopes_temp_focused)
 
-# Contrast
-#
-
-mod_baseline <- glm(formula_per_protocol,
-                    data = filter(schaffer_workload_data, work == "baseline"))
-mod_hotfirst <- glm(formula_per_protocol,
-                    data = filter(schaffer_workload_data, work == "hot-first"))
-
-# Estimated marginal means for each dimension x population_size cell
-emm_base <- emmeans(mod_baseline, ~ dimension * population_size,
-                    cov.reduce = median)
-emm_hot  <- emmeans(mod_hotfirst, ~ dimension * population_size,
-                    cov.reduce = median)
-
-# Pairwise contrasts — the CI width is the key number
-contrasts_base <- confint(pairs(emm_base)) %>%
-  as.data.frame() %>% mutate(work = "baseline")
-contrasts_hot  <- confint(pairs(emm_hot))  %>%
-  as.data.frame() %>% mutate(work = "hot-first")
-
-comparison <- bind_rows(contrasts_base, contrasts_hot) %>%
-  mutate(ci_width = upper.CL - lower.CL)
-
-# The headline test: are hot-first CIs narrower on average?
-comparison %>%
-  group_by(work) %>%
-  summarise(
-    mean_ci_width   = mean(ci_width),
-    median_ci_width = median(ci_width),
-    n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0)  # contrasts that are significant
-  )
-
-#-----------------------------
-
-ci_test <- comparison %>%
-  select(contrast, work, ci_width) %>%
-  tidyr::pivot_wider(names_from = work, values_from = ci_width) %>%
-  mutate(improvement = baseline - `hot-first`)
+# Mediator temperatures
 
 mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
@@ -448,10 +412,6 @@ mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size
 icsme_mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
                                   data = icsme_combined)
 
-cat("Contrasts where hot-first CI is narrower:",
-    sum(ci_test$improvement > 0), "of", nrow(ci_test), "\n")
-cat("Mean CI reduction:", round(mean(ci_test$improvement), 2), "Joules\n")
-t.test(ci_test$improvement)
 # ---------------------- end new
 
 mediator_coefficients <- data.frame( die=c(1,2),
@@ -468,9 +428,20 @@ mediator_coefficients <- data.frame( die=c(1,2),
 mediator_final_temp2 <- lm(final_temp_2 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
 
-kable( mediator_coefficients, caption="Mediator model coefficients for the hot-first intervention in both experiments and both dies")
+kable( mediator_coefficients, caption="Mediator model coefficients")
 @
+
 Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triangles). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}. All the coefficients for the initial temperatures for both dies and the two experiments are shown in Table \ref{tab:ieeecal.factors}, exemplifying the different effect of the intervention on both dies, although always lowering the initial temperature and thus creating the conditions for consuming less energy and boosting the signal to noise ratio of the actual algorithm parameters.
+%
+<<ieecal.contrast, echo=F, message=F>>=
+# Contrast
+#
+
+schaffer_comparison <- ci_comparison(schaffer_workload_data)
+kable(schaffer_comparison, caption="Comparison of confidence intervals, Schaffer experiment.")
+@
+%
+Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparison that we can perform reliably has increased to cover all of them; this achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
@@ -479,7 +450,7 @@ Evolving software towards more energy-efficient versions requires a sound method
 
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA. Source and data for this paper is available from \url{https://github.com/JJ/brave-new-green-algorithm}.
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA.
 
 
 \bibliographystyle{IEEEtran}
