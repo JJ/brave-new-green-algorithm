@@ -438,18 +438,35 @@ print(plot_slopes_temp_focused)
 
 mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
+icsme_mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
+                                  data = icsme_combined)
+
 
 mediator_final_temp1 <- lm(final_temp_1 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
 
 mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
+icsme_mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
+                                  data = icsme_combined)
+
+mediator_coefficients <- data.frame( die=c(1,2),
+                                     sphere_coefficients = c(
+                                       round(summary(icsme_mediator_initial_temp1)$coefficients["workhot-first",1],2),
+                                       round(summary(icsme_mediator_initial_temp2)$coefficients["workhot-first",1],2)
+                                       ),
+                                     schaffer_coefficients=c(
+                                       round(summary(mediator_initial_temp1)$coefficients["workhot-first",1],2),
+                                       round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)
+                                       )
+                                     )
 
 mediator_final_temp2 <- lm(final_temp_2 ~ work + dimension * population_size * alpha,
                      data = schaffer_workload_data)
 
+kable( mediator_coefficients, caption="Mediator model coefficients for the hot-first intervention in both experiments and both dies")
 @
-Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triangles). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}.
+Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triangles). Since we found in the model that the most important temperature variable is that of the second die, with a factor of \Sexpr{round(schaffer_workload_model$coefficients["initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common 38-44º range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the second die is kept at a lower temperature. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}. All the coefficients for the initial temperatures for both dies and the two experiments are shown in Table \ref{tab:ieeecal.factors}, exemplifying the different effect of the intervention on both dies, although always lowering the initial temperature and thus creating the conditions for consuming less energy and boosting the signal to noise ratio of the actual algorithm parameters.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
