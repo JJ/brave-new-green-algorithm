@@ -271,7 +271,7 @@ coef_df <- coef_df %>%
   mutate(
     category = case_when(
       str_detect(term, "^work")     ~ "Intervention (protocol)",
-      str_detect(term, "residual_") ~ "Operating context",
+      str_detect(term, "residual_|initial_") ~ "Operating context",
       TRUE                          ~ "Algorithm parameters"
     ),
     category = factor(category, levels = c(
