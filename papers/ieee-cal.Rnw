@@ -249,7 +249,7 @@ In order to isolate the operating context from the algorithm configuration, we w
 
 We represent in Figure \ref{fig:ieeecal.hot.combined} the energy consumed as a function of the initial temperatures for the two dies, as well as the distribution of these operational variables in both datasets. It shows the two ways in which the hot-first protocol lowers energy consumption: all other parameters being equal, the negative coefficients for the intervention will result in lower energy consumption; this is represented in the lines for predicted energy consumption in the graph, and we see how the hot-first line is effectively lower for both dies; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context: power/frequency, which we use through the residualized running time, as well as the dies' temperatures. If, using the protocol, programs take less time or the overall temperature at which they run is lower, this will result in additional gain. All in all, this proves our claim that scheduling the process to run on the hottest die in a two-die processor like the AMD Ryzen during an energy-measurement experiment will result in lower consumption than using regular OS scheduling.
 
-<<ieeecal.model.coeffs, echo=F, messages=F, fig.cap="Representation of model coefficients, split by the type of variable/intervention they represent. The bar indicates how it changes t, that is, the influence on the dependent variable, $E_w$", fig.height=5>>=
+<<ieeecal.model.coeffs, echo=F, messages=F, fig.cap="Representation of model coefficients, split by the type of variable/intervention they represent. The bar indicates how it changes t, that is, the influence on the dependent variable, $E_w$. Bars are labeled with the value of the estimate.", fig.height=5>>=
 # ============================================================
 # Coefficient plot: category + significance + highlighted
 # intervention effect, all in one ggplot2 figure
@@ -315,19 +315,17 @@ ggplot(coef_df, aes(x = statistic, y = term_label,
   geom_text(aes(label = signif(estimate, 3),
                 hjust = if_else(statistic >= 0, -0.15, 1.15)),
             size = 3, alpha = 1, show.legend = FALSE) +
-  facet_wrap(~category, scales = "free_y", ncol = 1) +
+  facet_wrap(~category, scales = "free", ncol = 1) +   # <- "free" not "free_y"
+  scale_x_continuous(expand = expansion(mult = 0.15)) + # <- replaces expand_limits
   scale_fill_manual(values = c(
     "Intervention (protocol)" = "#DD8452",
     "Operating context"       = "#4C72B0",
     "Algorithm parameters"    = "#55A868"
   ), guide = "none") +
   scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.3), guide = "none") +
-  expand_limits(x = c(min(coef_df$statistic) * 1.25,
-                       max(coef_df$statistic) * 1.25)) +
   labs(
     x = "t-statistic (standardized effect / evidence strength)",
-    y = NULL,
-    title = "What drives delta_PKG: context, intervention, algorithm",
+    y = NULL
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -335,6 +333,7 @@ ggplot(coef_df, aes(x = statistic, y = term_label,
     plot.subtitle = element_text(size = 9.5),
     panel.grid.minor = element_blank()
   )
+
 @
 
 Figure \ref{fig:ieeecal.model.coeffs} shows the value of the model coefficients, with or without the intervention, whose main objective was to make said coefficients more significant, giving you leverage to assess whether different values have an influence on energy consumption or not. And what we see is that there are more combinations that are effectively significant than in its absence; for instance, we can see that while most factor values for this intervention lower the amount of energy consumed, the combination dimension == 10 and population size == 400 will, in fact, increase energy consumption, all other factors being equal.
