@@ -464,7 +464,7 @@ Evolving software towards more energy-efficient versions requires a sound method
 
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA.
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA. Claude Code and Gemini have been used for the data processing and chart code.
 
 
 \bibliographystyle{IEEEtran}
