@@ -455,7 +455,7 @@ kable(schaffer_comparison$comparison, caption="Comparison of confidence interval
 ci_ttest <- t.test(schaffer_comparison$test$improvement)
 @
 %
-Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparisons that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement. This achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably. This reduction is consistent across all contrasts with a 95\% CI of \Sexpr{round(ci_ttest$conf.int[2], 2)}.
+Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparisons that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement. This achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably. This reduction is consistent across all contrasts with a 95\% CI of \Sexpr{round(ci_ttest$conf.int[2], 2)}. Data for these experiments and source for this paper, including all code for data processing, are available (with a free license) from \url{https://github.com/JJ/brave-new-green-algorithm}.
 
 \section{Conclusion and discussion}
 \label{sec:discussion}
