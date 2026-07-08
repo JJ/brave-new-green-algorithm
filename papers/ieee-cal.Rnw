@@ -468,6 +468,6 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 
 
 \bibliographystyle{IEEEtran}
-\bibliography{../ours,../energy,../ga-energy,../GAs}
+\bibliography{ours,energy,ga-energy,GAs}
 
 \end{document}
