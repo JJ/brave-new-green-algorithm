@@ -1,4 +1,4 @@
-\documentclass[lettersize,journal]{IEEEtran}
+\documentclass[journal]{IEEEtran}
 
 \usepackage{amsmath,amsfonts}
 \usepackage{algorithmic}
