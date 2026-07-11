@@ -15,9 +15,6 @@
 \title{Towards a methodology for measuring energy consumption in population-based optimization algorithms}
 %
 \titlerunning{Towards a methodology for measuring energy consumption...}
-% If the paper title is too long for the running head, you can set
-% an abbreviated paper title here
-%
 
 \author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Mario García-Valdez \inst{3}}
 \institute{Department of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
@@ -94,7 +91,7 @@ europar_test$base <- ifelse( startsWith(europar_test$work, "base"), TRUE, FALSE)
 ggplot(europar_test, aes(x=initial_temp, y=PKG, color=base, shape=dimension)) + geom_point()  + labs( title = "Energy Consumption Over Temperature", x = "2-die average initial temperature", y = "Energy Consumption " ) + theme_minimal()
 @
 
-This initial experiment is intended as a baseline for comparison. As stated, we run baseline and workload processes in {\em sandwich}, leaving to the OS and processor their allotment to specific cores. In Figure \ref{fig:europar.initial} we plot the PKG energy consumed against the initial temperature, which is computed as the average of the temperature of the two dies. Different dimensions translate to different shapes, and color indicates whether it is a baseline run (without workload, just generation of the initial population) or workload run. We can observe a certain dependence between temperature and energy consumed, which grows in a different way for runs with or without workload. We will then need to consider different models for them, since the fact that the same temperature can give rise to different energy consumptions and the other way round indicates that there are many variables, some of them hidden, with an influence on energy consumption.
+This initial experiment is intended as a baseline for comparison. As stated, we run baseline and workload processes in {\em sandwich}, leaving to the OS and processor their allotment to specific cores. In Figure \ref{fig:europar.initial} we plot the PKG energy consumed against the initial temperature, which is computed as the average of the temperature of the two dies. Different dimensions translate to different shapes, and color indicates whether it is a baseline run (without workload, just generation of the initial population) or workload run. We can observe a certain dependence between temperature and energy consumed, which grows in a different way for runs with or without workload. We will then need to consider different models for them, since the fact that the same temperature can give rise to different energy consumption and the other way round indicates that there are many variables, some of them hidden, with an influence on energy consumption.
 
 <<europar.initial.base.model, echo=FALSE, message=FALSE,warning=FALSE, fig.cap="Model of energy consumption for the baseline measures, initial", fig.height=4>>=
 library(dplyr)
