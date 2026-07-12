@@ -61,13 +61,14 @@ Addressing this gap, Freina et al. \cite{freina2024survey} categorized hardware 
 The most significant methodological advancements have emerged within the field of evolutionary algorithms and metaheuristics. A critical discovery is the {\em hysteretic effect} of system state: the system often remains in a high-energy-consumption state long after a workload has finished \cite{cotta25}. This phenomenon is largely driven by thermal dynamics; the temperature reached during one experimental run significantly biases the next \cite{cotta24}. While earlier models suggested a quadratic relationship between temperature and power consumption in the 20°C to 50°C range \cite{devogeleer2014modelingtemperaturebiaspower}, more recent analyses indicate an exponential relationship as temperatures approach 80°C \cite{PENG2025104837}.
 
 To mitigate these thermal and state-based biases, several experimental strategies have been proposed:\begin{itemize}
-
+\item {\em Operating condition lock:} as was proposed recently in \cite{11456441} the cores where the workload is going to be evaluated can be locked, and other sub-systems (like GPU computing) can be disabled.
 \item {\em Thermal Stabilization:} Implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
 \item {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption without requiring a system reboot between every run.
 \item {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
 \end{itemize}
 
-Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core election, directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core election, directly biases the comparison of algorithm configurations. Besides, trying to lock operating conditions creates a situation that first differs from the real world conditions where the actual workload is going to be executed, and second creates the false impression that the operating conditions are going to be exactly the same. As shown in \cite{merelo26:ola}, that is rarely going to be the case.
+This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
 
 \section{A Brave New Algorithm}\label{sec:bna}
 
@@ -86,7 +87,7 @@ There are some restrictions in these percentages, due to the way new members are
 % current bio-inspired metaheuristics. - Mario
 
 The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
-From the point of view of this paper, this algorithm will be a workload characterized by a problem dimension $D$ (the dimension of the argument to the function we are optimizing), a population size $P$, and it will run for an unknown number of generations evaluating a variable number of individuals which we will call $F$ (as in {\em fitness} evaluation). From the point of view of energy
+From the point of view of this paper, this algorithm will be a workload characterized by a problem dimension $D$ (the dimension of the argument to the function we are optimizing), a population size $P$, and it will run for an unknown number of generations evaluating a variable number of individuals which we will call $F$ (as in {\em fitness} evaluation). From the point of view of   consumption, $D$ and $P$ are the main parameters whose influence we want to measure, isolating this influence from the effect of the operating environment, specifically temperature and running time. The methodology we proposed to achieve this objective will be examined next.
 
 \section{Experimental methodology}\label{sec:meth}
 
