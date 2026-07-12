@@ -52,9 +52,43 @@ In modern Linux x86-based systems, we can rely on several sensors in order to me
 
 In this paper, we introduce a methodology to reduce the energy consumed by algorithm implementations by acting on the operating conditions. Our final objective is to measure the incidence of algorithm configurations and outcomes more precisely so that we can make operational decisions about how to make the algorithm more energy-efficient. We can only achieve this objective if we boost the signal-to-noise ratio by reducing overhead due to the operating context, thus shrinking the confidence interval for the configurations we want to compare.
 
-So far, research in this area has been significant; to mitigate these thermal and state-based biases, several experimental strategies have been proposed; for instance, implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control. The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changes in system states and background consumption without requiring a system reboot between every run. Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core selection, directly biases comparisons of algorithm configurations. This creates a need for methodologies that not only rotate experimental order but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+\section{State of the art}
 
-\section{Experimental methodology and results}\label{sec:results}
+Despite the growing imperative for green computing, achieving high accuracy in measuring the energy consumption of specific workloads remains a methodological hurdle often acknowledged but seldom resolved \cite{10549890}. The foundational "SPEC power" methodology \cite{von2018measuring} provides a framework for measuring whole-system power consumption relative to CPU load; however, because it relies on external, calibrated power meters, it is less suited for isolating granular software workloads in non-dedicated environments where background processes compete for resources.
+
+Addressing this gap, Freina et al. \cite{freina2024survey} categorized hardware and in-system software APIs, noting that tools leveraging model-specific registries (MSRs) offer a compelling balance of availability and precision. These software-based solutions exhibit error margins below 5\% \cite{6557170} with a negligible overhead of approximately 1\%. While a 10Hz to 20Hz sampling frequency is generally advised for temporal granularity, these tools alone do not constitute a methodology. The guiding principles of reproducibility, fairness, verifiability, and usability \cite{von2018measuring}—originally intended for data centers—must be adapted for the highly variable conditions of local execution environments. These APIs are accurate enough to be used to calibrate cloud computing environments, as was proposed by \cite{11153043}; lacking specific system-level sensors or APIs, cloud computing environments would need some predictive tools to assess the actual energy consumed by a cloud workload.
+
+The most significant methodological advancements have emerged within the field of evolutionary algorithms and metaheuristics. A critical discovery is the {\em hysteretic effect} of system state: the system often remains in a high-energy-consumption state long after a workload has finished \cite{cotta25}. This phenomenon is largely driven by thermal dynamics; the temperature reached during one experimental run significantly biases the next \cite{cotta24}. While earlier models suggested a quadratic relationship between temperature and power consumption in the 20°C to 50°C range \cite{devogeleer2014modelingtemperaturebiaspower}, more recent analyses indicate an exponential relationship as temperatures approach 80°C \cite{PENG2025104837}.
+
+To mitigate these thermal and state-based biases, several experimental strategies have been proposed:\begin{itemize}
+
+\item {\em Thermal Stabilization:} Implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control.
+\item {\em Statistical Validation (R3-Validation):} The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changing system states and background consumption without requiring a system reboot between every run.
+\item {\em Hardware-Level Design:} Recent research into new core layout algorithms \cite{PENG2025104837} demonstrates that energy concerns are being tackled at the architectural level, though such solutions are generally inaccessible to software researchers looking to optimize existing algorithm implementations.
+\end{itemize}
+
+Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core election, directly biases the comparison of algorithm configurations. This creates a need for methodologies that do not just rotate experimental order, but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+
+\section{A Brave New Algorithm}\label{sec:bna}
+
+The Brave New Algorithm \cite{merelo2022brave} is essentially an evolutionary algorithm, using the usual mechanism of mutation, crossover and selection to find the optimum of a given function, represented as a {\em chromosome}, in this case a vector of real numbers. However, how selection and reproduction take place is similar to how the novel Brave New World \cite{huxley2022brave} organized society: in castes. \begin{itemize}
+\item $\alpha$ generates new members by coupling the best individuals among them, to then undergo mutation and crossover.
+\item $\beta$ caste needs to reproduce a member of the $\alpha$ caste, and another member of its own caste, to then undergo mutation and crossover.
+\item $\delta$ and $\epsilon$ castes generate new individuals by mutation. The only difference between them is that those who reproduce are chosen among the other members of the population, and that mutation rates can be set separately.
+\item $\gamma$ generates new members by mutation, but mutation might be applied several times while the new individual is better than the previous one.
+\end{itemize}
+
+The operators used are mutation, that will change 40\% of the elements of the vector generating a new, random element, % random chromosome? because it changes many elements - Mario
+2-point crossover, and selection via binary tournament \cite{blickle1996comparison}. After every generation the population is re-ranked again, with the first \%$\alpha$ of the population assigned to that caste, and so on; through generations every caste will hold the same number of individuals. Since the two {\em upper} castes are mainly devoted to exploitation and the rest is devoted to exploration, the proportion of individuals in them is the main parameter governing the balance.
+There are some restrictions in these percentages, due to the way new members are generated: the beta caste needs to have twice as many members as the alpha caste; the percentage of population in the $\alpha$ caste is, thus, the main parameter for this, since we can use it to generate the rest. In practice, what we have done is to vary the percentage of the $\gamma$ caste, the "first" that performs local search, while keeping $\delta$ and $\epsilon$ fixed to a low value.
+% This algorithm is similar to the Grey Wolf Optimizer that also uses alphas, betas and deltas. - Mario
+% Maybe we could add a comment stating that this population-based algorithm is representative of
+% current bio-inspired metaheuristics. - Mario
+
+The implementation of the algorithm used is available under a free license at \url{https://github.com/cecimerelo/BraveNewAlgorithm.jl}
+From the point of view of this paper, this algorithm will be a workload characterized by a problem dimension $D$ (the dimension of the argument to the function we are optimizing), a population size $P$, and it will run for an unknown number of generations evaluating a variable number of individuals which we will call $F$ (as in {\em fitness} evaluation). From the point of view of energy
+
+\section{Experimental methodology}\label{sec:meth}
 
 Our workload in this paper is an implementation of the Brave New Algorithm \cite{merelo2022brave}. It is a stochastic, population-based optimization algorithm. All experiments are executed as single-threaded processes, which are run on a single processor core at a time. The algorithm, which ends when an optimum is found or when, after an established number of generations there is no improvement, is configured to minimize the Sphere function, part of the BBOB benchmark \cite{hansen2010comparing}, across several parameter configurations, with
 problem dimension ($D$) equal to 3, 5, or 10, population size ($N$): 200 or 400. The energy spent by the implementation will depend on \begin{itemize}
@@ -69,6 +103,8 @@ Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X. This 
 The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We use {\sf pinpoint} to tap the RAPL API \cite{pinpoint}. On this AMD architecture, measurements are restricted to Package (PKG) energy. The BNA algorithm is implemented in the language Julia, which uses a JIT compiler. A Perl script (running in superuser mode) automates the execution, processes readings from the {\sf sensors} command, and outputs a CSV file.
 All source code and experimental data are hosted in a public GitHub repository:
 \url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
+
+\section{Results}\label{sec:results}
 
 <<ieeecal.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments" >>=
 get_ref_val <- function(x) {
@@ -468,6 +504,6 @@ This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competit
 
 
 \bibliographystyle{IEEEtran}
-\bibliography{ours,energy,ga-energy,GAs}
+\bibliography{ours,energy,ga-energy,GAs,metaheuristics}
 
 \end{document}
