@@ -1,0 +1,473 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{balance}
+
+\usepackage{booktabs}
+\usepackage{color}
+
+
+\begin{document}
+
+\title{The Hot-First Protocol: Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
+
+\author{
+\IEEEauthorblockN{JJ Merelo}\\
+\IEEEauthorblockA{Department of Computer Engineering, Automatics and Robotics / CITIC, University of Granada, Spain\\
+Email: jmerelo@ugr.es; ORCID:0000-0002-1385-9741\\}
+\and
+\IEEEauthorblockN{Mario García-Valdez}\\
+\IEEEauthorblockA{Instituto Tecnológico Nacional de México, Tijuana, México\\
+Email: mario@tectijuana.edu.mx; ORCID: 0000-0002-2593-1114}
+}
+%
+\maketitle
+%
+\begin{abstract}
+Energy efficiency is increasingly regarded as a requirement in the implementation of algorithms; a better understanding of how it is spent in a system is a prerequisite for developing methodologies that effectively compare different configurations and provide heuristics for software developers to devise more energetically efficient programs. In this paper, we will investigate how the system's operating environment, specifically temperature and the choice of CPU die, along with the system's measures for keeping temperature in check, influence energy measurements in a population-based optimization algorithm. We will establish a model of this influence and, from this understanding, create a system that makes the influence of algorithm parameters on energy spent clearer, while, if possible, reducing the energy spent in experimental runs. We find that, under heavy-enough workloads and in a two-die system, accounting for silicon die temperatures while scheduling processes enables us to achieve this goal.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Green computing, energy profiling, measuring methodologies
+\end{IEEEkeywords}
+
+\section{Introduction and state of the art}
+
+The focus in software engineering has lately shifted from optimizing for performance toward {\em greening} algorithm implementations, an area that needs reliable methodologies and models; two critical areas, but full of technical challenges. The main obstacle is that, unlike traditional performance metrics, it is impossible to isolate the energy consumption of a single process running on a specific core under any modern operating system (OS). The best approach is to synchronize energy measurements with process execution and subsequently the workload's energy consumed from system overheads using different techniques.
+
+Standard practice involves taking baseline measurements that include program load and algorithm setup, but exclude the algorithm itself, to account for OS and framework overhead, then subtracting these from workload measurements to estimate the "real" energy consumed: $E_w = E - E_b$, where E is the measure taken, $E_b$ is the measured baseline energy and $E_w$ the energy consumed by the workload. This static view of energy consumption fails to take into account that E and $E_b$, and thus $E_w$, will be affected by the operating context, essentially temperature and voltage/power consumed by the chip package. And these variables will be actively managed by the OS and firmware: modern chipsets and OSs actively manage thermal envelopes through Dynamic Voltage and Frequency Scaling (DVFS) and Dynamic Power Management (DPM) \cite{snowdon2005power}; additionally, some modern processors have heterogeneous cores dividing them between high-performance "P" or "Performance" cores and energy-efficient "E" cores. The OS will assign a new process to a core with a different voltage and frequency depending on unstable conditions. For scientists working on non-dedicated personal computers running software other than the algorithm implementation being measured, the system state is in constant flux. Power reduction measures and thermal throttling are triggered not only by the workload under study but also by background processes and OS core selection policies.
+
+In modern Linux x86-based systems, we can rely on several sensors in order to measure energy and the operating conditions, besides the aforementioned time. Per-die temperature can be measured via system sensors; energy can be measured via command-line utilities such as {\sf pinpoint} \cite{pinpoint} which relies on the RAPL power-and-energy measurement API \cite{rapl}. Core voltage and frequency cannot be measured directly; we will use running time as a proxy for these two quantities, since reducing voltage and frequency will increase it.
+
+In this paper, we introduce a methodology to reduce the energy consumed by algorithm implementations by acting on the operating conditions. Our final objective is to measure the incidence of algorithm configurations and outcomes more precisely so that we can make operational decisions about how to make the algorithm more energy-efficient. We can only achieve this objective if we boost the signal-to-noise ratio by reducing overhead due to the operating context, thus shrinking the confidence interval for the configurations we want to compare.
+
+So far, research in this area has been significant; to mitigate these thermal and state-based biases, several experimental strategies have been proposed; for instance, implementing a cool-down phase after each measurement to allow thermal stabilization \cite{cotta25}. However, this remains difficult to guarantee in real-world environments where background processes are beyond the researcher's control. The "Robin and Rotate" (R3) approach \cite{rigorous} attempts to achieve reproducibility by running cycles of experimental variants in shifting orders. This design aims to mitigate changes in system states and background consumption without requiring a system reboot between every run. Ultimately, while experimental design can mitigate some "noise", a gap remains in modeling how the operational context, specifically temperature and OS-level core selection, directly biases comparisons of algorithm configurations. This creates a need for methodologies that not only rotate experimental order but explicitly account for the non-linear influence of thermal states on the resulting energy data.
+
+\section{Experimental methodology and results}\label{sec:results}
+
+Our workload in this paper is an implementation of the Brave New Algorithm \cite{merelo2022brave}. It is a stochastic, population-based optimization algorithm. All experiments are executed as single-threaded processes, which are run on a single processor core at a time. The algorithm, which ends when an optimum is found or when, after an established number of generations there is no improvement, is configured to minimize the Sphere function, part of the BBOB benchmark \cite{hansen2010comparing}, across several parameter configurations, with
+problem dimension ($D$) equal to 3, 5, or 10, population size ($N$): 200 or 400. The energy spent by the implementation will depend on \begin{itemize}
+\item The operating environment, represented by die temperature $T$ and running time $R$.
+\item Algorithm parameters: such as problem dimension $D$ and population size $P$.
+\item Algorithm outcomes; e. g., the number of evaluations of the function that is being optimized.
+\end{itemize}
+
+In order to be able to compute $E_w$, we make two kinds of runs: $W$ runs run the whole algorithm to completion, $B$ (baseline) runs only create the initial population; these are run in a {\em sandwich} $B-W-B...W-B$ configuration, with 30 $W$ and 31 $B$, seeking to make operating conditions for them as close as possible \cite{cec26}. We process experimental workload data by subtracting $(B_n + B_{n+1})/2$ from every $W_n$ run to obtain $\Delta E$, that is, $E_w$. A whole experiment will run these processes for all parameter combinations; then, it will be repeated 4 or 5 times, non-sequentially, at different moments of the day and after turning on the computer. This tries to ensure we gather data for as many different conditions as possible.
+
+Measurements were conducted on a desktop system with an AMD Ryzen 9 9950X. This CPU features a 16-core, two-die architecture (called {\em chiplets}), allowing us to monitor temperature via two distinct sensors ({\tt Tccd1} and {\tt Tccd2}) using the {\tt k10temp-pci-00c3} driver. The interesting thing about this chip is that although architecturally it is homogeneous, during the process of fabrication cores are graded by their frequency capability and ranked according to it, giving those capable of higher frequencies the highest ID, and going down from there \footnote{Please consult the technical explanation in documents such as \url{https://www.reddit.com/r/Amd/comments/dzjs7i/fastest_cores_is_windows_right_or_ryzen_master/}.}.
+The operating environment is Ubuntu (Kernel {\tt 6.17.0-14-generic}). We use {\sf pinpoint} to tap the RAPL API \cite{pinpoint}. On this AMD architecture, measurements are restricted to Package (PKG) energy. The BNA algorithm is implemented in the language Julia, which uses a JIT compiler. A Perl script (running in superuser mode) automates the execution, processes readings from the {\sf sensors} command, and outputs a CSV file.
+All source code and experimental data are hosted in a public GitHub repository:
+\url{https://github.com/CeciMerelo/BraveNewAlgorithm.jl}.
+
+<<ieeecal.baseline.workload, echo=FALSE, message=FALSE, fig.cap="Workload energy consumption for the baseline experiments" >>=
+get_ref_val <- function(x) {
+    if (is.numeric(x)) {
+      median(x, na.rm = TRUE) # Snaps to the median/middle value for numeric inputs
+    } else {
+      levels(factor(x))[1]    # Grabs the first level for categorical/factor inputs
+    }
+}
+
+plot_distributions <- function(mod, data ) {
+  # --- 1. Reference values for everything we are NOT sweeping -----
+  # Numeric -> median; factors -> first observed level (check this
+  # matches the level R actually dropped when fitting `mod`).
+  # NOTE: residual_delta_seconds IS included here (held at its
+  # median) even though it won't appear as its own facet.
+  work_levels <- levels(factor(data$work))
+
+  ref_grid <- data %>%
+    summarise(
+      dimension               = levels(factor(dimension))[1],
+      population_size         = get_ref_val(population_size),
+      evaluations              = median(evaluations, na.rm = TRUE),
+      residual_delta_seconds   = median(residual_delta_seconds, na.rm = TRUE),
+      initial_temp_1  = median(initial_temp_1, na.rm = TRUE),
+      initial_temp_2  = median(initial_temp_2, na.rm = TRUE)
+    )
+
+  # --- 2. Prediction grid: sweep each covariate of interest across
+  #        its observed range, for BOTH protocols, rest held fixed ---
+  build_grid <- function(var, n = 100) {
+  rng  <- quantile(data[[var]], probs = c(0.01, 0.99), na.rm = TRUE)  # <- was range()
+  vals <- seq(rng[1], rng[2], length.out = n)
+  grid <- ref_grid[rep(1, n * length(work_levels)), ]
+  grid[[var]]   <- rep(vals, times = length(work_levels))
+  grid$work     <- rep(work_levels, each = n)
+  grid$variable <- var
+  grid$x        <- grid[[var]]
+  grid
+  }
+
+  pred_grid <- bind_rows(
+    build_grid("initial_temp_1"),
+    build_grid("initial_temp_2")
+  )
+
+# --- 3. Model-based predictions = the "coefficient effect" -------
+  pr <- predict(mod, newdata = pred_grid, se.fit = TRUE)
+  pred_grid$fit <- pr$fit
+  pred_grid$lwr <- pr$fit - 1.96 * pr$se.fit
+  pred_grid$upr <- pr$fit + 1.96 * pr$se.fit
+
+# --- 4. Observed distributions per protocol = "distributional effect"
+  raw_long <- data %>%
+    select(work, initial_temp_1, initial_temp_2) %>%
+    pivot_longer(-work, names_to = "variable", values_to = "x")
+
+  dens_df <- raw_long %>%
+    group_by(variable, work) %>%
+    group_modify(~{
+      d <- density(.x$x, na.rm = TRUE, n = 512)
+      tibble(x = d$x, d = d$y)
+    }) %>%
+    ungroup()
+
+# Rescale each density into the bottom ~20% of its facet's y-range,
+# so it reads as a "shadow" under the curve rather than a separate axis
+  y_range <- pred_grid %>%
+    group_by(variable) %>%
+    summarise(y_min = min(lwr), y_max = max(upr), .groups = "drop")
+
+  dens_df <- dens_df %>%
+    left_join(y_range, by = "variable") %>%
+    group_by(variable) %>%
+    mutate(d_scaled = y_min + (d / max(d)) * (y_max - y_min) * 0.2) %>%
+    ungroup()
+
+  # add this block immediately after the dens_df mutate (line 147),
+# before the nice_labels definition
+
+x_limits <- pred_grid %>%
+  group_by(variable) %>%
+  summarise(x_min = min(x), x_max = max(x), .groups = "drop")
+
+dens_df <- dens_df %>%
+  left_join(x_limits, by = "variable") %>%
+  filter(x >= x_min, x <= x_max) %>%
+  select(-x_min, -x_max)
+# --- 5. Labels & colors ------------------------------------------
+  nice_labels <- c(
+    initial_temp_1 = "Initial temp - component 1",
+    initial_temp_2 = "Initial temp - component 2"
+  )
+
+  pal <- setNames(c("#d95f02", "#1b9e77"), work_levels)  # check order matches your labels
+
+# --- 6. The combined plot ------------------------------------------
+  p <- ggplot() +
+    # geom_area(data = dens_df,
+    #         aes(x = x, y = d_scaled, fill = work),
+    #         alpha = 0.25, position = "identity") +
+    geom_ribbon(data = dens_df,
+            aes(x = x, ymin = y_min, ymax = d_scaled, fill = work),
+            alpha = 0.35, position = "identity") +
+    geom_ribbon(data = pred_grid,
+              aes(x = x, ymin = lwr, ymax = upr, fill = work),
+              alpha = 0.15) +
+    geom_line(data = pred_grid,
+            aes(x = x, y = fit, colour = work),
+            linewidth = 1) +
+    facet_wrap(~variable, scales = "free",
+             labeller = as_labeller(nice_labels)) +
+    scale_colour_manual(values = pal, name = "Protocol") +
+    scale_fill_manual(values = pal, name = "Protocol") +
+    labs(
+      x = NULL,
+      y = expression(paste("Predicted ", Delta, "PKG (energy)")),
+    ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top", plot.subtitle = element_text(size = 10))
+  print(p)
+}
+
+staged_model <- function( data ) {
+  combined_workload_time_model <- glm( delta_seconds ~  initial_temp_1*initial_temp_2+work*dimension*population_size*evaluations+I(initial_temp_1^2)*I(initial_temp_2^2) , data= data)
+  data$residual_delta_seconds <- residuals(combined_workload_time_model)
+
+  icsme_combined_workload_model <- glm( delta_PKG ~ initial_temp_1*initial_temp_2+
+                                          work*dimension*population_size+
+                                          evaluations+residual_delta_seconds+
+                                          I(initial_temp_1^2)*I(initial_temp_2^2)+I(residual_delta_seconds^2),
+                                        data= data)
+
+  return(list(
+    model = icsme_combined_workload_model,
+    augmented_data = data
+  ))
+}
+
+# Load data
+load("../data/europar_die1_workload.rds")
+load("../data/europar_taskset_die2_processed.rds")
+
+initial_workload <- rbind( europar_die1_workload, europar_taskset_die2_processed )
+load("../data/icsm_hot_first.rds")
+source("../R/process_deltas.R")
+library(dplyr)
+icsme_hot_workload <- process_deltas(icsm_hot_first)
+icsme_hot_workload$dimension <- as.factor(icsme_hot_workload$dimension)
+icsme_hot_workload$population_size <- as.factor(icsme_hot_workload$population_size)
+icsme_hot_workload$work <- "hot-first"
+initial_workload$work <- "baseline"
+icsme_combined <- rbind(icsme_hot_workload,initial_workload)
+staged_model_results <- staged_model( icsme_combined )
+
+icsme_combined_workload_model <- staged_model_results$model
+icsme_combined <- staged_model_results$augmented_data
+@
+
+Temperature is one of the factors that influence energy consumption: higher temperatures cause the system to consume more energy due to thermal leakage. However, by hitting the hotter processor die we would  help the dies cool themselves through the differences in temperature; in general, in heterogeneous architectures such as the Ryzen the hotter die will be the one with the highest performance, making it a {\em run-to-idle} strategy that will spend less energy simply by spending less time in the processor.
+What we propose and are going to evaluate in this paper is to use a {\em hot-first} scheduling strategy, instead of the default OS strategy for assigning processes to cores: We will set up the experiment running script so that the next process is always run on the die that has the {\em highest} temperature using the {\sf taskset} command.
+
+We will be running four blocks of experiments using this strategy, tagged {\sf hot-first}. The {\sf baseline} strategy will let the processor and core on which the program is running be scheduled by the operating system. We will model the differences between the two protocols using Generalized Linear Models.
+
+<<ieeecal.hot.combined, echo=FALSE, message=FALSE, warning=F, fig.cap="Plotting energy consumption vs. temperatures for the two dies; lines: model-predicted energy at a given covariate value (coefficient effect); shaded area under each line: where that protocol's actual values sit (distributional effect).", fig.height=3.5, fig.pos="h!tb">>=
+
+library(tidyr)
+library(ggplot2)
+
+plot_distributions( icsme_combined_workload_model, icsme_combined)
+
+@
+
+In order to isolate the operating context from the algorithm configuration, we will model energy consumed in stages:\begin{itemize}
+\item A first model of time as a function of the temperature of the two dies, and the interaction between the intervention (baseline or hot-first) and the algorithm parameters (dimension and population size). Residuals for this time component are extracted to be used in subsequent models.
+\item A final model that includes the operating context variables; linear and squared, as well as the intervention factor interacting with algorithm variables.
+\end{itemize}
+
+We represent in Figure \ref{fig:ieeecal.hot.combined} the energy consumed as a function of the initial temperatures for the two dies, as well as the distribution of these operational variables in both datasets. It shows the two ways in which the hot-first protocol lowers energy consumption: all other parameters being equal, the negative coefficients for the intervention will result in lower energy consumption; this is represented in the lines for predicted energy consumption in the graph, and we see how the hot-first line is effectively lower for both dies; for the same initial temperature, using the hot-first protocol will result in lower energy consumption. But energy consumed is also dependent on the operating context: power/frequency, which we use through the residualized running time, as well as the dies' temperatures. If, using the protocol, programs take less time or the overall temperature at which they run is lower, this will result in additional gain. All in all, this proves our claim that scheduling the process to run on the hottest die in a two-die processor like the AMD Ryzen during an energy-measurement experiment will result in lower consumption than using regular OS scheduling.
+
+<<ieeecal.hot.combined.chart, echo=FALSE, message=FALSE, warning=F, fig.cap="Density plot comparing energy consumption for the baseline and hot-first strategy", fig.height=3.5, fig.pos="h!tb">>=
+library(ggExtra)
+
+ggplot(icsme_combined, aes(x = delta_seconds, y = delta_PKG, fill = work)) +
+  # Map alpha to the calculated density level
+  stat_density_2d(aes(alpha = after_stat(level)),
+                  geom = "polygon",
+                  color = "white", # Adds a faint white line between depth levels
+                  linewidth = 0.2) +
+  # Control the transparency range (0.1 = outer edges, 0.8 = dense center)
+  scale_alpha_continuous(range = c(0.1, 0.8), guide = "none") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(
+    title = "Execution Time vs Energy (Shaded Depth)",
+    x = "Execution Time (delta_seconds)",
+    y = "Energy Consumption (delta_PKG)"
+  )
+
+library(diptest)
+hartigan_p_value <- dip.test(icsme_combined$delta_PKG[icsme_combined$work == "baseline"])$p.value
+@
+
+We can take a different look at how energy spent depends on the other proxy we have for operational context variables, time. Figure \ref{fig:ieeecal.hot.combined.chart} shows a density plot of the workload-only energy $E_w$ ({\tt delta\_PKG}) vs. running time ({\tt delta\_seconds}) with or without the hot-first intervention. And the interesting result is that while the baseline (OS-scheduled) has two peaks (unimodality rejected by the Hartigan test with p-value $< 0.001$), one at the more running-time/energy area, hot-first has a single one; the hot-first intervention has influenced the operating context, lowering measured energy consumed, by keeping the operating context in an area (lower temperature for the two dies, higher frequency/wattage resulting in less running time) where there is less thermal leakage and, with less overall energy consumed. As proved, this achieves the stated objective of working in a regime where more precise measurements of energy consumed by different algorithm configurations can be taken.
+
+<<ieeecal.model.coeffs, echo=F, message=F, warning=F, fig.cap="Representation of model coefficients, split by the type of variable/intervention they represent. The bar indicates how it changes t, that is, the influence on the dependent variable, $E_w$. Bars are labeled with the value of the estimate.", fig.height=4>>=
+
+library(emmeans)
+
+ci_comparison <- function( workload_data ) {
+  # Same formula, fit per protocol
+  formula_per_protocol <- delta_PKG ~
+  initial_temp_1 * initial_temp_2 +
+  I(initial_temp_1^2) * I(initial_temp_2^2) +
+  dimension * population_size +
+  evaluations + residual_delta_seconds +
+  I(residual_delta_seconds^2)
+
+  mod_baseline <- glm(formula_per_protocol,
+                    data = filter(workload_data, work == "baseline"))
+  mod_hotfirst <- glm(formula_per_protocol,
+                    data = filter(workload_data, work == "hot-first"))
+
+# Estimated marginal means for each dimension x population_size cell
+  emm_base <- emmeans(mod_baseline, ~ dimension * population_size,
+                    cov.reduce = median)
+  emm_hot  <- emmeans(mod_hotfirst, ~ dimension * population_size,
+                    cov.reduce = median)
+
+# Pairwise contrasts — the CI width is the key number
+  contrasts_base <- confint(pairs(emm_base)) %>%
+    as.data.frame() %>% mutate(work = "baseline")
+  contrasts_hot  <- confint(pairs(emm_hot))  %>%
+    as.data.frame() %>% mutate(work = "hot-first")
+
+  comparison <- bind_rows(contrasts_base, contrasts_hot) %>%
+    mutate(ci_width = upper.CL - lower.CL)
+
+# The headline test: are hot-first CIs narrower on average?
+  return( list(comparison = comparison %>%
+                group_by(work) %>%
+                summarise(
+                  mean_ci_width   = mean(ci_width),
+                  median_ci_width = median(ci_width),
+                  n_excluding_zero = sum(lower.CL > 0 | upper.CL < 0),  # contrasts that are significant
+                ),
+               test = bind_rows(
+                        contrasts_base %>% mutate(ci_width = upper.CL - lower.CL),
+                        contrasts_hot  %>% mutate(ci_width = upper.CL - lower.CL)
+                      ) %>%
+                      select(contrast, work, ci_width) %>%
+                      tidyr::pivot_wider(names_from = work, values_from = ci_width) %>%
+                      mutate(improvement = baseline - `hot-first`)
+  )  )
+}
+
+comparison_sphere <- ci_comparison( icsme_combined )
+
+kable( comparison_sphere$comparison,
+       caption="Comparison of confidence intervals of baseline and hot-first datasets for the Sphere experiment, including the number of pairwise contrasts that exclude 0, that is, configurations that are statistically distinguishable." )
+@
+
+Our stated intention, however, is to use these measurements to compare different algorithm configurations to find the best ones; the two sets of experiments are compared in Table \ref{tab:ieeecal.model.coeffs}. In this sense there is an issue with the new protocol: although overall we are spending less energy, this decreases our ability to distinguish between different algorithm configurations, and thus we would have to balance one target against the other.
+
+Since we have achieved the main objective, but not the sub-objective, it becomes necessary to perform additional experiments, with more configurations, to check whether we can actually achieve both. We also used a different, more heavy-duty, BBOB function such as Schaffer's F7; this function is known to require more energy per call than the Sphere used so far \cite{merelo25}. Besides, we can extend the range of possible values for algorithm parameters, using dimension= 3, 5 and 10, population size = 400, 800, and 1200, and different values for other algorithm parameters. We used again the sandwich protocol and made 4 blocks of experiments for baseline (OS scheduling) and hot-first scheduling. These new experiments are run in the same machine, using version 7.0.0 of the Linux kernel.
+
+<<ieeecal.schaffer, echo=F, message=F, fig.cap="Predicted delta PKG and temperature distribution plot for the experiment with the Schaffer's F7 function.", fig.height=3.5, fig.pos="h!tb">>=
+schaffer_v7_workload <- readRDS("../data/schaffer_v7_workload.rds")
+schaffer_v7_workload$residual_initial_temp_1 <- NULL
+schaffer_v7_workload$residual_initial_temp_2 <- NULL
+schaffer_v7_workload$residual_seconds <- NULL
+schaffer_v7_workload$population_size <- as.factor(schaffer_v7_workload$population_size)
+
+staged_model_results <- staged_model( schaffer_v7_workload )
+
+schaffer_workload_model <- staged_model_results$model
+schaffer_workload_data <- staged_model_results$augmented_data
+
+plot_distributions( schaffer_workload_model, schaffer_workload_data)
+@
+
+If we compare Figure \ref{fig:ieeecal.schaffer} with Figure \ref{fig:ieeecal.hot.combined} it looks totally different: the energy consumption curves for the hot-first experiments are {\em over} the baseline, and the distribution of experiment temperature does not look so different for the hot-first intervention.
+
+<<ieeecal.factors, echo=F, fig.cap="Hot-first intervention vs. baseline for different problem sizes (dimension) and configurations.", fig.height=3.5>>=
+library(ggnewscale) # Required to mix discrete line colors and continuous point colors
+library(scales) # Required for the 'squish' function
+library(knitr)
+
+plot_slopes_temp_focused <- schaffer_workload_data %>%
+  mutate(dimension_num = as.numeric(as.character(dimension)),
+        population_size = factor(population_size, levels = c(400, 800, 1600))) %>%
+  ggplot(aes(x = population_size, y = delta_PKG)) +
+
+  # --- LAYER 1: The Fit Lines ---
+  geom_smooth(
+    aes(color = work, fill = work),
+    method = "lm", formula = y ~ x, se = TRUE, linewidth = 1.5, alpha = 0.2
+  ) +
+  scale_color_brewer(palette = "Set1", name = "Strategy") +
+  scale_fill_brewer(palette = "Set1", name = "Strategy") +
+
+  # --- THE MAGIC RESET ---
+  new_scale_color() +
+
+  # --- LAYER 2: The Points ---
+  geom_point(
+    aes(shape = work, color = initial_temp_2, group = work),
+    position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.8),  # <- was 220
+    size = 1.8,
+    alpha = 0.8
+  ) +
+  # THE FIX: Focus the gradient on the IQR and squish the outliers
+  scale_color_viridis_c(
+    option = "inferno",
+    name = "Initial Temp 2 (°C)",
+    limits = c(38, 45),      # Stretches the palette across the dense data range
+    oob = scales::squish       # Forces anything > 42 to take the maximum bright color
+  ) +
+  scale_shape_manual(values = c(16, 17), name = "Strategy") +
+
+  # --- FACETING ---
+  facet_grid(alpha ~ dimension, labeller = label_both) +
+
+  theme_bw() +
+  labs(
+    x = "Schaffer Function Dimension",
+    y = expression(paste(Delta, " PKG Energy (Joules)"))
+  ) +
+  theme(
+    legend.position = "right",
+    text = element_text(size = 14),
+    strip.background = element_rect(fill = "grey95"),
+    strip.text = element_text(size = 11, face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+
+print(plot_slopes_temp_focused)
+
+# Mediator temperatures
+
+mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+icsme_mediator_initial_temp1 <- lm(initial_temp_1 ~ work + dimension * population_size * alpha,
+                                  data = icsme_combined)
+
+
+mediator_final_temp1 <- lm(final_temp_1 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
+mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+icsme_mediator_initial_temp2 <- lm(initial_temp_2 ~ work + dimension * population_size * alpha,
+                                  data = icsme_combined)
+
+# ---------------------- end new
+
+mediator_coefficients <- data.frame( die=c(1,2),
+                                     sphere_coefficients = c(
+                                       round(summary(icsme_mediator_initial_temp1)$coefficients["workhot-first",1],2),
+                                       round(summary(icsme_mediator_initial_temp2)$coefficients["workhot-first",1],2)
+                                       ),
+                                     schaffer_coefficients=c(
+                                       round(summary(mediator_initial_temp1)$coefficients["workhot-first",1],2),
+                                       round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)
+                                       )
+                                     )
+
+mediator_final_temp2 <- lm(final_temp_2 ~ work + dimension * population_size * alpha,
+                     data = schaffer_workload_data)
+
+kable( mediator_coefficients, caption="Mediator model coefficients")
+@
+
+Since we are interested in reducing the energy consumed by algorithm implementations and how the hot-first intervention affects it, we show in Figure \ref{fig:ieeecal.factors} how the intervention affects energy consumption (baseline is represented by circles while hot-first uses triangles). Since we found in the model that the most important temperature variable is that of the second die, with a coefficient of \Sexpr{round(schaffer_workload_model$coefficients["initial_temp_2"],2)}, we also color points according to this temperature, clamped to the most common $38-44^{\circ}$ range. In some cases, we see that the hot-first strategy consumes {\em less} energy, and it does so mainly because the temperature gradient between the two dies is kept, allowing passive heat dissipation and reducing energy consumption. In fact, if we model the initial temperature of the second die using as factors the intervention as well as the algorithm parameters, the coefficient for the intervention is \Sexpr{round(summary(mediator_initial_temp2)$coefficients["workhot-first",1],2)}; more interestingly, the coefficient of the intervention for the {\em final} temperature (taken after every program is finished) is \Sexpr{round(summary(mediator_final_temp2)$coefficients["workhot-first",1],2)}. All the coefficients for the initial temperatures for both dies and the two experiments are shown in Table \ref{tab:ieeecal.factors}, exemplifying the different effect of the intervention on both dies, although always lowering the initial temperature and thus creating the conditions for consuming less energy and boosting the signal-to-noise ratio of the actual algorithm parameters.
+%
+<<ieecal.contrast, echo=F, message=F>>=
+# Contrast
+#
+
+schaffer_comparison <- ci_comparison(schaffer_workload_data)
+
+kable(schaffer_comparison$comparison, caption="Comparison of confidence intervals, Schaffer experiment.")
+
+ci_ttest <- t.test(schaffer_comparison$test$improvement)
+@
+%
+Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of the confidence interval is smaller, and the number of possible comparisons that we can perform reliably has increased from 16 to 25 out of 36 possible pairs, a 56\% improvement. This achieves our second objective, which was based on creating a measurement protocol that could be used to compare algorithm configurations more reliably. This reduction is consistent across all contrasts with a 95\% CI of [\Sexpr{round(ci_ttest$conf.int[1], 2)},\Sexpr{round(ci_ttest$conf.int[2], 2)}]. Data for these experiments and source for this paper, including all code for data processing, are available (with a free license) from \url{https://github.com/JJ/brave-new-green-algorithm}.
+
+\section{Conclusion and discussion}
+\label{sec:discussion}
+
+Evolving software towards more energy-efficient versions requires a sound methodology that can differentiate energy spent by different configurations of software under study from the operating context. What we have introduced here is a temperature-aware experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to reduce the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these configurations. By using temperature-aware process scheduling that always hits the hottest die in a multi-die architecture, we have managed to reduce the temperature and thus the energy consumption for different configurations of our population-based optimization algorithm for two different workloads with different kernel versions, showing that this intervention reduces the overall temperature of the two dies, thus reducing thermal leakage and overall energy consumption. Besides, in an experiment using the heavier workload (Schaffer's function) and more possible configurations, we have shown that the confidence interval of energy measurements is shrunk, allowing reliable comparison for a greater amount of all possible configurations measured.
+
+
+\section*{Acknowledgements}
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA. Claude Code and Gemini have been used for the data processing and chart code.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{ours,energy,ga-energy,GAs}
+
+\end{document}
