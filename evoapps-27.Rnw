@@ -153,10 +153,10 @@ BNA, opening new venues of research as well as energy-saving. In this paper, how
 We have used the following hardware-software stack for the experiments\begin{itemize}
 \item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 32 threads in a heterogeneous configuration, with cores power-capped depending on their performance.
 \item We are running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}.
-\item The frequency scaling driver is set to {\tt amd-pstate-epp} and the scaling governor to {\tt powersave}. This again seeks to reproduce actual researcher configuration.
+\item The frequency scaling driver is set to {\tt amd-pstate-epp} and the scaling governor to {\tt powersave}. The energy performance preference is set to {\tt balance\_performance}, which is the default behavior. This again seeks to reproduce actual researcher configuration.
 \item We are running Julia 1.11.9. This is not the latest stable release (that would be 1.12.5), but initial performance tests made us discard it.
 \item We will be using RAPL counters to measure energy via the {\sf pinpoint} command-line tool \cite{pinpoint} with a sampling period of 0.1 s. For system temperature we will be using {\em sensors} that tap an AMD driver.
-\item The experiments will be run from a Perl script, capturing output from pinpoint and saving it to a CSV file.
+\item The experiments will be run from a Perl script, capturing output from {\sf pinpoint} and saving it to a CSV file.
 \end{itemize}
 
 For every experiment, we save the following data\begin{itemize}
