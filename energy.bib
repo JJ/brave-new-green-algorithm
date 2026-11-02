@@ -7,6 +7,19 @@
   organization={IEEE}
 }
 
+@inbook{10.1145/3803437.3806429,
+author = {Rajput, Saurabhsingh and Sharma, Tushar},
+title = {CodeGreen: Towards Improving Precision and Portability in Software Energy Measurement},
+year = {2026},
+isbn = {9798400726361},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3803437.3806429},
+abstract = {Accurate software energy measurement is critical for optimizing energy, yet existing profilers force a trade-off between measurement accuracy and overhead due to tight coupling with supported specific hardware or languages. We present CodeGreen, a modular energy measurement platform that decouples instrumentation from measurement via an asynchronous producer-consumer architecture. We implement a Native Energy Measurement Backend (NEMB) that polls hardware sensors (Intel RAPL, NVIDIA NVML, AMD ROCm) independently, while lightweight timestamp markers enable tunable granularity. CodeGreen leverages Tree-sitter AST queries for automated instrumentation across Python, C++, C, and Java, with straightforward extension to any Tree-sitter-supported grammar, enabling developers to target specific scopes (loops, methods, classes) without manual intervention. Validation against Computer Language Benchmarks Game demonstrates R2 = 0.9934 correlation with RAPL ground truth and R2 = 0.9997 energy-workload linearity. By bridging fine-grained measurement precision with cross-platform portability, CodeGreen enables practical algorithmic energy optimization across heterogeneous environments. Source code, video demo, and documentation are publicly available [18].},
+booktitle = {Proceedings of the 34th ACM International Conference on the Foundations of Software Engineering},
+pages = {247–251},
+numpages = {5}
+}
 @ARTICLE{11153043,
   author={Nasrin, Amina and Chen, Dayuan and Zong, Ziliang},
   journal={IEEE Transactions on Sustainable Computing}, 
