@@ -20,7 +20,7 @@
 
 \begin{document}
 
-\title{Presenting the Hot-First Protocol as a more Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
+\title{Presenting the Hot-First Protocol as a more Precise Energy Measurement Methodology for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
 
 \author{
 \IEEEauthorblockN{JJ Merelo}\\
