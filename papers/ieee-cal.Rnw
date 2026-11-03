@@ -20,7 +20,7 @@
 
 \begin{document}
 
-\title{The Hot-First Protocol: Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
+\title{Presenting the Hot-First Protocol as a more Precise Energy Measurement for Implementations of Population-Based Optimization Algorithms in Multi-Die Systems}
 
 \author{
 \IEEEauthorblockN{JJ Merelo}\\
@@ -29,7 +29,11 @@ Email: jmerelo@ugr.es; ORCID:0000-0002-1385-9741\\}
 \and
 \IEEEauthorblockN{Mario García-Valdez}\\
 \IEEEauthorblockA{Instituto Tecnológico Nacional de México, Tijuana, México\\
-Email: mario@tectijuana.edu.mx; ORCID: 0000-0002-2593-1114}
+Email: mario@tectijuana.edu.mx; ORCID: 0000-0002-2593-1114}\\
+\and
+\IEEEauthorblockN{Carlos Cotta}\\
+\IEEEauthorblockA{ITIS Software, University of Málaga, Spain\\
+Email: ccottap@lcc.uma.es; ORCID: 0000-0001-8478-7549}\\
 }
 %
 \maketitle
@@ -460,11 +464,22 @@ Besides, in this case, as shown in Table \ref{tab:ieecal.contrast}, the width of
 \section{Conclusion and discussion}
 \label{sec:discussion}
 
-Evolving software towards more energy-efficient versions requires a sound methodology that can differentiate energy spent by different configurations of software under study from the operating context. What we have introduced here is a temperature-aware experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to reduce the influence of the operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these configurations. By using temperature-aware process scheduling that always hits the hottest die in a multi-die architecture, we have managed to reduce the temperature and thus the energy consumption for different configurations of our population-based optimization algorithm for two different workloads with different kernel versions, showing that this intervention reduces the overall temperature of the two dies, thus reducing thermal leakage and overall energy consumption. Besides, in an experiment using the heavier workload (Schaffer's function) and more possible configurations, we have shown that the confidence interval of energy measurements is shrunk, allowing reliable comparison for a greater amount of all possible configurations measured.
+Evolving software towards more energy-efficient versions requires a sound methodology that can differentiate energy spent by different configurations of software under study from the operating context. What we have introduced here is a temperature-aware experimental protocol for measuring the energy consumption of different algorithm implementation configurations for multi-die CPUs that is able to reduce the influence of that operating context, maximizing the possibility of distinguishing between the energy consumption requirements of these configurations.
+
+By using temperature-aware process scheduling that always hits the hottest die
+in a multi-die architecture, we have managed to reduce the temperature and thus
+the energy consumption for different configurations of our population-based
+optimization algorithm for two different workloads with different kernel
+versions, showing that this intervention reduces the overall temperature of the
+two dies, minimizing thermal leakage and overall energy consumption. Besides,
+in an experiment using the heavier workload (Schaffer's function) and more
+possible configurations, we have shown that the confidence interval of energy
+measurements is shrunk, allowing reliable comparison for a greater amount of all
+possible configurations measured.
 
 
 \section*{Acknowledgements}
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Funding for open access charge: Universidad de Granada/CBUA. Claude Code and Gemini have been used for the data processing and chart code.
+This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitiveness and Economy) under project PID2023-147409NB-C21. Claude Code and Gemini have been used for the data processing and chart code.
 
 
 \bibliographystyle{IEEEtran}
