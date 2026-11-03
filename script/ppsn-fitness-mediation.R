@@ -54,6 +54,40 @@ param_terms <- paste0("(", paste(params, collapse = " + "), ")^2")
 cat("Workload runs per version:\n")
 print(table(fitness_data$group))
 
+
+# Partial-regression view of the slopes: strip the parameter effects from both
+# axes within each version (Frisch-Waugh-Lovell), so the line through the points
+# has exactly the coefficient in `slopes`. Group means are added back to keep
+# the axes in real log10 units.
+f_y_par <- as.formula(paste("log_fit ~",   param_terms))
+f_x_par <- as.formula(paste("log_evals ~", param_terms))
+
+partial <- fitness_data %>%
+  group_by(group) %>%
+  group_modify(function(d, key) {
+    d <- droplevels(d)
+    mutate(d,
+           fit_adj   = resid(lm(f_y_par, d)) + mean(log_fit),
+           evals_adj = resid(lm(f_x_par, d)) + mean(log_evals))
+  }) %>%
+  ungroup()
+
+slope_labels <- slopes %>%
+  mutate(group = factor(group, levels = names(versions)),
+         label = sprintf("slope %.2f [%.2f, %.2f]", slope, lower, upper))
+
+ggplot(partial, aes(evals_adj, fit_adj, colour = group)) +
+  geom_point(alpha = 0.2, size = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, linewidth = 0.8) +
+  geom_text(data = slope_labels, aes(label = label),
+            x = -Inf, y = -Inf, hjust = -0.05, vjust = -0.6,
+            size = 2.8, colour = "grey20", inherit.aes = FALSE) +
+  facet_wrap(~ group, nrow = 1) +
+  labs(x = "log10(evaluations), adjusted for parameters",
+       y = "log10(diff_fitness), adjusted for parameters") +
+  theme_minimal() +
+  theme(legend.position = "none", panel.grid.minor = element_blank())
+
 # ---- 2. Pooled models: total effect, mediator, direct effect + slopes ---------
 
 f_total <- as.formula(paste("log_fit ~ group *", param_terms))
@@ -75,6 +109,7 @@ slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slopes
                      lower = slopes[, 1], upper = slopes[, 2], row.names = NULL)
 cat("\nlog10(diff_fitness) vs log10(evaluations) slope per version (more negative = more efficient):\n")
 print(slopes, digits = 3)
+
 
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
@@ -197,10 +232,9 @@ print(version_table, row.names = FALSE)
 
 # ---- 6. Plot ------------------------------------------------------------------
 
-p <- ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
+ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   geom_point(alpha = 0.15, size = 0.8) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
-ggsave("figure/ppsn-fitness-mediation.png", p, width = 6, height = 4.5)
-cat("\nPlot saved to figure/ppsn-fitness-mediation.png\n")
+
