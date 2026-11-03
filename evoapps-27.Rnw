@@ -422,7 +422,7 @@ On the other hand, this methodology of researching energy efficiency together wi
 \begin{credits}
 \subsubsection{\ackname}
 
-This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
+% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
 
 \end{credits}
 
