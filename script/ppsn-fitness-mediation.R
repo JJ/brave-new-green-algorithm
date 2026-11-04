@@ -239,3 +239,100 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
+
+# ---- 7. no_alpha: which parameter splits the fitness/evaluations cloud? -------
+#
+# In the plot above the no_alpha cloud is visibly split in two parallel bands.
+# A parameter that creates the split shifts fitness *at the same number of
+# evaluations*, i.e. it acts through the direct (not the mediated) path.
+# For each parameter:
+#   - offset: difference in mean residual of log_fit ~ log_evals between its
+#     levels (vertical distance between the two bands, in log10 units);
+#   - r2_gain: extra R^2 of log_fit ~ log_evals + param over log_fit ~ log_evals;
+#   - agreement: how well its levels match a 2-cluster k-means split of those
+#     residuals (0.5 = unrelated, 1 = the parameter *is* the split).
+
+na_data <- fitness_data %>% filter(group == "no_alpha") %>% droplevels()
+
+m_na_evals   <- lm(log_fit ~ log_evals, data = na_data)
+na_data$res  <- resid(m_na_evals)
+r2_evals     <- summary(m_na_evals)$r.squared
+set.seed(1)
+na_clusters  <- kmeans(na_data$res, centers = quantile(na_data$res, c(0.25, 0.75)))$cluster
+
+split_table <- do.call(rbind, lapply(params, function(p) {
+  lv  <- levels(na_data[[p]])
+  tab <- table(na_data[[p]], na_clusters)
+  data.frame(param     = p,
+             offset    = mean(na_data$res[na_data[[p]] == lv[2]]) -
+                         mean(na_data$res[na_data[[p]] == lv[1]]),
+             r2_gain   = summary(lm(as.formula(paste("log_fit ~ log_evals +", p)),
+                                    na_data))$r.squared - r2_evals,
+             agreement = max(sum(diag(tab)), sum(tab) - sum(diag(tab))) / sum(tab))
+})) %>% arrange(desc(agreement))
+
+cat("\nno_alpha: separation of the fitness bands by parameter",
+    "(offset = high - low level, log10 units):\n")
+print(split_table, digits = 3, row.names = FALSE)
+split_param <- split_table$param[1]
+cat("Parameter that best explains the split:", split_param, "\n")
+
+# Evaluation-mediated decomposition for no_alpha (from section 4): the split
+# parameter should show a large *direct* effect.
+cat("\nno_alpha: total / direct / indirect effect of each parameter (from section 4):\n")
+print(mediation_table %>%
+        filter(group == "no_alpha") %>%
+        transmute(param,
+                  total    = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
+                  direct   = sprintf("%.3f [%.3f, %.3f]", direct, direct_lo, direct_hi),
+                  indirect = sprintf("%.3f [%.3f, %.3f]", indirect, indirect_lo, indirect_hi),
+                  prop_mediated = round(prop_mediated, 2)),
+      row.names = FALSE)
+
+# Convergence line (log_fit ~ log_evals) for every level of every parameter.
+# Pooling the two bands flattens the slope, so within-level slopes for the
+# split parameter are the more meaningful convergence rates.
+na_long <- bind_rows(lapply(params, function(p) {
+  na_data %>% transmute(param = p, level = as.character(.data[[p]]), log_evals, log_fit)
+}))
+
+na_level_slopes <- na_long %>%
+  group_by(param, level) %>%
+  group_modify(function(d, key) {
+    m  <- lm(log_fit ~ log_evals, d)
+    ci <- confint(m)["log_evals", ]
+    data.frame(n = nrow(d), intercept = coef(m)[[1]], slope = coef(m)[[2]],
+               lower = ci[[1]], upper = ci[[2]])
+  }) %>%
+  ungroup()
+cat("\nno_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
+print(as.data.frame(na_level_slopes), digits = 3, row.names = FALSE)
+
+# Mediation for the other parameters *within* each level of the split
+# parameter, so their effects are not confounded with the band they fall in.
+other_params <- setdiff(params, split_param)
+cat("\nno_alpha: effects of the remaining parameters within each level of", split_param, "\n")
+within_split <- bind_rows(lapply(levels(na_data[[split_param]]), function(l) {
+  d  <- na_data %>% filter(.data[[split_param]] == l)
+  pt <- paste0("(", paste(other_params, collapse = " + "), ")^2")
+  mm <- lm(as.formula(paste("log_evals ~", pt)), d)
+  mt <- lm(as.formula(paste("log_fit ~",   pt)), d)
+  my <- lm(as.formula(paste("log_fit ~",   pt, "+ log_evals")), d)
+  b  <- coef(my)[["log_evals"]]
+  do.call(rbind, lapply(other_params, function(p) {
+    data.frame(level = paste(split_param, "=", l), param = p,
+               total    = marginal_effect(mt, d, p),
+               direct   = marginal_effect(my, d, p),
+               indirect = b * marginal_effect(mm, d, p))
+  }))
+}))
+print(within_split, digits = 3, row.names = FALSE)
+
+ggplot(na_long, aes(log_evals, log_fit, colour = level)) +
+  geom_point(alpha = 0.15, size = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
+  facet_wrap(~ param, nrow = 1) +
+  labs(x = "log10(evaluations)", y = "log10(diff_fitness)", colour = "Level",
+       title = "no_alpha: fitness vs evaluations by parameter level") +
+  theme_minimal() +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
