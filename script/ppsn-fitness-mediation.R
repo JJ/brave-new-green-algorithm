@@ -7,6 +7,7 @@
 #
 # Run from the repository root:
 #   Rscript script/ppsn-fitness-mediation.R
+#   N_BOOT=20 Rscript script/ppsn-fitness-mediation.R   # quick run
 #
 # Notes
 # - Only workload runs are used; fitness does not depend on operating conditions
@@ -14,6 +15,9 @@
 # - Response: log10(diff_fitness); mediator: log10(evaluations). In log-log
 #   scale the slope is a convergence rate (orders of magnitude of fitness gained
 #   per order of magnitude of evaluations).
+# - All current datasets use a single problem dimension (10), so dimension is
+#   not modelled. If other dimensions are added, it must enter as a problem
+#   parameter (stratum), not as an algorithm parameter.
 # - The stopping criterion (max_gens generations without improvement) makes
 #   evaluations partly a *consequence* of fitness progress, so the direct effect
 #   must be read as "conditional on the same search effort", not strictly causal.
@@ -23,7 +27,7 @@
 library(dplyr)
 library(ggplot2)
 
-N_BOOT <- 500
+N_BOOT <- as.integer(Sys.getenv("N_BOOT", "500"))
 
 # ---- 1. Data ------------------------------------------------------------------
 
@@ -54,6 +58,27 @@ param_terms <- paste0("(", paste(params, collapse = " + "), ")^2")
 cat("Workload runs per version:\n")
 print(table(fitness_data$group))
 
+# ---- 2. Pooled models: total effect, mediator, direct effect + slopes ---------
+
+f_total <- as.formula(paste("log_fit ~ group *", param_terms))
+f_med   <- as.formula(paste("log_evals ~ group *", param_terms))
+f_out   <- as.formula(paste("log_fit ~ group *", param_terms, "+ group:log_evals"))
+
+m_total <- lm(f_total, data = fitness_data)
+m_med   <- lm(f_med,   data = fitness_data)
+m_out   <- lm(f_out,   data = fitness_data)
+
+cat("\nR^2  total:", round(summary(m_total)$r.squared, 3),
+    " mediator:", round(summary(m_med)$r.squared, 3),
+    " direct:", round(summary(m_out)$r.squared, 3), "\n")
+
+# Convergence rate (log-log slope) per version, with 95% CI
+slopes <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
+slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slopes)),
+                     slope = coef(m_out)[rownames(slopes)],
+                     lower = slopes[, 1], upper = slopes[, 2], row.names = NULL)
+cat("\nlog10(diff_fitness) vs log10(evaluations) slope per version (more negative = more efficient):\n")
+print(slopes, digits = 3)
 
 # Partial-regression view of the slopes: strip the parameter effects from both
 # axes within each version (Frisch-Waugh-Lovell), so the line through the points
@@ -87,29 +112,6 @@ ggplot(partial, aes(evals_adj, fit_adj, colour = group)) +
        y = "log10(diff_fitness), adjusted for parameters") +
   theme_minimal() +
   theme(legend.position = "none", panel.grid.minor = element_blank())
-
-# ---- 2. Pooled models: total effect, mediator, direct effect + slopes ---------
-
-f_total <- as.formula(paste("log_fit ~ group *", param_terms))
-f_med   <- as.formula(paste("log_evals ~ group *", param_terms))
-f_out   <- as.formula(paste("log_fit ~ group *", param_terms, "+ group:log_evals"))
-
-m_total <- lm(f_total, data = fitness_data)
-m_med   <- lm(f_med,   data = fitness_data)
-m_out   <- lm(f_out,   data = fitness_data)
-
-cat("\nR^2  total:", round(summary(m_total)$r.squared, 3),
-    " mediator:", round(summary(m_med)$r.squared, 3),
-    " direct:", round(summary(m_out)$r.squared, 3), "\n")
-
-# Convergence rate (log-log slope) per version, with 95% CI
-slopes <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
-slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slopes)),
-                     slope = coef(m_out)[rownames(slopes)],
-                     lower = slopes[, 1], upper = slopes[, 2], row.names = NULL)
-cat("\nlog10(diff_fitness) vs log10(evaluations) slope per version (more negative = more efficient):\n")
-print(slopes, digits = 3)
-
 
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
@@ -237,4 +239,3 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
-
