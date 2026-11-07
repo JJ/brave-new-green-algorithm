@@ -108,8 +108,8 @@ ggplot(partial, aes(evals_adjusted, fit_adjusted, colour = group)) +
             x = -Inf, y = -Inf, hjust = -0.05, vjust = -0.6,
             size = 2.8, colour = "grey20", inherit.aes = FALSE) +
   facet_wrap(~ group, nrow = 1) +
-  labs(x = "log10(evaluations), adjusted for parameters",
-       y = "log10(diff_fitness), adjusted for parameters") +
+  labs(x = "log10(evaluations) net of parameters (FWL partial)",
+       y = "log10(diff_fitness) net of parameters (FWL partial)") +
   theme_minimal() +
   theme(legend.position = "none", panel.grid.minor = element_blank())
 
