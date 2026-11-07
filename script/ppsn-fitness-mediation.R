@@ -309,20 +309,23 @@ ggplot(config_by_param, aes(x, y)) +
 
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
-# Within each version: budget model log_evals ~ params^2 and outcome model
-# log_fit ~ params^2 + log_evals. For a two-level parameter, effects are
-# average marginal effects of switching it from its low to its high level,
-# averaged over the observed values of the other parameters. All effects are
-# differences in log10(diff_fitness), i.e. log10 of the high/low fitness ratio.
-#   same_budget: effect at the same number of evaluations (search efficiency).
-#   via_budget:  effect through the change in the number of evaluations
-#                = (change in log10 evaluations) x b, b = fitness-per-budget
-#                slope (negative), so via_budget > 0 means the parameter
-#                shortens runs (fewer evaluations) and that costs fitness.
-#   budget_share = |via_budget| / (|same_budget| + |via_budget|), in [0, 1];
-#                replaces indirect/total, which is meaningless when the two
-#                paths have opposite signs.
-# With a single slope b, total = same_budget + via_budget exactly (OLS, same
+# Within each version: mediator (evaluation budget) model log_evals ~ params^2
+# and outcome model log_fit ~ params^2 + log_evals. For a two-level parameter,
+# effects are average marginal effects of switching it from its low to its high
+# level, averaged over the observed values of the other parameters. All effects
+# are differences in log10(diff_fitness), i.e. log10 of the high/low fitness
+# ratio.
+#   direct_same_budget:  direct effect, at the same number of evaluations
+#                        (search efficiency).
+#   mediated_via_budget: effect mediated by the evaluation budget
+#                        = (change in log10 evaluations) x b, b = slope of
+#                        fitness on the mediator (negative), so a positive
+#                        value means the parameter shortens runs (fewer
+#                        evaluations) and that costs fitness.
+#   share_mediated = |mediated| / (|direct| + |mediated|), in [0, 1];
+#                        replaces mediated/total, which is meaningless when the
+#                        two paths have opposite signs.
+# With a single mediator slope b, total = direct + mediated exactly (OLS, same
 # regressors).
 
 marginal_effect <- function(model, data, param) {
