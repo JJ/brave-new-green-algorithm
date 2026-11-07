@@ -250,7 +250,7 @@ ggplot(config_by_param, aes(x, y)) +
 #     no_mutation_alpha -2.68. microopt ~ baseline: the implementation-only
 #     negative control behaves as expected. The jump comes with low_mutation and
 #     grows with no_mutation_alpha: in those versions a run that lasts longer
-#     keeps improving much more (10x evals -> ~17x and ~480x better fitness,
+#     keeps improving much more (10x evaluations -> ~17x and ~480x better fitness,
 #     vs ~2x in the first three versions).
 #
 # F3. Across configurations vs across runs (this section):
@@ -273,27 +273,57 @@ ggplot(config_by_param, aes(x, y)) +
 #     - steps (16 vs 64) has ~no effect: configurations differing only in
 #       steps overlap, which produces the point pairs in every panel.
 #     - High alpha (25% vs 10%), high max_gens (25 vs 10) and high
-#       population_size (800 vs 400) give better fitness in most versions,
-#       always with more evaluations (arrows go right and down). Whether they
-#       also search better, not only longer, depends on whether arrows are
-#       steeper than the across_configs slope (direct vs indirect, section 4).
-#     - low_mutation is the exception for alpha and population_size: arrows are
-#       much flatter, so these mostly cost evaluations without improving
-#       fitness. Hypothesis (unverified): with low mutation, these knobs stop
-#       supplying useful diversity.
+#       population_size (800 vs 400) give better fitness in most versions.
+#       The arrow plot alone was misleading about alpha; see F5.
 #     - no_mutation_alpha breaks the configuration layout shared by the other
-#       versions. With an unmutated alpha caste, alpha size acts as an
-#       elitism/exploitation knob, so it plausibly shifts fitness directly
-#       rather than only through evaluations; section 7 (split_param) and the
-#       no_mutation_alpha rows of mediation_table should confirm it.
+#       versions; F5 shows why (alpha's direct effect is ~9x larger there).
+#
+# F5. Mediation per parameter (section 4; effect of low -> high on
+#     log10(diff_fitness), negative = better; direct = at the same number of
+#     evaluations, indirect = through the change in evaluations).
+#     - steps: no effect on either path.
+#     - max_gens: pure budget effect. direct ~0, indirect -0.11 to -0.13
+#       (first three versions), -0.36 (low_mutation), -0.69
+#       (no_mutation_alpha). More patience -> more evaluations -> better
+#       fitness, with no better search.
+#     - population_size: direct POSITIVE (worse at the same number of
+#       evaluations: +0.04 to +0.06, +0.35 low_mutation, +0.30
+#       no_mutation_alpha), indirect negative (more evaluations). It pays off
+#       only by making runs longer; in low_mutation the two cancel out (total
+#       +0.013, n.s.). Reading: an exploration knob, costs efficiency per
+#       evaluation.
+#     - alpha: direct strongly NEGATIVE (better at the same budget: -0.14 to
+#       -0.15, -0.32 low_mutation, -1.33 no_mutation_alpha = ~21x better),
+#       indirect POSITIVE (+0.08 to +0.09, +0.36, +0.55): a larger alpha caste
+#       means FEWER evaluations, because the run stagnates and the stopping
+#       rule fires earlier. Net gain except in low_mutation (total +0.046, worse):
+#       there early stagnation outweighs the better search. Reading: an
+#       exploitation knob; classic premature-convergence trade-off. With low
+#       mutation the algorithm is already exploitative and more elite tips it
+#       into stagnation; with an unmutated alpha caste (pure elitism) the gain
+#       per evaluation is largest.
+#     - prop_mediated is meaningless when direct and indirect have opposite
+#       signs (alpha, population_size); report both components instead.
+#     E/E readings are interpretations consistent with the signs, not a direct
+#     measurement of exploration/exploitation.
 
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
-# Within each version: mediator model log_evals ~ params^2 and outcome model
+# Within each version: budget model log_evals ~ params^2 and outcome model
 # log_fit ~ params^2 + log_evals. For a two-level parameter, effects are
 # average marginal effects of switching it from its low to its high level,
-# averaged over the observed values of the other parameters. With a single
-# mediator slope b, total = direct + indirect exactly (OLS, same regressors).
+# averaged over the observed values of the other parameters. All effects are
+# differences in log10(diff_fitness), i.e. log10 of the high/low fitness ratio.
+#   same_budget: effect at the same number of evaluations (search efficiency).
+#   via_budget:  effect through the change in the number of evaluations
+#                = (change in log10 evaluations) x b, b = fitness-per-budget
+#                slope (negative), so via_budget > 0 means the parameter
+#                shortens runs (fewer evaluations) and that costs fitness.
+#   budget_share = |via_budget| / (|same_budget| + |via_budget|), in [0, 1];
+#                replaces indirect/total, which is meaningless when the two
+#                paths have opposite signs.
+# With a single slope b, total = same_budget + via_budget exactly (OLS, same
+# regressors).
 
 marginal_effect <- function(model, data, param) {
   lv <- levels(data[[param]])
@@ -310,10 +340,11 @@ mediation_effects <- function(data) {
   mm <- lm(f_m, data); my <- lm(f_y, data); mt <- lm(f_t, data)
   b <- coef(my)["log_evals"]
   do.call(rbind, lapply(params, function(p) {
-    total    <- marginal_effect(mt, data, p)
-    direct   <- marginal_effect(my, data, p)
-    indirect <- b * marginal_effect(mm, data, p)
-    data.frame(param = p, total = total, direct = direct, indirect = unname(indirect))
+    total       <- marginal_effect(mt, data, p)
+    same_budget <- marginal_effect(my, data, p)
+    via_budget  <- b * marginal_effect(mm, data, p)
+    data.frame(param = p, total = total, same_budget = same_budget,
+               via_budget = unname(via_budget))
   }))
 }
 
@@ -326,30 +357,31 @@ mediation_by_group <- function(g) {
   ci <- function(k, q) apply(boots[, k, ], 1, quantile, q)
   point %>%
     mutate(group = g,
-           total_lo  = ci("total", 0.025),    total_hi  = ci("total", 0.975),
-           direct_lo = ci("direct", 0.025),   direct_hi = ci("direct", 0.975),
-           indirect_lo = ci("indirect", 0.025), indirect_hi = ci("indirect", 0.975),
-           prop_mediated = indirect / total) %>%
+           total_lo       = ci("total", 0.025),       total_hi       = ci("total", 0.975),
+           same_budget_lo = ci("same_budget", 0.025), same_budget_hi = ci("same_budget", 0.975),
+           via_budget_lo  = ci("via_budget", 0.025),  via_budget_hi  = ci("via_budget", 0.975),
+           budget_share   = abs(via_budget) / (abs(same_budget) + abs(via_budget))) %>%
     relocate(group)
 }
 
 mediation_table <- bind_rows(lapply(levels(fitness_data$group), mediation_by_group))
 
 cat("\nEffect on log10(diff_fitness) of switching each parameter low -> high",
-    "(negative = better fitness), 95% bootstrap CI:\n")
+    "(negative = better fitness): at the same budget vs through the budget,",
+    "95% bootstrap CI:\n")
 print(mediation_table %>%
         transmute(group, param,
-                  total    = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
-                  direct   = sprintf("%.3f [%.3f, %.3f]", direct, direct_lo, direct_hi),
-                  indirect = sprintf("%.3f [%.3f, %.3f]", indirect, indirect_lo, indirect_hi),
-                  prop_mediated = round(prop_mediated, 2)),
+                  total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
+                  same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
+                  via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
+                  budget_share = round(budget_share, 2)),
       row.names = FALSE)
 
 # ---- 5. Version effects (consecutive pairs, as in the paper) ------------------
 #
 # Same decomposition, with the version change as the "treatment" and the four
 # parameters as covariates. microopt vs baseline is a negative control:
-# an implementation-only change should have ~0 total and direct effect.
+# an implementation-only change should have ~0 total and same_budget effect.
 
 version_pairs <- list(c("baseline", "gamma_upgrade"),
                       c("baseline", "microopt"),
@@ -361,9 +393,9 @@ version_effect <- function(data) {
   my <- lm(as.formula(paste("log_fit ~ group *", param_terms, "+ log_evals")), data)
   mt <- lm(as.formula(paste("log_fit ~ group *", param_terms)), data)
   b <- coef(my)["log_evals"]
-  c(total    = marginal_effect(mt, data, "group"),
-    direct   = marginal_effect(my, data, "group"),
-    indirect = unname(b * marginal_effect(mm, data, "group")))
+  c(total       = marginal_effect(mt, data, "group"),
+    same_budget = marginal_effect(my, data, "group"),
+    via_budget  = unname(b * marginal_effect(mm, data, "group")))
 }
 
 version_table <- do.call(rbind, lapply(version_pairs, function(pair) {
@@ -373,10 +405,11 @@ version_table <- do.call(rbind, lapply(version_pairs, function(pair) {
   boots <- replicate(N_BOOT, version_effect(d[sample(nrow(d), replace = TRUE), ]))
   q <- apply(boots, 1, quantile, c(0.025, 0.975))
   data.frame(change = paste(pair, collapse = " -> "),
-             total    = sprintf("%.3f [%.3f, %.3f]", point["total"],    q[1, "total"],    q[2, "total"]),
-             direct   = sprintf("%.3f [%.3f, %.3f]", point["direct"],   q[1, "direct"],   q[2, "direct"]),
-             indirect = sprintf("%.3f [%.3f, %.3f]", point["indirect"], q[1, "indirect"], q[2, "indirect"]),
-             prop_mediated = round(point["indirect"] / point["total"], 2),
+             total       = sprintf("%.3f [%.3f, %.3f]", point["total"],       q[1, "total"],       q[2, "total"]),
+             same_budget = sprintf("%.3f [%.3f, %.3f]", point["same_budget"], q[1, "same_budget"], q[2, "same_budget"]),
+             via_budget  = sprintf("%.3f [%.3f, %.3f]", point["via_budget"],  q[1, "via_budget"],  q[2, "via_budget"]),
+             budget_share = round(abs(point["via_budget"]) /
+                                  (abs(point["same_budget"]) + abs(point["via_budget"])), 2),
              row.names = NULL)
 }))
 
@@ -391,11 +424,12 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
 
-# ---- 7. no_mutation_alpha: which parameter splits the fitness/evaluations cloud? -------
+# ---- 7. no_mutation_alpha: which parameter splits the fitness/evaluations cloud?
 #
-# In the plot above the no_mutation_alpha cloud is visibly split in two parallel bands.
-# A parameter that creates the split shifts fitness *at the same number of
-# evaluations*, i.e. it acts through the direct (not the mediated) path.
+# In the plot above the no_mutation_alpha cloud is visibly split in two
+# parallel bands. A parameter that creates the split shifts fitness *at the
+# same number of evaluations*, i.e. it acts through the same_budget path, not
+# through the budget.
 # For each parameter:
 #   - offset: difference in mean residual of log_fit ~ log_evals between its
 #     levels (vertical distance between the two bands, in log10 units);
@@ -428,16 +462,16 @@ print(split_table, digits = 3, row.names = FALSE)
 split_param <- split_table$param[1]
 cat("Parameter that best explains the split:", split_param, "\n")
 
-# Evaluation-mediated decomposition for no_mutation_alpha (from section 4): the split
-# parameter should show a large *direct* effect.
-cat("\nno_alpha: total / direct / indirect effect of each parameter (from section 4):\n")
+# Budget decomposition for no_mutation_alpha (from section 4): the split
+# parameter should show a large *same_budget* effect.
+cat("\nno_mutation_alpha: total / same_budget / via_budget effect of each parameter (from section 4):\n")
 print(mediation_table %>%
         filter(group == "no_mutation_alpha") %>%
         transmute(param,
-                  total    = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
-                  direct   = sprintf("%.3f [%.3f, %.3f]", direct, direct_lo, direct_hi),
-                  indirect = sprintf("%.3f [%.3f, %.3f]", indirect, indirect_lo, indirect_hi),
-                  prop_mediated = round(prop_mediated, 2)),
+                  total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
+                  same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
+                  via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
+                  budget_share = round(budget_share, 2)),
       row.names = FALSE)
 
 # Convergence line (log_fit ~ log_evals) for every level of every parameter.
@@ -472,9 +506,9 @@ within_split <- bind_rows(lapply(levels(nma_data[[split_param]]), function(l) {
   b  <- coef(my)[["log_evals"]]
   do.call(rbind, lapply(other_params, function(p) {
     data.frame(level = paste(split_param, "=", l), param = p,
-               total    = marginal_effect(mt, d, p),
-               direct   = marginal_effect(my, d, p),
-               indirect = b * marginal_effect(mm, d, p))
+               total       = marginal_effect(mt, d, p),
+               same_budget = marginal_effect(my, d, p),
+               via_budget  = b * marginal_effect(mm, d, p))
   }))
 }))
 print(within_split, digits = 3, row.names = FALSE)
