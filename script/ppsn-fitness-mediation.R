@@ -187,6 +187,50 @@ ggplot(config_run_points, aes(x, y, colour = group)) +
   theme_minimal() +
   theme(legend.position = "none", panel.grid.minor = element_blank())
 
+# Same configuration points, one row per parameter, coloured by its level.
+# Arrows join configurations that differ only in that parameter (low -> high):
+# along the across_configs slope = it acts by spending more evaluations;
+# vertical = it changes fitness at the same cost; ~zero length = no effect.
+# Arrows that all point the same way = the better value is always the same.
+config_by_param <- bind_rows(lapply(params, function(p) {
+  d <- config_points
+  d$param      <- p
+  d$level      <- as.character(d[[p]])
+  d$level_rank <- ifelse(as.integer(d[[p]]) == 1, "low", "high")
+  d$others     <- do.call(paste, c(lapply(d[setdiff(params, p)], as.character), sep = "/"))
+  d
+})) %>%
+  mutate(param = factor(param, levels = params))
+
+config_arrows <- config_by_param %>%
+  select(group, param, others, level_rank, x, y) %>%
+  tidyr::pivot_wider(names_from = level_rank, values_from = c(x, y)) %>%
+  filter(!is.na(x_low), !is.na(x_high))
+
+param_level_text <- config_by_param %>%
+  group_by(group, param) %>%
+  summarise(label = paste0("low = ",  first(level[level_rank == "low"]),
+                           ", high = ", first(level[level_rank == "high"])),
+            .groups = "drop")
+
+ggplot(config_by_param, aes(x, y)) +
+  geom_segment(data = config_arrows,
+               aes(x = x_low, y = y_low, xend = x_high, yend = y_high),
+               arrow = arrow(length = unit(0.12, "cm")),
+               colour = "grey60", linewidth = 0.4) +
+  geom_point(aes(colour = level_rank, size = runs), alpha = 0.85) +
+  geom_text(data = param_level_text, aes(label = label),
+            x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
+            size = 2.5, colour = "grey30", inherit.aes = FALSE) +
+  facet_wrap(~ param + group, ncol = length(versions), scales = "free",
+             labeller = label_wrap_gen(width = 26, multi_line = FALSE)) +
+  scale_colour_manual(values = c(low = "#1b9e77", high = "#d95f02"), name = "Level") +
+  scale_size_area(max_size = 3, guide = "none") +
+  labs(x = "configuration mean log10(evaluations)",
+       y = "configuration mean log10(diff_fitness)") +
+  theme_minimal() +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
 # Within each version: mediator model log_evals ~ params^2 and outcome model
