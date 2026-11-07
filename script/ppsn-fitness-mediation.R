@@ -21,8 +21,9 @@
 # - The stopping criterion (max_gens generations without improvement) makes
 #   evaluations partly a *consequence* of fitness progress, so the direct effect
 #   must be read as "conditional on the same search effort", not strictly causal.
-#   Section 3 separates within-configuration slopes (stopping-rule artifact +
-#   luck) from between-configuration slopes (parameter effect).
+#   Section 3 separates the slope across runs of the same configuration
+#   (seed, realized run length: stopping-rule artifact + luck) from the slope
+#   across configurations (set by parameters, max_gens value included).
 
 library(dplyr)
 library(ggplot2)
@@ -116,25 +117,32 @@ ggplot(partial, aes(evals_adjusted, fit_adjusted, colour = group)) +
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
 
-# ---- 3. Within vs between configuration slopes --------------------------------
+# ---- 3. Slopes across configurations vs across runs ---------------------------
+#
+# across_configs: slope on a configuration's mean log10(evaluations), i.e. what
+#   a configuration that spends more evaluations gains (no parameter terms in
+#   the model, so it also absorbs direct parameter effects).
+# across_runs: slope on a run's deviation from its configuration mean, i.e.
+#   what a run gains by happening to last longer (seed + when max_gens fires).
 
 fitness_data <- fitness_data %>%
   group_by(group, alpha, steps, max_gens, population_size) %>%
-  mutate(log_evals_cell   = mean(log_evals),
-         log_evals_within = log_evals - log_evals_cell) %>%
+  mutate(log_evals_config_mean = mean(log_evals),
+         log_evals_run_dev     = log_evals - log_evals_config_mean) %>%
   ungroup()
 
-m_within_between <- lm(log_fit ~ group * (log_evals_cell + log_evals_within),
-                       data = fitness_data)
+m_configs_runs <- lm(log_fit ~ group * (log_evals_config_mean + log_evals_run_dev),
+                     data = fitness_data)
 
-wb <- data.frame(t(sapply(levels(fitness_data$group), function(g) {
+config_run_slopes <- data.frame(t(sapply(levels(fitness_data$group), function(g) {
   ref <- g == levels(fitness_data$group)[1]
-  b <- coef(m_within_between)
-  c(between = unname(b["log_evals_cell"]   + if (ref) 0 else b[paste0("group", g, ":log_evals_cell")]),
-    within  = unname(b["log_evals_within"] + if (ref) 0 else b[paste0("group", g, ":log_evals_within")]))
+  b <- coef(m_configs_runs)
+  c(across_configs = unname(b["log_evals_config_mean"] + if (ref) 0 else b[paste0("group", g, ":log_evals_config_mean")]),
+    across_runs    = unname(b["log_evals_run_dev"]     + if (ref) 0 else b[paste0("group", g, ":log_evals_run_dev")]))
 })))
-cat("\nBetween-configuration (parameter-driven) vs within-configuration (seed/stopping-driven) slopes:\n")
-print(wb, digits = 3)
+cat("\nSlopes across configurations (set by parameters, max_gens included) vs",
+    "across runs of the same configuration (seed, realized run length):\n")
+print(config_run_slopes, digits = 3)
 
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
