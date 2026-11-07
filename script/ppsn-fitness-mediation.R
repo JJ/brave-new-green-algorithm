@@ -144,6 +144,49 @@ cat("\nSlopes across configurations (set by parameters, max_gens included) vs",
     "across runs of the same configuration (seed, realized run length):\n")
 print(config_run_slopes, digits = 3)
 
+# Plot of the two slopes. Top row: one point per configuration (its mean
+# log10 evaluations and mean log10 fitness, size = number of runs). Bottom row:
+# one point per run, as its distance from its configuration's means. A
+# run-weighted line through the top row and a plain line through the bottom
+# row reproduce across_configs and across_runs exactly.
+config_points <- fitness_data %>%
+  group_by(group, alpha, steps, max_gens, population_size) %>%
+  summarise(x = mean(log_evals), y = mean(log_fit), runs = n(), .groups = "drop") %>%
+  mutate(view = "across configurations")
+
+run_points <- fitness_data %>%
+  group_by(group, alpha, steps, max_gens, population_size) %>%
+  mutate(x = log_evals_run_dev, y = log_fit - mean(log_fit), runs = 1) %>%
+  ungroup() %>%
+  mutate(view = "across runs (distance from configuration mean)")
+
+views <- c("across configurations", "across runs (distance from configuration mean)")
+config_run_points <- bind_rows(config_points, run_points) %>%
+  mutate(view = factor(view, levels = views))
+
+config_run_labels <- config_run_slopes %>%
+  mutate(group = factor(rownames(config_run_slopes), levels = names(versions))) %>%
+  tidyr::pivot_longer(c(across_configs, across_runs), names_to = "view", values_to = "slope") %>%
+  mutate(view  = factor(views[match(view, c("across_configs", "across_runs"))], levels = views),
+         label = sprintf("slope %.2f", slope))
+
+ggplot(config_run_points, aes(x, y, colour = group)) +
+  geom_point(data = filter(config_run_points, view == views[2]),
+             alpha = 0.15, size = 0.6) +
+  geom_point(data = filter(config_run_points, view == views[1]),
+             aes(size = runs), alpha = 0.8) +
+  geom_smooth(aes(weight = runs), method = "lm", formula = y ~ x,
+              se = FALSE, linewidth = 0.8, colour = "grey20") +
+  geom_text(data = config_run_labels, aes(label = label),
+            x = -Inf, y = -Inf, hjust = -0.05, vjust = -0.6,
+            size = 2.8, colour = "grey20", inherit.aes = FALSE) +
+  facet_wrap(view ~ group, nrow = 2, scales = "free",
+             labeller = label_wrap_gen(width = 26, multi_line = FALSE)) +
+  scale_size_area(max_size = 3, guide = "none") +
+  labs(x = "log10(evaluations)", y = "log10(diff_fitness)") +
+  theme_minimal() +
+  theme(legend.position = "none", panel.grid.minor = element_blank())
+
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
 # Within each version: mediator model log_evals ~ params^2 and outcome model
