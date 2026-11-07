@@ -16,12 +16,12 @@
 #   scale the slope is a convergence rate (orders of magnitude of fitness gained
 #   per order of magnitude of evaluations).
 # - All current datasets use a single problem dimension (10), so dimension is
-#   not modelled. If other dimensions are added, it must enter as a problem
+#   not modeled. If other dimensions are added, it must enter as a problem
 #   parameter (stratum), not as an algorithm parameter.
 # - The stopping criterion (max_gens generations without improvement) makes
 #   evaluations partly a *consequence* of fitness progress, so the direct effect
 #   must be read as "conditional on the same search effort", not strictly causal.
-#   Section 3 separates within-configuration slopes (stopping-rule artefact +
+#   Section 3 separates within-configuration slopes (stopping-rule artifact +
 #   luck) from between-configuration slopes (parameter effect).
 
 library(dplyr)
@@ -70,13 +70,13 @@ m_out   <- lm(f_out,   data = fitness_data)
 
 cat("\nR^2  total:", round(summary(m_total)$r.squared, 3),
     " mediator:", round(summary(m_med)$r.squared, 3),
-    " direct:", round(summary(m_out)$r.squared, 3), "\n")
+    " outcome (parameter + evals):", round(summary(m_out)$r.squared, 3), "\n")
 
 # Convergence rate (log-log slope) per version, with 95% CI
-slopes <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
-slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slopes)),
-                     slope = coef(m_out)[rownames(slopes)],
-                     lower = slopes[, 1], upper = slopes[, 2], row.names = NULL)
+slope_ci <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
+slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slope_ci)),
+                     slope = coef(m_out)[rownames(slope_ci)],
+                     lower = slope_ci[, 1], upper = slope_ci[, 2], row.names = NULL)
 cat("\nlog10(diff_fitness) vs log10(evaluations) slope per version (more negative = more efficient):\n")
 print(slopes, digits = 3)
 
