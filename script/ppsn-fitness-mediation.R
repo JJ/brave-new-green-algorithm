@@ -279,8 +279,9 @@ ggplot(config_by_param, aes(x, y)) +
 #       versions; F5 shows why (alpha's direct effect is ~9x larger there).
 #
 # F5. Mediation per parameter (section 4; effect of low -> high on
-#     log10(diff_fitness), negative = better; direct = at the same number of
-#     evaluations, indirect = through the change in evaluations).
+#     log10(diff_fitness), negative = better; direct (same_budget) = at the
+#     same number of evaluations, mediated (via_budget) = through the
+#     mediator, the evaluation budget).
 #     - steps: no effect on either path.
 #     - max_gens: pure budget effect. direct ~0, indirect -0.11 to -0.13
 #       (first three versions), -0.36 (low_mutation), -0.69
@@ -302,8 +303,10 @@ ggplot(config_by_param, aes(x, y)) +
 #       mutation the algorithm is already exploitative and more elite tips it
 #       into stagnation; with an unmutated alpha caste (pure elitism) the gain
 #       per evaluation is largest.
-#     - prop_mediated is meaningless when direct and indirect have opposite
-#       signs (alpha, population_size); report both components instead.
+#     - The old prop_mediated (mediated / total) is meaningless when the two
+#       paths have opposite signs (alpha, population_size); it is replaced by
+#       budget_share = |mediated| / (|direct| + |mediated|). Report both
+#       components anyway.
 #     E/E readings are interpretations consistent with the signs, not a direct
 #     measurement of exploration/exploitation.
 
@@ -315,18 +318,18 @@ ggplot(config_by_param, aes(x, y)) +
 # level, averaged over the observed values of the other parameters. All effects
 # are differences in log10(diff_fitness), i.e. log10 of the high/low fitness
 # ratio.
-#   direct_same_budget:  direct effect, at the same number of evaluations
-#                        (search efficiency).
-#   mediated_via_budget: effect mediated by the evaluation budget
-#                        = (change in log10 evaluations) x b, b = slope of
-#                        fitness on the mediator (negative), so a positive
-#                        value means the parameter shortens runs (fewer
-#                        evaluations) and that costs fitness.
-#   share_mediated = |mediated| / (|direct| + |mediated|), in [0, 1];
-#                        replaces mediated/total, which is meaningless when the
-#                        two paths have opposite signs.
-# With a single mediator slope b, total = direct + mediated exactly (OLS, same
-# regressors).
+#   same_budget:  DIRECT effect, at the same number of evaluations (search
+#                 efficiency).
+#   via_budget:   MEDIATED (indirect) effect, through the mediator, the
+#                 evaluation budget = (change in log10 evaluations) x b, where
+#                 b = slope of fitness on the mediator (negative). A positive
+#                 value means the parameter shortens runs (fewer evaluations)
+#                 and that costs fitness.
+#   budget_share: share mediated = |via_budget| / (|same_budget| + |via_budget|),
+#                 in [0, 1]; replaces mediated/total, which is meaningless when
+#                 the two paths have opposite signs.
+# With a single mediator slope b, total = same_budget + via_budget exactly
+# (OLS, same regressors).
 
 marginal_effect <- function(model, data, param) {
   lv <- levels(data[[param]])
@@ -370,8 +373,8 @@ mediation_by_group <- function(g) {
 mediation_table <- bind_rows(lapply(levels(fitness_data$group), mediation_by_group))
 
 cat("\nEffect on log10(diff_fitness) of switching each parameter low -> high",
-    "(negative = better fitness): at the same budget vs through the budget,",
-    "95% bootstrap CI:\n")
+    "(negative = better fitness): same_budget = direct, via_budget = mediated",
+    "by the evaluation budget, 95% bootstrap CI:\n")
 print(mediation_table %>%
         transmute(group, param,
                   total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
@@ -384,7 +387,8 @@ print(mediation_table %>%
 #
 # Same decomposition, with the version change as the "treatment" and the four
 # parameters as covariates. microopt vs baseline is a negative control:
-# an implementation-only change should have ~0 total and same_budget effect.
+# an implementation-only change should have ~0 total and direct (same_budget)
+# effect.
 
 version_pairs <- list(c("baseline", "gamma_upgrade"),
                       c("baseline", "microopt"),
@@ -431,8 +435,8 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
 #
 # In the plot above the no_mutation_alpha cloud is visibly split in two
 # parallel bands. A parameter that creates the split shifts fitness *at the
-# same number of evaluations*, i.e. it acts through the same_budget path, not
-# through the budget.
+# same number of evaluations*, i.e. it acts through the direct (same_budget)
+# path, not through the mediator (evaluation budget).
 # For each parameter:
 #   - offset: difference in mean residual of log_fit ~ log_evals between its
 #     levels (vertical distance between the two bands, in log10 units);
@@ -459,15 +463,16 @@ split_table <- do.call(rbind, lapply(params, function(p) {
              agreement = max(sum(diag(tab)), sum(tab) - sum(diag(tab))) / sum(tab))
 })) %>% arrange(desc(agreement))
 
-cat("\nno_alpha: separation of the fitness bands by parameter",
+cat("\nno_mutation_alpha: separation of the fitness bands by parameter",
     "(offset = high - low level, log10 units):\n")
 print(split_table, digits = 3, row.names = FALSE)
 split_param <- split_table$param[1]
 cat("Parameter that best explains the split:", split_param, "\n")
 
-# Budget decomposition for no_mutation_alpha (from section 4): the split
-# parameter should show a large *same_budget* effect.
-cat("\nno_mutation_alpha: total / same_budget / via_budget effect of each parameter (from section 4):\n")
+# Mediation by the evaluation budget for no_mutation_alpha (from section 4):
+# the split parameter should show a large *direct* (same_budget) effect.
+cat("\nno_mutation_alpha: total / direct (same_budget) / mediated (via_budget)",
+    "effect of each parameter (from section 4):\n")
 print(mediation_table %>%
         filter(group == "no_mutation_alpha") %>%
         transmute(param,
@@ -493,13 +498,13 @@ nma_level_slopes <- nma_long %>%
                lower = ci[[1]], upper = ci[[2]])
   }) %>%
   ungroup()
-cat("\nno_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
+cat("\nno_mutation_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
 print(as.data.frame(nma_level_slopes), digits = 3, row.names = FALSE)
 
 # Mediation for the other parameters *within* each level of the split
 # parameter, so their effects are not confounded with the band they fall in.
 other_params <- setdiff(params, split_param)
-cat("\nno_alpha: effects of the remaining parameters within each level of", split_param, "\n")
+cat("\nno_mutation_alpha: effects of the remaining parameters within each level of", split_param, "\n")
 within_split <- bind_rows(lapply(levels(nma_data[[split_param]]), function(l) {
   d  <- nma_data %>% filter(.data[[split_param]] == l)
   pt <- paste0("(", paste(other_params, collapse = " + "), ")^2")
