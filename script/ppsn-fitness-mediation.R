@@ -423,6 +423,88 @@ version_table <- do.call(rbind, lapply(version_pairs, function(pair) {
 cat("\nEffect of each version change on log10(diff_fitness), 95% bootstrap CI:\n")
 print(version_table, row.names = FALSE)
 
+# ---- 5b. Version effects with a version-specific convergence slope ------------
+#
+# Section 5 uses one slope b of fitness on evaluations for both versions in a
+# pair, so via_budget values every extra evaluation at the same rate in both,
+# while F2 shows the slopes differ ~4x (microopt -> low_mutation) and ~2x
+# (low_mutation -> no_mutation_alpha). Here the outcome model gets a
+# group:log_evals interaction, so each version has its own slope, and the
+# question becomes: are the new version's extra evaluations worth more?
+#
+# With M_old / M_new = predicted log10(evaluations) of each configuration under
+# the old / new version (mediator model), and b_old / b_new the two slopes:
+#   same_budget:    new - old version at the OLD version's budget M_old
+#                   (better search at the same effort).
+#   via_budget:     b_new x (M_new - M_old): what the new version gains from
+#                   its change in run length, at its own rate. Split into
+#     at_old_rate:  b_old x (M_new - M_old): what those extra evaluations would
+#                   have bought the old version;
+#     better_use:   (b_new - b_old) x (M_new - M_old): extra gain because the
+#                   new version converts evaluations into fitness faster.
+#   slope_old, slope_new, slope_diff: the two convergence rates (log-log).
+# total is still the model without the mediator; same_budget + via_budget no
+# longer has to equal it exactly (it does only for parallel slopes).
+
+version_effect_slopes <- function(data) {
+  pair <- levels(data$group)
+  mm <- lm(as.formula(paste("log_evals ~ group *", param_terms)), data)
+  my <- lm(as.formula(paste("log_fit ~ group *", param_terms, "+ group * log_evals")), data)
+  mt <- lm(as.formula(paste("log_fit ~ group *", param_terms)), data)
+  old <- new <- data
+  old$group <- factor(pair[1], levels = pair)
+  new$group <- factor(pair[2], levels = pair)
+  m_old <- predict(mm, old)
+  m_new <- predict(mm, new)
+  slope <- function(d) {                   # model is linear in log_evals
+    d1 <- d; d1$log_evals <- d$log_evals + 1
+    mean(predict(my, d1) - predict(my, d))
+  }
+  new_at_old <- new
+  old$log_evals        <- m_old
+  new_at_old$log_evals <- m_old
+  new$log_evals        <- m_new
+  b_old <- slope(old); b_new <- slope(new)
+  d_m   <- mean(m_new - m_old)
+  c(total       = mean(predict(mt, new) - predict(mt, old)),
+    same_budget = mean(predict(my, new_at_old) - predict(my, old)),
+    via_budget  = b_new * d_m,
+    at_old_rate = b_old * d_m,
+    better_use  = (b_new - b_old) * d_m,
+    slope_old   = b_old,
+    slope_new   = b_new,
+    slope_diff  = b_new - b_old)
+}
+
+fmt_ci <- function(x, lo, hi) sprintf("%.3f [%.3f, %.3f]", x, lo, hi)
+
+version_slope_results <- lapply(version_pairs, function(pair) {
+  d <- fitness_data %>% filter(group %in% pair) %>%
+    mutate(group = factor(as.character(group), levels = pair))
+  point <- version_effect_slopes(d)
+  boots <- replicate(N_BOOT, version_effect_slopes(d[sample(nrow(d), replace = TRUE), ]))
+  q <- apply(boots, 1, quantile, c(0.025, 0.975))
+  list(change = paste(pair, collapse = " -> "), point = point, q = q)
+})
+
+version_slope_table <- do.call(rbind, lapply(version_slope_results, function(r) {
+  cols <- c("total", "same_budget", "via_budget", "at_old_rate", "better_use")
+  as.data.frame(c(list(change = r$change),
+                  setNames(lapply(cols, function(k) fmt_ci(r$point[k], r$q[1, k], r$q[2, k])), cols)))
+}))
+
+version_slope_rates <- do.call(rbind, lapply(version_slope_results, function(r) {
+  cols <- c("slope_old", "slope_new", "slope_diff")
+  as.data.frame(c(list(change = r$change),
+                  setNames(lapply(cols, function(k) fmt_ci(r$point[k], r$q[1, k], r$q[2, k])), cols)))
+}))
+
+cat("\nVersion change effect on log10(diff_fitness) with version-specific slopes,",
+    "95% bootstrap CI:\n")
+print(version_slope_table, row.names = FALSE)
+cat("\nConvergence slopes (log10 fitness per log10 evaluation) in each pair, 95% bootstrap CI:\n")
+print(version_slope_rates, row.names = FALSE)
+
 # ---- 6. Plot ------------------------------------------------------------------
 
 ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
