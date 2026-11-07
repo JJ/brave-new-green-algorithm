@@ -336,3 +336,4 @@ ggplot(na_long, aes(log_evals, log_fit, colour = level)) +
        title = "no_alpha: fitness vs evaluations by parameter level") +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
+
