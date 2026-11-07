@@ -367,7 +367,7 @@ We have thus found a very economical lunch indeed, which can even be free if we 
 %\end{credits}
 
 \bibliographystyle{splncs04}
-\bibliography{energy,ga-energy,GAs,metaheuristics,ours,julia}
+\bibliography{energy,ga-energy,GAs,metaheuristics,ours,julia,search}
 
 \end{document}
 
