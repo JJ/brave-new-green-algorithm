@@ -92,8 +92,8 @@ partial <- fitness_data %>%
   group_modify(function(d, key) {
     d <- droplevels(d)
     mutate(d,
-           fit_adj   = resid(lm(f_y_par, d)) + mean(log_fit),
-           evals_adj = resid(lm(f_x_par, d)) + mean(log_evals))
+           fit_adjusted   = resid(lm(f_y_par, d)) + mean(log_fit),
+           evals_adjusted = resid(lm(f_x_par, d)) + mean(log_evals))
   }) %>%
   ungroup()
 
@@ -101,7 +101,7 @@ slope_labels <- slopes %>%
   mutate(group = factor(group, levels = names(versions)),
          label = sprintf("slope %.2f [%.2f, %.2f]", slope, lower, upper))
 
-ggplot(partial, aes(evals_adj, fit_adj, colour = group)) +
+ggplot(partial, aes(evals_adjusted, fit_adjusted, colour = group)) +
   geom_point(alpha = 0.2, size = 0.7) +
   geom_smooth(method = "lm", formula = y ~ x, se = TRUE, linewidth = 0.8) +
   geom_text(data = slope_labels, aes(label = label),
