@@ -38,30 +38,14 @@
 %% Changes to improve flow
 % Making an optimization (or genetic) algorithm more effective? Later in the text
 % there are references to properties applied only to these algorithms. - M
-Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with a stratified population, %populations? - M
-%called Brave New Algorithm, %% Commented out for generalizability -Carlos
-we %reach a parametrization and implementation
-attain an algorithmic solution that reaches an optimum at a very low cost or %reach certain levels of fitness
-approximates it spending much less energy than others evaluated.
-\keywords{Green computing  \and Energy profiling methodologies \and Metaheuristics.}
+Making an algorithm more effective often involves a series of trade-offs
+\keywords{ \and Metaheuristics.}
 \end{abstract}
 %
 %
 %
 \section{Introduction and state of the art}
 
-An algorithm is an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences the measured energy consumption of any algorithm's implementation. %% Make this more compact -Carlos
-When implementing a metaheuristic, adapting it, or tweaking its parameters, we are usually aiming for efficiency in both performance and energy consumption if possible. However, relying on energy measurements to take decisions requires the latter to be reliable and reproducible.
-
-A common approach in this context has been to try to eliminate the dependence of energy measurements on the operating context \cite{merelo25,bna25-anon}. %% swaps references to use natural order -Carlos
-%% Saving orphan lines -Carlos
-In this sense, many authors have proposed fixing the temperature, lock clock frequencies and fix the core \cite{pereira2017energy} where the process is going to be running, performing any other kind of operation like a cool-down period after every run (suggested, for instance, by \cite{cotta25}) or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue remains: in a real environment like the one most scientists can afford, i.e., a desktop computer, the operating context will influence results in complex ways. Furthermore, there is a second issue: the way the implementation will influence that same operating environment, creating hysteresis-like effects \cite{cotta25}. %% Add missing backslash -Carlos
-
-We consider a different approach: to include the operating context variables in
-performance models, so that we can understand how they influence energy consumption and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such. By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels. Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying  implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
-
-In this work, we take steps in this direction, %% termino de editar -Carlos
-looking at understanding how we can use the models to make decisions about changes, and how such changes, whether at the algorithmic, implementation, or parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with slightly more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
 
 The rest of the paper is organized as follows: next we present
 background and previous work in Sect. \ref{sec:soa}; then, we proceed to
@@ -71,40 +55,15 @@ finally, we discuss these results and draw our conclusions in Sect. \ref{sec:con
 
 \section{State of the art}\label{sec:soa}
 
-Recent work in green computing has focused on understanding how different factors influence the total energy consumption of computational workloads, particularly in demanding applications such as large-scale deep learning training and inference workloads \cite{fernandez2025energy}. These factors include compilation strategies, hardware platforms, parallelization techniques, and architectural design choices.
 
-In parallel, accurately measuring energy consumption remains a critical challenge. Hardware-based methodologies, such as the SPECpower framework \cite{von2018measuring}, provide reliable measurements but require calibrated external power meters, limiting their accessibility and reproducibility for researchers working on commodity hardware under realistic conditions.
-% Saving orphan lines -Carlos
-%In contrast to
-Unlike controlled laboratory environments, many experiments are conducted on non-dedicated systems (e.g., personal computers and laptops), where background processes and system services are continuously active. As a result, the execution context is inherently dynamic, introducing variability that cannot be fully controlled or isolated. Consequently, energy measurements are influenced not only by the workload under study, but also by system-level factors such as thermal conditions and CPU scheduling behavior.
-
-Prior work has shown that these effects operate at multiple levels. Thermal management mechanisms, such as dynamic voltage and frequency scaling (DVFS) and power gating, continuously adapt processor behavior in response to temperature variations, directly affecting energy consumption \cite{rafsanjani2025thermal}. Many of these mechanisms are implemented at the hardware level and operate independently of the operating system (OS),
-%% acronym to be used later -Carlos
-making their effects difficult to observe or control explicitly. At the same time, operating system scheduling decisions influence energy consumption, as the power profile of a workload depends on the type of processor cycles executed and their distribution across CPU cores \cite{jaiantilal2010modeling}.
-
-Taken together, these observations indicate that energy consumption is governed by a combination of hardware-driven adaptations and software-level decisions that evolve dynamically during execution. While prior work has extensively explored these factors from a modeling and optimization perspective, their methodological implications for energy measurement remain underexplored.
-% Saving orphan lines -Carlos
-%From a methodological
-From this latter standpoint, this dynamic behavior introduces significant challenges for achieving reliable and reproducible measurements, as system state and environmental conditions can bias experimental results. In particular, recent studies have identified a hysteretic effect in system behavior, whereby the system remains in a high-energy-consumption state even after a workload has completed \cite{cotta25}. This effect is strongly influenced by thermal dynamics, as the temperature reached during one experimental run can significantly affect subsequent measurements \cite{cotta24}. Furthermore, the relationship between temperature and power consumption is non-linear, ranging from quadratic behavior in moderate ranges \cite{devogeleer2014modelingtemperaturebiaspower} to exponential growth at higher temperatures \cite{PENG2025104837}.
-
-Despite these advances, existing approaches often overlook the dynamic and non-deterministic nature of real-world execution environments. Energy measurements are affected by temporal dependencies, thermal effects, and variability
-% Saving orphan lines -Carlos
-%introduced by both hardware-level mechanisms and operating system
-resulting from hardware mechanisms and OS
-behavior, including process scheduling and task migration across CPU cores. These factors can lead to inconsistent and non-reproducible results, particularly on non-dedicated systems.
-
-In this work, we address this challenge by proposing a measurement methodology that incorporates controlled waiting intervals to manage these dynamic effects. By stabilizing thermal and system conditions prior to measurement, our approach reduces variability and enables more consistent energy profiling on commodity hardware platforms.
 
 \section{A brave new algorithm} \label{sec:bna}
 
-Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm (EA), by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.  %% comienzo a editar -Carlos
-Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave-anon,bna25-anon}, but we will give a brief description here for the sake of completeness.%% termino de editar -Carlos
-%% Sorting references by number -Carlos
+Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm (EA), by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.
+Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave-anon,bna25-anon}, but we will give a brief description here for the sake of completeness.
 
 What BNA introduces with respect to other EAs is the division of the population into {\em castes} (i.e., strata);
 each receiving a differentiated treatment for reproduction.
-%% tuning down the metaphor -Carlos
-%% :-) - JJ
 More precisely, reproduction goes as follows by caste:
 \begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
@@ -398,24 +357,6 @@ We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per con
 We have thus found a very economical lunch indeed, which can even be free if we take into account that the energy needed by {\sf no\_alpha} to reach the -3 level is lower than the energy needed by {\sf low\_mutation} to reach the level above, -2.
 
 \section{Discussion and conclusions}\label{sec:conclusions}
-
-We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or do it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try to obtain better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
-
-%%Simplified the structure. Check. -Carlos
-While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only to find which configuration consumes the most energy, but also which factors among the operating conditions, experimental interventions and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using residualized models that separate the interaction among the different experimental variables.
-
-%%Minor edits here -Carlos
-One of the innovations included in this paper is to include the baseline runs in the model, instead of subtracting averages from the workload; the model shows a strong dependence that {\em explains} a good percentage of the variance, but the modelling allows us to estimate precisely by how much, and thus compare the amount of energy spent only by the workload; this avoids unrealistic scenarios where subtracting averages of baselines from the workload lead to very small or even negative energy values \cite{merelo25}.
-
-%%Maybe this paragraph does not need to mention the algorithmic details (describe din detail in the experimentation), and only the results - Carlos
-Using this experimental framework and analysis, we have been able to discard a specific change in the algorithm and eventually adopt a parametrization
-%leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation,
-that reaches a $10^{-5}$ difference to optimum fitness with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
-
-The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}: we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make-up they leave to their offspring; second, we tip the balance towards exploitation and at the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
-
-Although the main point of the paper has been well proved by using a single BBOB function, it would be interesting to work with other, more energy-demanding functions, as was found in \cite{merelo25}. The energy consumption model will most likely change, giving the number of evaluations a greater influence on the final profile. By how much, however, remains to be seen and measured.
-On the other hand, this methodology of researching energy efficiency together with online performance positions the Brave New Algorithm to achieve more competitive results can be achieved, so an investigation into its possibilities in the BBOB suite is already within reach. This, however, is left as future work.
 
 
 %\begin{credits}
