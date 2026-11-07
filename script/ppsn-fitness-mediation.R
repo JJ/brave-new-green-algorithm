@@ -612,3 +612,254 @@ ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
+# no_mutation_alpha: is the shorter run length of a larger alpha caste a matter
+# of generations or of evaluations per generation?
+#
+# In section 4, a larger alpha caste (25% vs 10%) spends ~38% fewer evaluations
+# (via_budget +0.55). Two mechanisms can produce that:
+#   - fewer generations: the run exhausts its improvements sooner and the
+#     stopping rule (max_gens generations without improvement) fires earlier;
+#   - fewer evaluations per generation: smaller lower castes, which may spend
+#     more evaluations per individual than the alpha caste's crossover.
+# log10(evaluations) = log10(generations) + log10(evaluations per generation),
+# so for every parameter (low -> high, average marginal effect, same terms as
+# section 4):
+#   evaluations_change = generations_change + evaluations_per_generation_change
+# exactly. The fitness model then uses the two parts as separate mediators:
+#   slope_generations, slope_evaluations_per_generation: log10 fitness gained
+#     per log10 of each part (equal slopes = an evaluation is worth the same
+#     whether it comes from a longer run or from a more expensive generation);
+#   via_generations, via_evaluations_per_generation: each part's contribution
+#     to the budget-mediated effect on log10(diff_fitness).
+# If evaluations per generation are fully set by the parameters (no variation
+# between runs of the same configuration), its slope is not identifiable and
+# shows as NA.
+
+no_mutation_alpha_environment <- new.env()
+load(file.path("data", "ppsn_no_alpha.rds"), envir = no_mutation_alpha_environment)
+no_mutation_alpha_runs <- get("ppsn_no_alpha", envir = no_mutation_alpha_environment) %>%
+  filter(!startsWith(work, "base")) %>%
+  select(population_size, max_gens, alpha, steps, diff_fitness, evaluations, generations) %>%
+  mutate(log_fit                        = log10(diff_fitness),
+         log_evals                      = log10(evaluations),
+         log_generations                = log10(generations),
+         log_evaluations_per_generation = log_evals - log_generations,
+         across(all_of(params), factor))
+
+run_length_by_alpha <- no_mutation_alpha_runs %>%
+  group_by(alpha) %>%
+  summarise(runs                              = n(),
+            median_generations                = median(generations),
+            median_evaluations                = median(evaluations),
+            median_evaluations_per_generation = median(evaluations / generations),
+            .groups = "drop")
+cat("\nno_mutation_alpha: run length by alpha caste size:\n")
+print(as.data.frame(run_length_by_alpha), digits = 4, row.names = FALSE)
+
+run_length_measures <- c("evaluations_change", "generations_change",
+                         "evaluations_per_generation_change",
+                         "via_generations", "via_evaluations_per_generation")
+
+fit_on_parameters <- function(runs, response, extra_terms = "") {
+  lm(as.formula(paste(response, "~", param_terms, extra_terms)), runs)
+}
+
+run_length_slopes <- function(runs) {
+  fitness_model <- fit_on_parameters(runs, "log_fit",
+                                     "+ log_generations + log_evaluations_per_generation")
+  c(slope_generations                = unname(coef(fitness_model)["log_generations"]),
+    slope_evaluations_per_generation = unname(coef(fitness_model)["log_evaluations_per_generation"]))
+}
+
+run_length_effects <- function(runs) {
+  evaluations_model    <- fit_on_parameters(runs, "log_evals")
+  generations_model    <- fit_on_parameters(runs, "log_generations")
+  per_generation_model <- fit_on_parameters(runs, "log_evaluations_per_generation")
+  slopes <- run_length_slopes(runs)
+  sapply(params, function(parameter) {
+    generations_change    <- marginal_effect(generations_model, runs, parameter)
+    per_generation_change <- marginal_effect(per_generation_model, runs, parameter)
+    c(evaluations_change                = marginal_effect(evaluations_model, runs, parameter),
+      generations_change                = generations_change,
+      evaluations_per_generation_change = per_generation_change,
+      via_generations                   = slopes[["slope_generations"]] * generations_change,
+      via_evaluations_per_generation    = slopes[["slope_evaluations_per_generation"]] * per_generation_change)
+  })
+}
+
+resample_runs <- function(runs) runs[sample(nrow(runs), replace = TRUE), ]
+
+run_length_point      <- run_length_effects(no_mutation_alpha_runs)
+run_length_bootstrap  <- replicate(N_BOOT, run_length_effects(resample_runs(no_mutation_alpha_runs)))
+slopes_point          <- run_length_slopes(no_mutation_alpha_runs)
+slopes_bootstrap      <- replicate(N_BOOT, run_length_slopes(resample_runs(no_mutation_alpha_runs)))
+
+format_estimate <- function(estimate, samples) {
+  sprintf("%.3f [%.3f, %.3f]", estimate,
+          quantile(samples, 0.025, na.rm = TRUE), quantile(samples, 0.975, na.rm = TRUE))
+}
+
+run_length_table <- data.frame(
+  parameter = params,
+  sapply(run_length_measures, function(measure) {
+    sapply(params, function(parameter) {
+      format_estimate(run_length_point[measure, parameter],
+                      run_length_bootstrap[measure, parameter, ])
+    })
+  }),
+  row.names = NULL)
+
+cat("\nno_mutation_alpha: change in log10 run length (low -> high) split into",
+    "generations and evaluations per generation, 95% bootstrap CI:\n")
+print(run_length_table, row.names = FALSE)
+
+cat("\nno_mutation_alpha: log10 fitness per log10 generations vs per log10",
+    "evaluations per generation, 95% bootstrap CI:\n")
+print(data.frame(slope = names(slopes_point),
+                 estimate = sapply(names(slopes_point), function(name) {
+                   format_estimate(slopes_point[[name]], slopes_bootstrap[name, ])
+                 }),
+                 row.names = NULL),
+      row.names = FALSE)
+
+no_mutation_alpha_runs %>%
+  transmute(alpha,
+            `log10(generations)`                = log_generations,
+            `log10(evaluations per generation)` = log_evaluations_per_generation) %>%
+  tidyr::pivot_longer(-alpha, names_to = "run_length_part", values_to = "value") %>%
+  ggplot(aes(alpha, value, fill = alpha)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(~ run_length_part, scales = "free_y") +
+  labs(x = "alpha caste size", y = NULL,
+       title = "no_mutation_alpha: run length parts by alpha caste size") +
+  theme_minimal() +
+  theme(legend.position = "none", panel.grid.minor = element_blank())
+
+# Where the evaluations go. One point per run, x = log10(generations),
+# y = log10(evaluations per generation). Because log10(evaluations) is their
+# sum, the dashed diagonals are lines of equal total evaluations. The arrow in
+# each panel joins the median run of the low and the high level of that
+# parameter: pointing right = longer runs, up = more expensive generations,
+# along a diagonal = same total evaluations spent differently.
+runs_by_parameter_level <- bind_rows(lapply(params, function(parameter) {
+  no_mutation_alpha_runs %>%
+    transmute(parameter   = parameter,
+              level       = as.character(.data[[parameter]]),
+              level_rank  = ifelse(as.integer(.data[[parameter]]) == 1, "low", "high"),
+              log_generations, log_evaluations_per_generation, log_fit)
+})) %>%
+  mutate(parameter  = factor(parameter, levels = params),
+         level_rank = factor(level_rank, levels = c("low", "high")))
+
+level_medians <- runs_by_parameter_level %>%
+  group_by(parameter, level_rank, level) %>%
+  summarise(log_generations                = median(log_generations),
+            log_evaluations_per_generation = median(log_evaluations_per_generation),
+            .groups = "drop")
+
+level_arrows <- level_medians %>%
+  select(parameter, level_rank, log_generations, log_evaluations_per_generation) %>%
+  tidyr::pivot_wider(names_from = level_rank,
+                     values_from = c(log_generations, log_evaluations_per_generation))
+
+level_names <- level_medians %>%
+  group_by(parameter) %>%
+  summarise(label = paste0("low = ",   level[level_rank == "low"],
+                           ", high = ", level[level_rank == "high"]),
+            .groups = "drop")
+
+generations_range    <- range(no_mutation_alpha_runs$log_generations)
+per_generation_range <- range(no_mutation_alpha_runs$log_evaluations_per_generation)
+equal_evaluation_lines <- data.frame(log_evaluations = seq(4.5, 7, by = 0.25)) %>%
+  mutate(label_x = generations_range[2],
+         label_y = log_evaluations - label_x) %>%
+  filter(label_y >= per_generation_range[1], label_y <= per_generation_range[2]) %>%
+  mutate(label = sprintf("10^%.2f evaluations", log_evaluations))
+
+rank_colours <- c(low = "#1b9e77", high = "#d95f02")
+
+ggplot(runs_by_parameter_level,
+       aes(log_generations, log_evaluations_per_generation, colour = level_rank)) +
+  geom_abline(data = equal_evaluation_lines, aes(intercept = log_evaluations, slope = -1),
+              linetype = "dashed", colour = "grey75", linewidth = 0.3) +
+  geom_text(data = equal_evaluation_lines, aes(label_x, label_y, label = label),
+            hjust = 1, vjust = -0.4, size = 2.3, colour = "grey50", inherit.aes = FALSE) +
+  geom_point(alpha = 0.15, size = 0.7) +
+  geom_segment(data = level_arrows,
+               aes(x = log_generations_low, y = log_evaluations_per_generation_low,
+                   xend = log_generations_high, yend = log_evaluations_per_generation_high),
+               arrow = arrow(length = unit(0.18, "cm")), colour = "grey15",
+               linewidth = 0.7, inherit.aes = FALSE) +
+  geom_point(data = level_medians, size = 2.5) +
+  geom_text(data = level_names, aes(label = label), x = -Inf, y = Inf,
+            hjust = -0.05, vjust = 1.3, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
+  facet_wrap(~ parameter, nrow = 1) +
+  scale_colour_manual(values = rank_colours, name = "Level") +
+  labs(x = "log10(generations)", y = "log10(evaluations per generation)",
+       title = "no_mutation_alpha: run length (generations) vs cost of a generation, by parameter level") +
+  theme_minimal() +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+
+# Companion of the fitness vs evaluations plot above, with generations on the
+# x axis: the convergence lines now measure fitness gained per generation, so a
+# parameter that only makes generations cheaper or dearer (alpha,
+# population_size) shows up as a vertical gap, not as a shift along x.
+ggplot(runs_by_parameter_level, aes(log_generations, log_fit, colour = level_rank)) +
+  geom_point(alpha = 0.15, size = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
+  geom_text(data = level_names, aes(label = label), x = -Inf, y = -Inf,
+            hjust = -0.05, vjust = -0.6, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
+  facet_wrap(~ parameter, nrow = 1) +
+  scale_colour_manual(values = rank_colours, name = "Level") +
+  labs(x = "log10(generations)", y = "log10(diff_fitness)",
+       title = "no_mutation_alpha: fitness vs generations by parameter level") +
+  theme_minimal() +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+
+# ---- FINDINGS (2026-11-07), section 7 -----------------------------------------
+#
+# F7. no_mutation_alpha: the alpha caste size splits the fitness bands, and
+#     changes what a generation costs rather than how long a run lasts.
+#     - Bands: alpha alone explains the two parallel bands of the fitness vs
+#       evaluations cloud. At the same number of evaluations, 25% vs 10% alpha
+#       is ~11x better (offset -1.05), r2_gain 0.62, agreement with the 2-band
+#       split 0.91. Other parameters: agreement 0.50-0.58 (chance); max_gens
+#       (offset -0.40) shifts fitness within each band, it does not make one.
+#     - Total effect of 25% vs 10% alpha: -0.784 [-0.822, -0.749], ~6x better
+#       fitness, with ~38% fewer evaluations (log10 change -0.205).
+#     - Run length, medians:   alpha 10%: 128.0 generations, 3968 evaluations
+#       per generation, 502263 evaluations; alpha 25%: 140.5, 2323, 315080.
+#     - Split of the log10 change in evaluations (low -> high, 95% CI):
+#                        evaluations   generations   evaluations/generation
+#       alpha              -0.205        +0.037          -0.242
+#       max_gens           +0.256        +0.277          -0.021
+#       population_size    +0.331        +0.024          +0.306
+#       steps              ~0            ~0              ~0
+#       * alpha: a 25% alpha caste makes each generation ~43% cheaper and runs
+#         ~9% MORE generations. Shorter runs do NOT come from earlier
+#         stagnation. The saving is larger than the caste-size shift alone
+#         allows (at most ~17% if alpha individuals cost nothing), so
+#         individuals in the lower castes also spend fewer evaluations each:
+#         gamma's local search stops improving sooner when it works on a
+#         better-combined population.
+#       * population_size: doubles the cost of a generation (0.306 ~ log10 2,
+#         same cost per individual), barely changes the number of generations.
+#       * max_gens: acts only through generations (more patience, longer
+#         runs); via_generations -0.672 matches section 4's via_budget -0.686.
+#     - Gamma: its local search takes most of the evaluations in a generation,
+#       and more of them when the alpha caste is small, while those runs reach
+#       ~6x worse fitness. It costs a lot of evaluations and contributes little
+#       to the final fitness. Indirect evidence: the slope on evaluations per
+#       generation is not identifiable (it is set by the configuration and
+#       barely varies between runs; via_evaluations_per_generation CI for alpha
+#       [-0.86, 0.53]).
+#     - Consequence for the section 4 split in this version: for alpha and
+#       population_size, via_budget prices per-generation cost at the run-length
+#       slope (which comes from generations), so most of it reflects what a
+#       generation costs, not how long the run is. Through generations the
+#       run-length contributions are small: alpha -0.089, population_size -0.059.
+#     - Energy/time reading: evaluations per generation is a cost set by the
+#       configuration, mostly gamma's local search. A 25% alpha caste gives
+#       ~6x better fitness for ~38% fewer evaluations; to be checked against
+#       PKG and running time.
+
