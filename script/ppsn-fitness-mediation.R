@@ -32,11 +32,14 @@ N_BOOT <- as.integer(Sys.getenv("N_BOOT", "500"))
 
 # ---- 1. Data ------------------------------------------------------------------
 
-versions <- c(baseline      = "ppsn_speedup_fixed_gradient_descent",
-              gamma_upgrade = "gamma_upgrade",
-              microopt      = "ppsn_microopt",
-              low_mutation  = "ppsn_low_mutation",
-              no_alpha      = "ppsn_no_alpha")
+# no_mutation_alpha: the alpha caste is not mutated (data object keeps its
+# original name, ppsn_no_alpha). The alpha parameter (alpha caste size, 10% or
+# 25%) is still active in that version.
+versions <- c(baseline          = "ppsn_speedup_fixed_gradient_descent",
+              gamma_upgrade     = "gamma_upgrade",
+              microopt          = "ppsn_microopt",
+              low_mutation      = "ppsn_low_mutation",
+              no_mutation_alpha = "ppsn_no_alpha")
 
 load_version <- function(name, object) {
   env <- new.env()
@@ -231,6 +234,59 @@ ggplot(config_by_param, aes(x, y)) +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
+# ---- FINDINGS so far (2026-11-07), to move to the paper -----------------------
+# diff_fitness is distance to the optimum: lower = better. Slopes are log-log,
+# so 10x more evaluations -> 10^|slope| times better fitness.
+#
+# F1. Model fit (section 2, pooled). Version + parameters explain 97.9% of the
+#     variance of log10(diff_fitness) and 86.4% of log10(evaluations). Adding
+#     evaluations raises it to 98.7%: +0.008, i.e. ~38% of what parameters
+#     leave unexplained. That extra part is run-to-run variation within a
+#     configuration, not a parameter effect. (R^2 values are fit, not a
+#     total = direct + indirect decomposition; that is sections 4-5.)
+#
+# F2. Convergence rate at fixed configuration (FWL slopes, section 2):
+#     baseline -0.32, gamma_upgrade -0.38, microopt -0.33, low_mutation -1.24,
+#     no_mutation_alpha -2.68. microopt ~ baseline: the implementation-only
+#     negative control behaves as expected. The jump comes with low_mutation and
+#     grows with no_mutation_alpha: in those versions a run that lasts longer
+#     keeps improving much more (10x evals -> ~17x and ~480x better fitness,
+#     vs ~2x in the first three versions).
+#
+# F3. Across configurations vs across runs (this section):
+#                       across_configs  across_runs
+#     baseline              -0.150        -0.324
+#     gamma_upgrade         -0.155        -0.377
+#     microopt              -0.144        -0.329
+#     low_mutation          -0.440        -1.237
+#     no_mutation_alpha     -1.010        -2.683
+#     In every version, extra evaluations obtained by choosing a different
+#     configuration buy 2.2-2.8x less fitness than extra evaluations a run gets
+#     by lasting longer. Caveats: across_configs has no parameter terms, so it
+#     also absorbs direct parameter effects; across_runs is steepened by the
+#     stopping rule (a run that keeps improving is the one that does not stop).
+#     No CIs yet; across_configs CIs need a bootstrap over configurations.
+#     across_runs matches the F2 slopes, as expected.
+#
+# F4. Per-parameter view (arrow plot above; visual reading, to be confirmed
+#     with mediation_table from section 4):
+#     - steps (16 vs 64) has ~no effect: configurations differing only in
+#       steps overlap, which produces the point pairs in every panel.
+#     - High alpha (25% vs 10%), high max_gens (25 vs 10) and high
+#       population_size (800 vs 400) give better fitness in most versions,
+#       always with more evaluations (arrows go right and down). Whether they
+#       also search better, not only longer, depends on whether arrows are
+#       steeper than the across_configs slope (direct vs indirect, section 4).
+#     - low_mutation is the exception for alpha and population_size: arrows are
+#       much flatter, so these mostly cost evaluations without improving
+#       fitness. Hypothesis (unverified): with low mutation, these knobs stop
+#       supplying useful diversity.
+#     - no_mutation_alpha breaks the configuration layout shared by the other
+#       versions. With an unmutated alpha caste, alpha size acts as an
+#       elitism/exploitation knob, so it plausibly shifts fitness directly
+#       rather than only through evaluations; section 7 (split_param) and the
+#       no_mutation_alpha rows of mediation_table should confirm it.
+
 # ---- 4. Mediation per version and parameter (bootstrap) ----------------------
 #
 # Within each version: mediator model log_evals ~ params^2 and outcome model
@@ -298,7 +354,7 @@ print(mediation_table %>%
 version_pairs <- list(c("baseline", "gamma_upgrade"),
                       c("baseline", "microopt"),
                       c("microopt", "low_mutation"),
-                      c("low_mutation", "no_alpha"))
+                      c("low_mutation", "no_mutation_alpha"))
 
 version_effect <- function(data) {
   mm <- lm(as.formula(paste("log_evals ~ group *", param_terms)), data)
@@ -335,9 +391,9 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
 
-# ---- 7. no_alpha: which parameter splits the fitness/evaluations cloud? -------
+# ---- 7. no_mutation_alpha: which parameter splits the fitness/evaluations cloud? -------
 #
-# In the plot above the no_alpha cloud is visibly split in two parallel bands.
+# In the plot above the no_mutation_alpha cloud is visibly split in two parallel bands.
 # A parameter that creates the split shifts fitness *at the same number of
 # evaluations*, i.e. it acts through the direct (not the mediated) path.
 # For each parameter:
@@ -347,22 +403,22 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
 #   - agreement: how well its levels match a 2-cluster k-means split of those
 #     residuals (0.5 = unrelated, 1 = the parameter *is* the split).
 
-na_data <- fitness_data %>% filter(group == "no_alpha") %>% droplevels()
+nma_data <- fitness_data %>% filter(group == "no_mutation_alpha") %>% droplevels()
 
-m_na_evals   <- lm(log_fit ~ log_evals, data = na_data)
-na_data$res  <- resid(m_na_evals)
-r2_evals     <- summary(m_na_evals)$r.squared
+m_nma_evals   <- lm(log_fit ~ log_evals, data = nma_data)
+nma_data$res  <- resid(m_nma_evals)
+r2_evals     <- summary(m_nma_evals)$r.squared
 set.seed(1)
-na_clusters  <- kmeans(na_data$res, centers = quantile(na_data$res, c(0.25, 0.75)))$cluster
+nma_clusters  <- kmeans(nma_data$res, centers = quantile(nma_data$res, c(0.25, 0.75)))$cluster
 
 split_table <- do.call(rbind, lapply(params, function(p) {
-  lv  <- levels(na_data[[p]])
-  tab <- table(na_data[[p]], na_clusters)
+  lv  <- levels(nma_data[[p]])
+  tab <- table(nma_data[[p]], nma_clusters)
   data.frame(param     = p,
-             offset    = mean(na_data$res[na_data[[p]] == lv[2]]) -
-                         mean(na_data$res[na_data[[p]] == lv[1]]),
+             offset    = mean(nma_data$res[nma_data[[p]] == lv[2]]) -
+                         mean(nma_data$res[nma_data[[p]] == lv[1]]),
              r2_gain   = summary(lm(as.formula(paste("log_fit ~ log_evals +", p)),
-                                    na_data))$r.squared - r2_evals,
+                                    nma_data))$r.squared - r2_evals,
              agreement = max(sum(diag(tab)), sum(tab) - sum(diag(tab))) / sum(tab))
 })) %>% arrange(desc(agreement))
 
@@ -372,11 +428,11 @@ print(split_table, digits = 3, row.names = FALSE)
 split_param <- split_table$param[1]
 cat("Parameter that best explains the split:", split_param, "\n")
 
-# Evaluation-mediated decomposition for no_alpha (from section 4): the split
+# Evaluation-mediated decomposition for no_mutation_alpha (from section 4): the split
 # parameter should show a large *direct* effect.
 cat("\nno_alpha: total / direct / indirect effect of each parameter (from section 4):\n")
 print(mediation_table %>%
-        filter(group == "no_alpha") %>%
+        filter(group == "no_mutation_alpha") %>%
         transmute(param,
                   total    = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
                   direct   = sprintf("%.3f [%.3f, %.3f]", direct, direct_lo, direct_hi),
@@ -387,11 +443,11 @@ print(mediation_table %>%
 # Convergence line (log_fit ~ log_evals) for every level of every parameter.
 # Pooling the two bands flattens the slope, so within-level slopes for the
 # split parameter are the more meaningful convergence rates.
-na_long <- bind_rows(lapply(params, function(p) {
-  na_data %>% transmute(param = p, level = as.character(.data[[p]]), log_evals, log_fit)
+nma_long <- bind_rows(lapply(params, function(p) {
+  nma_data %>% transmute(param = p, level = as.character(.data[[p]]), log_evals, log_fit)
 }))
 
-na_level_slopes <- na_long %>%
+nma_level_slopes <- nma_long %>%
   group_by(param, level) %>%
   group_modify(function(d, key) {
     m  <- lm(log_fit ~ log_evals, d)
@@ -401,14 +457,14 @@ na_level_slopes <- na_long %>%
   }) %>%
   ungroup()
 cat("\nno_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
-print(as.data.frame(na_level_slopes), digits = 3, row.names = FALSE)
+print(as.data.frame(nma_level_slopes), digits = 3, row.names = FALSE)
 
 # Mediation for the other parameters *within* each level of the split
 # parameter, so their effects are not confounded with the band they fall in.
 other_params <- setdiff(params, split_param)
 cat("\nno_alpha: effects of the remaining parameters within each level of", split_param, "\n")
-within_split <- bind_rows(lapply(levels(na_data[[split_param]]), function(l) {
-  d  <- na_data %>% filter(.data[[split_param]] == l)
+within_split <- bind_rows(lapply(levels(nma_data[[split_param]]), function(l) {
+  d  <- nma_data %>% filter(.data[[split_param]] == l)
   pt <- paste0("(", paste(other_params, collapse = " + "), ")^2")
   mm <- lm(as.formula(paste("log_evals ~", pt)), d)
   mt <- lm(as.formula(paste("log_fit ~",   pt)), d)
@@ -423,12 +479,12 @@ within_split <- bind_rows(lapply(levels(na_data[[split_param]]), function(l) {
 }))
 print(within_split, digits = 3, row.names = FALSE)
 
-ggplot(na_long, aes(log_evals, log_fit, colour = level)) +
+ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
   geom_point(alpha = 0.15, size = 0.7) +
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
   facet_wrap(~ param, nrow = 1) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", colour = "Level",
-       title = "no_alpha: fitness vs evaluations by parameter level") +
+       title = "no_mutation_alpha: fitness vs evaluations by parameter level") +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
