@@ -737,44 +737,39 @@ no_mutation_alpha_runs %>%
 
 # Where the evaluations go. One point per run, x = log10(generations),
 # y = log10(evaluations per generation). Because log10(evaluations) is their
-# sum, the dashed diagonals are lines of equal total evaluations. The arrow in
-# each panel joins the median run of the low and the high level of that
-# parameter: pointing right = longer runs, up = more expensive generations,
-# along a diagonal = same total evaluations spent differently.
+# sum, the dashed diagonals are lines of equal total evaluations. The four
+# horizontal bands are the four alpha x population_size combinations. Colour by
+# level: a parameter whose levels separate vertically changes the cost of a
+# generation (alpha, population_size); one whose levels separate along a band
+# changes run length (max_gens); mixed colours = no effect (steps).
 runs_by_parameter_level <- bind_rows(lapply(params, function(parameter) {
   no_mutation_alpha_runs %>%
     transmute(parameter   = parameter,
               level       = as.character(.data[[parameter]]),
               level_rank  = ifelse(as.integer(.data[[parameter]]) == 1, "low", "high"),
-              log_generations, log_evaluations_per_generation, log_fit)
+              log_generations, log_evaluations_per_generation, log_fit,
+              evaluations_per_generation = evaluations / generations)
 })) %>%
   mutate(parameter  = factor(parameter, levels = params),
          level_rank = factor(level_rank, levels = c("low", "high")))
 
-level_medians <- runs_by_parameter_level %>%
-  group_by(parameter, level_rank, level) %>%
-  summarise(log_generations                = median(log_generations),
-            log_evaluations_per_generation = median(log_evaluations_per_generation),
-            .groups = "drop")
-
-level_arrows <- level_medians %>%
-  select(parameter, level_rank, log_generations, log_evaluations_per_generation) %>%
-  tidyr::pivot_wider(names_from = level_rank,
-                     values_from = c(log_generations, log_evaluations_per_generation))
-
-level_names <- level_medians %>%
+level_names <- runs_by_parameter_level %>%
   group_by(parameter) %>%
-  summarise(label = paste0("low = ",   level[level_rank == "low"],
-                           ", high = ", level[level_rank == "high"]),
+  summarise(label = paste0("low = ",   first(level[level_rank == "low"]),
+                           ", high = ", first(level[level_rank == "high"])),
             .groups = "drop")
 
+# Equal-evaluation diagonals: all are drawn; each label sits where its line
+# crosses the right edge of the panel (labels there are spaced vertically, so
+# they do not collide), and only if that point is inside the y range.
 generations_range    <- range(no_mutation_alpha_runs$log_generations)
 per_generation_range <- range(no_mutation_alpha_runs$log_evaluations_per_generation)
-equal_evaluation_lines <- data.frame(log_evaluations = seq(4.5, 7, by = 0.25)) %>%
+equal_evaluation_lines <- data.frame(log_evaluations = seq(4.5, 7, by = 0.25))
+equal_evaluation_labels <- equal_evaluation_lines %>%
   mutate(label_x = generations_range[2],
          label_y = log_evaluations - label_x) %>%
   filter(label_y >= per_generation_range[1], label_y <= per_generation_range[2]) %>%
-  mutate(label = sprintf("10^%.2f evaluations", log_evaluations))
+  mutate(label = sprintf("10^%.2f", log_evaluations))
 
 rank_colours <- c(low = "#1b9e77", high = "#d95f02")
 
@@ -782,21 +777,18 @@ ggplot(runs_by_parameter_level,
        aes(log_generations, log_evaluations_per_generation, colour = level_rank)) +
   geom_abline(data = equal_evaluation_lines, aes(intercept = log_evaluations, slope = -1),
               linetype = "dashed", colour = "grey75", linewidth = 0.3) +
-  geom_text(data = equal_evaluation_lines, aes(label_x, label_y, label = label),
-            hjust = 1, vjust = -0.4, size = 2.3, colour = "grey50", inherit.aes = FALSE) +
+  geom_text(data = equal_evaluation_labels, aes(label_x, label_y, label = label),
+            hjust = 1, vjust = -0.3, size = 2.3, colour = "grey50",
+            inherit.aes = FALSE) +
   geom_point(alpha = 0.15, size = 0.7) +
-  geom_segment(data = level_arrows,
-               aes(x = log_generations_low, y = log_evaluations_per_generation_low,
-                   xend = log_generations_high, yend = log_evaluations_per_generation_high),
-               arrow = arrow(length = unit(0.18, "cm")), colour = "grey15",
-               linewidth = 0.7, inherit.aes = FALSE) +
-  geom_point(data = level_medians, size = 2.5) +
   geom_text(data = level_names, aes(label = label), x = -Inf, y = Inf,
             hjust = -0.05, vjust = 1.3, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
   facet_wrap(~ parameter, nrow = 1) +
   scale_colour_manual(values = rank_colours, name = "Level") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
   labs(x = "log10(generations)", y = "log10(evaluations per generation)",
-       title = "no_mutation_alpha: run length (generations) vs cost of a generation, by parameter level") +
+       title = "no_mutation_alpha: run length (generations) vs cost of a generation, by parameter level",
+       subtitle = "Dashed lines: equal total evaluations (labelled 10^x at the right edge)") +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
@@ -804,13 +796,17 @@ ggplot(runs_by_parameter_level,
 # x axis: the convergence lines now measure fitness gained per generation, so a
 # parameter that only makes generations cheaper or dearer (alpha,
 # population_size) shows up as a vertical gap, not as a shift along x.
+# Point size = evaluations per generation, so the cost of reaching each point
+# stays visible: big points spent more evaluations per generation.
 ggplot(runs_by_parameter_level, aes(log_generations, log_fit, colour = level_rank)) +
-  geom_point(alpha = 0.15, size = 0.7) +
+  geom_point(aes(size = evaluations_per_generation), alpha = 0.15, shape = 16) +
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
   geom_text(data = level_names, aes(label = label), x = -Inf, y = -Inf,
             hjust = -0.05, vjust = -0.6, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
   facet_wrap(~ parameter, nrow = 1) +
   scale_colour_manual(values = rank_colours, name = "Level") +
+  scale_size_area(max_size = 2.5, name = "Evaluations per generation") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
   labs(x = "log10(generations)", y = "log10(diff_fitness)",
        title = "no_mutation_alpha: fitness vs generations by parameter level") +
   theme_minimal() +
