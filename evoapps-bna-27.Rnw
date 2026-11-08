@@ -134,7 +134,7 @@ Since every run is affected by workload, we have two types of runs (changed by a
 %% I move this paragraph here -Carlos
 For workload runs we capture the fitness of the best individual at the end of the run and the total number of evaluations and generations, additionally to the operating data mentioned above.
 
-We have established another experimental condition, specific for multi-die CPUs, which tries to minimize the effect of temperature on energy consumption: at the beginning of every run, die temperature is checked and (using {\tt taskset}) the process is always sent to the {\em hottest} die\footnote{This strategy, generically called {\em run-to-idle} has been analyzed and justified elsewhere.}.
+% We have established another experimental condition, specific for multi-die CPUs, which tries to minimize the effect of temperature on energy consumption: at the beginning of every run, die temperature is checked and (using {\tt taskset}) the process is always sent to the {\em hottest} die \cite{hot-first-anon} - not relevant in this paper
 
 %For workload runs we capture the following data, additionally to the operating data mentioned above: Fitness of the best individual at the end of the run ad the total number of evaluations and generations.
 
