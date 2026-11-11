@@ -77,7 +77,8 @@ In this paper, however, we will try to attack the problem of optimizing the impr
 \section{A brave new algorithm} \label{sec:bna}
 
 Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm (EA) by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.
-Thus, we are not so much proposing a new metaheuristic as a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals.
+Thus, we are not so much proposing a new metaheuristic as a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, in such a way that recombination of individuals and random generation is performed in a different way by each stratum.
+
 Our stated objective is to try and find an easier way to disentangle exploration from exploration by keeping some layers explicitly exploratory and some of them either more balanced or simply exploiting; in practice, this means that mutation and crossover will be distributed in a different way depending on the layer or {\em stratum}.
 The algorithm is described in more detail in \cite{merelo2022brave-anon,bna25-anon}, but we will give a brief description here for the sake of completeness.
 
@@ -85,25 +86,23 @@ What BNA introduces with respect to other EAs is the division of the population 
 each receiving a differentiated treatment for reproduction.
 More precisely, reproduction goes as follows by caste:
 \begin{itemize}
-\item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
-\item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
-\item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation.
-\item The $\gamma$ caste will use hill-climbing for a number of steps to improve its fitness.
+\item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing (possibly) mutation and then crossover. Since this stratum is mainly recombining high-fitness individuals, it is mainly a {\em exploitative} one {\em a priori}.
+\item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover. In this case, the exploitative element is more important than the explorative.
+\item The $\delta$ and $\epsilon$ castes will only reproduce via cloning and mutation, so they are purely explorative.
+\item The $\gamma$ caste will use hill-climbing for a number of steps to improve its fitness. In a EEB framework, it is difficult to qualify this stratum; although it is sampling the space randomly, it will stop when fitness is no longer improving. The issues with pigeonholing some operators this way is one of the reasons why we are looking at the fitness/evaluations relationship from a different angle.
 \end{itemize}
 
 Mutation and crossover rates can be established independently for every caste, although by default all mutation rates will be the same.
 
 All individuals will be ranked according to their fitness and then assigned to the castes;
-in particular, the $\alpha$ caste will receive the best while the $\gamma$ caste will get only the last ones; percentages assigned to every caste will be an algorithm parameter, although in order to simplify we will only change the $\alpha$ percentage, with $\delta$ and $\epsilon$ getting always 5\%; $\beta$ is always double that of $\alpha$ and finally $\gamma$ the rest; this gives us a single parameter to regulate this aspect of the algorithm, which is strongly related to the exploration/exploitation balance.
+in particular, the $\alpha$ caste will receive the best while the $\gamma$ caste will get only the last ones; percentages assigned to every caste will be an algorithm parameter, although in order to simplify we will only change the $\alpha$ percentage, with $\delta$ and $\epsilon$ getting always 5\%; $\beta$ is always double that of $\alpha$ and finally $\gamma$ the rest; this gives us a single parameter to regulate this aspect of the algorithm, which is strongly related to the exploration/exploitation balance. Selection, usually considered a {\em exploitative} operator, would still be acting here; however, it also selects which operators are going to be applied by placing individuals in different strata, some of them purely explorative. Again, it is difficult to place it in a EEB framework.
 
 The algorithm uses elitism to keep the best member of the previous population
 (replacing the worst one) but other than that, all individuals have offspring one way or the other. This is the main difference with respect to other EAs: the worst elements are not dropped from the reproduction pool but mutated in a random or directed way (in the case of $\gamma$). This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes;
 while
 this adds another parameter for experimental design,
-%but still
 it allows customization for specific problems or problem sizes.
-%
-%The parameters that can be varied in the algorithm are then
+
 The free parameters are thus:
 \begin{itemize}
 \item Population size:
@@ -113,10 +112,9 @@ Note that all castes need to have a non-zero integer size, which limits the poss
 %which is
 the essential parameter for controlling the balance between exploitation and exploration.
 \item Mutation rates
-%for the different castes except $\gamma$, which
 (for all castes except $\gamma$): these can be set to the same value or customized for every caste.
-\item Local-search depth: maximum number of hill-climbing steps while there is still improvement in the fitness.
-\item Stopping criterion: the maximum number of generations without improvement.
+\item Local-search depth: maximum number of hill-climbing {\em steps} while there is still improvement in the fitness.
+\item Stopping criterion: the maximum number of generations without improvement, that is, {\em max\_gens}.
 \end{itemize}
 
 Note that the orchestrated use of local improvement within this general evolutionary engine makes BNA fall within the general scope of memetic algorithms \cite{cotta2025harnessing}. %
