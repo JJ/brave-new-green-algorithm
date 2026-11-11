@@ -68,7 +68,7 @@ finally, we discuss these results and draw our conclusions in Section \ref{sec:c
 
 \section{State of the art}\label{sec:soa}
 
-From the initial paper by Eiben and Schippers \cite{eiben98}, and despite having been a tenet of evolutionary computation from the beginning, there is not an extensive literature that look at the so-called exploration/exploitation balance. The most recent one by Ferhat et al. \cite{ferhat2025measures} focus mainly on measures of diversity and
+From the initial paper by Eiben and Schippers \cite{eiben98}, and despite having been a tenet of evolutionary computation from the beginning, there is not an extensive literature that look at the so-called exploration/exploitation balance. The most recent one by Ferhat et al. \cite{ferhat2025measures} focus mainly on measures of diversity and convergence rates; however, these are at most indirect measures that do not really reflect how exploration and exploitation affect fitness improvement.
 
 \section{A brave new algorithm} \label{sec:bna}
 
