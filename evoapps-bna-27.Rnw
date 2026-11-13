@@ -253,7 +253,7 @@ ggplot(partial, aes(evals_adjusted, fit_adjusted, colour = group)) +
 
 @
 
-We have processed the dataset by applying a $log10$ to the number of evaluations and the difference between the fitness reached and optimum fitness. We will model the resulting logarithmid $\Delta$ fitness in terms of the number of evaluations, that is considered the {\em mediator} variable. The Frisch-Waugh-Lowell theorem ) \cite{Lovell01121963} affirms that the coefficients of the dependent variable (in this case $log \Delta$ Fitness) is related to the part of the of the explanatory variable (evaluations) that is not related to the other explanatory variables (algorithm parameters). We then proceed to the decomposition via a linear model of the $log\Delta$ Fitness) and $log$ evaluations, and compute the slope independently for every experiment level.
+We have processed the dataset by applying a $log10$ to the number of evaluations and the difference between the fitness reached and optimum fitness. We will model the resulting logarithmid $\Delta$ fitness in terms of the number of evaluations, that is considered the {\em mediator} variable. The Frisch-Waugh-Lovell theorem ) \cite{Lovell01121963} affirms that the coefficients of the dependent variable (in this case $log \Delta$ Fitness) is related to the part of the of the explanatory variable (evaluations) that is not related to the other explanatory variables (algorithm parameters). We then proceed to the decomposition via a linear model of the $log\Delta$ Fitness) and $log$ evaluations, and compute the slope independently for every experiment level.
 What we plot in Figure \ref{fig:evoapps27.setup} are the residuals of fitting fitness and evaluations to the rest of the parameters, adjusted to their corresponding scale by adding the average fitness and evaluations value for every group.
 
 This is where we begin to understand the exploration and exploitation balance. However, we have a different angle: the fitness obtained will have two components: the part that can be explained by the parameters in a direct way and the indirect effect, which is the number of {\em extra} evaluations that cannot be directly explained by the parameters. In part, this effect is going to be random, but in fact what is indicating is the extra area of the search space these parameters are placing the population into and that would allow the extra generations until stagnation and the hillclimbing $\gamma$ to effectively produce individuals that continue improving the fitness. We will explore this effect further.
@@ -832,6 +832,89 @@ ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
 The first analysis looks for the "split": Figure \ref{fig:evoapps27.alpha} plots with different colors high-low values of the different parameters, along with the respective log-log fitness-evaluations slope for them. The {\sf alpha} value is the first one, and clearly explains the split in two clusters. The slopes are very similar; however, the higher value where the $\alpha$ layer gets 25\% of the population clearly needs less evaluations to reach the same fitness. All other parameters being equal, same-budget fitness reached favors this configuration.
 
 The same happens for the other parameters, except for {\sf steps}, that shows no difference. The slopes are the same, but the distribution of evaluations/fitness reached depends on the value; the slopes are not significant, because they cut across clusters thus not being really relevant for the different mechanism used to reach better fitness values.
+
+<<evoapps27.alpha.fwl, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="FWL view of the $\\alpha$ caste size in the {\\sf no\\_mutation\\_alpha} version: log-log plot of residuals + averages, with the FWL decomposition shown on the chart.">>=
+# Why do alpha = 10% and alpha = 25% differ if their convergence slopes are
+# the same? Equal slopes mean both convert extra evaluations into fitness at
+# the same rate; the difference must then be in the intercept (fitness at the
+# same budget) and in where along the line the runs stop (the budget).
+# FWL: remove max_gens, population_size and steps from both axes, then fit
+#   fitness_net ~ alpha + evaluations_net
+# with a single slope. The alpha coefficient is the same-budget effect; the
+# alpha shift in evaluations_net times the slope is the budget-mediated
+# effect; both add up exactly to the difference between the alpha centroids.
+other_parameter_terms <- paste0("(", paste(setdiff(params, "alpha"), collapse = " + "), ")^2")
+
+alpha_net_runs <- nma_data %>%
+  mutate(fitness_net     = resid(lm(as.formula(paste("log_fit ~",   other_parameter_terms)), nma_data)) +
+                           mean(log_fit),
+         evaluations_net = resid(lm(as.formula(paste("log_evals ~", other_parameter_terms)), nma_data)) +
+                           mean(log_evals))
+
+common_slope_model <- lm(fitness_net ~ alpha + evaluations_net, data = alpha_net_runs)
+common_slope       <- coef(common_slope_model)[["evaluations_net"]]
+same_budget_effect <- coef(common_slope_model)[["alpha25"]]
+
+alpha_centroids <- alpha_net_runs %>%
+  group_by(alpha) %>%
+  summarise(evaluations_net = mean(evaluations_net),
+            fitness_net     = mean(fitness_net), .groups = "drop")
+
+low_alpha_centroid  <- alpha_centroids %>% filter(alpha == "10")
+high_alpha_centroid <- alpha_centroids %>% filter(alpha == "25")
+evaluations_shift   <- high_alpha_centroid$evaluations_net - low_alpha_centroid$evaluations_net
+via_budget_effect   <- common_slope * evaluations_shift
+total_effect        <- high_alpha_centroid$fitness_net - low_alpha_centroid$fitness_net
+
+# Corner of the path: 10% line evaluated at the 25% budget
+path_corner <- data.frame(evaluations_net = high_alpha_centroid$evaluations_net,
+                          fitness_net     = low_alpha_centroid$fitness_net + via_budget_effect)
+
+alpha_lines <- alpha_centroids %>%
+  mutate(intercept = fitness_net - common_slope * evaluations_net)
+
+effect_path <- data.frame(
+  path  = c("via budget", "same budget", "total"),
+  x     = c(low_alpha_centroid$evaluations_net, path_corner$evaluations_net,
+            low_alpha_centroid$evaluations_net),
+  y     = c(low_alpha_centroid$fitness_net, path_corner$fitness_net,
+            low_alpha_centroid$fitness_net),
+  xend  = c(path_corner$evaluations_net, high_alpha_centroid$evaluations_net,
+            high_alpha_centroid$evaluations_net),
+  yend  = c(path_corner$fitness_net, high_alpha_centroid$fitness_net,
+            high_alpha_centroid$fitness_net),
+  label = c(sprintf("via budget: %+.2f\n(%.0f%% fewer evaluations)",
+                    via_budget_effect, 100 * (1 - 10^evaluations_shift)),
+            sprintf("same budget: %+.2f\n(%.0fx better)",
+                    same_budget_effect, 10^-same_budget_effect),
+            sprintf("total: %+.2f\n(%.0fx better)",
+                    total_effect, 10^-total_effect)))
+
+ggplot(alpha_net_runs, aes(evaluations_net, fitness_net, colour = alpha)) +
+  geom_point(alpha = 0.15, size = 0.7) +
+  geom_abline(data = alpha_lines,
+              aes(intercept = intercept, slope = common_slope, colour = alpha),
+              linewidth = 0.8) +
+  geom_segment(data = effect_path,
+               aes(x = x, y = y, xend = xend, yend = yend, linetype = path),
+               colour = "grey15", linewidth = 0.6,
+               arrow = arrow(length = unit(0.15, "cm")), inherit.aes = FALSE) +
+  geom_label(data = effect_path,
+             aes(x = (x + xend) / 2, y = (y + yend) / 2, label = label),
+             size = 2.5, label.size = 0, fill = "white", alpha = 0.85,
+             inherit.aes = FALSE) +
+  geom_point(data = alpha_centroids, size = 3, shape = 21, fill = "white", stroke = 1.2) +
+  scale_linetype_manual(values = c("via budget" = "solid", "same budget" = "solid",
+                                   "total" = "dotted"), guide = "none") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+  labs(x = "log10(evaluations) net of max_gens, population_size, steps",
+       y = "log10(diff_fitness) net of other parameters",
+       colour = "alpha caste (%)") +
+  theme_minimal() +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+@
+
+We can again use the FWL theorem on this experiment and the difference between the two parameter levels, shown in Figure \ref{fig:evoapps27.alpha.fwl}, which plots the residuals of the two models for equal values of the other 3 parameters; in this case we are studying the {\sf alpha} percentage but again the mediator variable is the number of evaluations. The chart shows what explains the difference between the two values: when {\sf alpha} = 10\%, it needs more evaluations to achieve the same fitness level; its {\em path} to reach lower fitness levels is only by making more evaluations. For the same number of evaluations, {\sf alpha} = 25\% is 22 times better than the other value, which can keep the algorithm running for longer without stagnation, but is still unable to find better solutions or reach the part of the search space where they are placed.
 
 <<evoapps27.alpha.params, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # no_mutation_alpha: is the shorter run length of a larger alpha caste a matter
