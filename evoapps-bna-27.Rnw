@@ -158,7 +158,7 @@ These are the five versions of the algorithm we will test with the same set of p
 \item the {\sf no\_alpha\_mutation} version eliminates mutation for the alpha layer, making it a crossover-only stratum. Theoretically, this should reduce exploration and make it a pure exploitation layer
 \end{itemize}
 
-<<evoapps27.setup, echo=FALSE, message=FALSE, warnings=, cache=T, fig.cap="Log-log plot delta fitness vs. number of evaluations for the 4 experiments and baseline", fig.height=3.5 >>=
+<<evoapps27.setup, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Log-log plot of the residuals of delta fitness vs. number of evaluations for the 4 experiments and baseline", fig.height=3.5 >>=
 
 library(dplyr)
 library(ggplot2)
@@ -206,10 +206,10 @@ m_out   <- lm(f_out,   data = fitness_data)
 #     " outcome (parameter + evals):", round(summary(m_out)$r.squared, 3), "\n")
 
 # Convergence rate (log-log slope) per version, with 95% CI
-# slope_ci <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
-# slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slope_ci)),
-#                      slope = coef(m_out)[rownames(slope_ci)],
-#                      lower = slope_ci[, 1], upper = slope_ci[, 2], row.names = NULL)
+slope_ci <- confint(m_out)[grep(":log_evals$", names(coef(m_out))), , drop = FALSE]
+slopes <- data.frame(group = sub("^group(.*):log_evals$", "\\1", rownames(slope_ci)),
+                    slope = coef(m_out)[rownames(slope_ci)],
+                    lower = slope_ci[, 1], upper = slope_ci[, 2], row.names = NULL)
 # cat("\nlog10(diff_fitness) vs log10(evaluations) slope per version (more negative = more efficient):\n")
 # print(slopes, digits = 3)
 
@@ -249,8 +249,14 @@ ggplot(partial, aes(evals_adjusted, fit_adjusted, colour = group)) +
 
 @
 
+We have processed the dataset by applying a $log10$ to the number of evaluations and the difference between the fitness reached and optimum fitness. We will model the resulting logarithmid $\Delta$ fitness in terms of the number of evaluations, that is considered the {\em mediator} variable. The Frisch-Waugh-Lowell theorem ) \cite{Lovell01121963} affirms that the coefficients of the dependent variable (in this case $log \Delta$ Fitness) is related to the part of the of the explanatory variable (evaluations) that is not related to the other explanatory variables (algorithm parameters). We then proceed to the decomposition via a linear model of the $log\Delta$ Fitness) and $log$ evaluations, and compute the slope independently for every experiment level.
+What we plot in Figure \ref{fig:evoapps27.setup} are the residuals of fitting fitness and evaluations to the rest of the parameters, adjusted to their corresponding scale by adding the average fitness and evaluations value for every group.
 
-<<evoapps27.regression, echo=FALSE, message=FALSE, warnings=FALSE>>=
+This is where we begin to understand the exploration and exploitation balance. However, we have a different angle: the fitness obtained will have two components: the part that can be explained by the parameters in a direct way and the indirect effect, which is the number of {\em extra} evaluations that cannot be directly explained by the parameters. In part, this effect is going to be random, but in fact what is indicating is the extra area of the search space these parameters are placing the population into and that would allow the extra generations until stagnation and the hillclimbing $\gamma$ to effectively produce individuals that continue improving the fitness. We will explore this effect further.
+
+We can clearly see already that the {\sf no\_mutation\_alpha} reaches the lowest fitness values. Although it does so using more evaluations, the slope indicates that, for the same number of evaluations, this configuration is able to optimize fitness more efficiently than the rest of the configurations.
+
+<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
 
@@ -277,9 +283,9 @@ config_run_slopes <- data.frame(t(sapply(levels(fitness_data$group), function(g)
   c(across_configs = unname(b["log_evals_config_mean"] + if (ref) 0 else b[paste0("group", g, ":log_evals_config_mean")]),
     across_runs    = unname(b["log_evals_run_dev"]     + if (ref) 0 else b[paste0("group", g, ":log_evals_run_dev")]))
 })))
-cat("\nSlopes across configurations (set by parameters, max_gens included) vs",
-    "across runs of the same configuration (seed, realized run length):\n")
-print(config_run_slopes, digits = 3)
+#cat("\nSlopes across configurations (set by parameters, max_gens included) vs",
+#    "across runs of the same configuration (seed, realized run length):\n")
+#print(config_run_slopes, digits = 3)
 
 # Plot of the two slopes. Top row: one point per configuration (its mean
 # log10 evaluations and mean log10 fitness, size = number of runs). Bottom row:
@@ -314,16 +320,17 @@ ggplot(config_run_points, aes(x, y, colour = group)) +
              aes(size = runs), alpha = 0.8) +
   geom_smooth(aes(weight = runs), method = "lm", formula = y ~ x,
               se = FALSE, linewidth = 0.8, colour = "grey20") +
-  geom_text(data = config_run_labels, aes(label = label),
-            x = -Inf, y = -Inf, hjust = -0.05, vjust = -0.6,
-            size = 2.8, colour = "grey20", inherit.aes = FALSE) +
   facet_wrap(view ~ group, nrow = 2, scales = "free",
              labeller = label_wrap_gen(width = 26, multi_line = FALSE)) +
   scale_size_area(max_size = 3, guide = "none") +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)") +
   theme_minimal() +
   theme(legend.position = "none", panel.grid.minor = element_blank())
+@
 
+Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations.
+
+<<evoapps27.regression, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
 # Same configuration points, one row per parameter, coloured by its level.
 # Arrows join configurations that differ only in that parameter (low -> high):
 # along the across_configs slope = it acts by spending more evaluations;
