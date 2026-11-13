@@ -337,7 +337,7 @@ The effect of the FWL regression are shown in Figure \ref{fig:evoapps27.fwl}, wh
 
 This is one reason why these experiments are performed until the termination condition is met: it allows us to understand better how direct and indirect effects combine to achieve the final fitness we observe.
 
-<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
+<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE,fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # Same configuration points, one row per parameter, coloured by its level.
 # Arrows join configurations that differ only in that parameter (low -> high):
 # along the across_configs slope = it acts by spending more evaluations;
@@ -390,7 +390,7 @@ Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values o
 
 The results for the rest of the parameters are, however, not so clear, with some combinations of population, for instance, having an effect on the number of evaluations (smaller population meaning less evaluations), but not in general. This is why the {\em indirect} effect becomes more important.
 
-<<evoapps27.table, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+<<evoapps27.table, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE, results="asis">>=
 # ---- FINDINGS so far (2026-11-07), to move to the paper -----------------------
 # diff_fitness is distance to the optimum: lower = better. Slopes are log-log,
 # so 10x more evaluations -> 10^|slope| times better fitness.
@@ -706,8 +706,15 @@ version_slope_kable %>%
 #print(version_slope_rates, row.names = FALSE)
 @
 
+How these two different effects are distributed for the 5 experiment levels is shown in Table \ref{tab:evoapps27.table}. We examine how the effect is distributed via same-budget (same number of evaluations), and extra effect achieved via evaluations; every level is compared with the one from which it is an improvement. The first row shows how the so-called gamma "upgrade" is essentially neutral; it shows a very small improvement, which is in fact compatible with no improvement at all. Changing the $\gamma$ layer does not change the efficiency of the algorithm
 
-<<evoapps27.plot, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
+Surprisingly, making only improvements to the implementation improves slightly the fitness, around 35\% due entirely to same-budget effects. We do not have a clear explanation for this, other than a change in implementation might have fixed some unknown bug that made some operator underperform. At any rate, it is a very small and scarcely noticeable improvement.
+
+Changing to a lower mutation rate, however (third row) improves same-budget results, with fitness reached 10 times better (that is, 1/10th of what was previously reached), with an additional improvement obtained via enabling longer runs, with more evaluations; fitness difference is almost halved that way.
+
+The definitive improvement comes from suppressing mutation in the $\alpha$ layer: fitness is two orders of magnitude better via same-budget, with an additional (roughly) order of magnitude due to the fact that every run lasts longer, with more evaluations sampling additional areas of the search space.
+
+<<evoapps27.plot, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # ---- 6. Plot ------------------------------------------------------------------
 
 ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
@@ -715,7 +722,11 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)", color = "Version") +
   theme_minimal() + theme(legend.position = "bottom")
+@
 
+This effect can be observed in Figure \ref{fig:evoapps27.plot}. When experimental points run more to the right, it is a signal of that additional number of evaluations obtained when the algorithm is not stuck in a local minima and new, better individuals are being found. The {\em slope} is also what shows how much fitness is being improved by every additional evaluation. The steeper slope is shown by the {\sf no\_alpha\_mutation} experiment (lower cloud, in pink). However, we see that the slope cuts across two different clusters of experiments; as a matter of fact, the vertical and horizontal extension might indicate some internal dynamics that might be interesting to investigate.
+
+<<evoapps27.alpha, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # ---- 7. no_mutation_alpha: which parameter splits the fitness/evaluations cloud?
 #
 # In the plot above the no_mutation_alpha cloud is visibly split in two
