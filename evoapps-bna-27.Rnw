@@ -112,10 +112,8 @@ it allows customization for specific problems or problem sizes.
 The free parameters are thus:
 \begin{itemize}
 \item Population size:
-%Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size.
-Note that all castes need to have a non-zero integer size, which limits the possible values for this parameter.
-\item $\alpha$ percentage:
-%which is
+Note that all castes need to have a non-zero integer size, which limits the possible values for this parameter due to the relationship between the population size for $\alpha$ and $\beta$ caste.
+\item $\alpha$ percentage: {\em a priori}
 the essential parameter for controlling the balance between exploitation and exploration.
 \item Mutation rates
 (for all castes except $\gamma$): these can be set to the same value or customized for every caste.
