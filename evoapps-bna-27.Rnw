@@ -256,7 +256,7 @@ This is where we begin to understand the exploration and exploitation balance. H
 
 We can clearly see already that the {\sf no\_mutation\_alpha} reaches the lowest fitness values. Although it does so using more evaluations, the slope indicates that, for the same number of evaluations, this configuration is able to optimize fitness more efficiently than the rest of the configurations.
 
-<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
+<<evoapps27.fwl, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
 
@@ -321,18 +321,21 @@ ggplot(config_run_points, aes(x, y, colour = group)) +
   geom_smooth(aes(weight = runs), method = "lm", formula = y ~ x,
               se = FALSE, linewidth = 0.8, colour = "grey20") +
   facet_wrap(view ~ group, nrow = 2, scales = "free",
-             labeller = label_wrap_gen(width = 26, multi_line = FALSE)) +
+             labeller = label_value) +
   scale_size_area(max_size = 3, guide = "none") +
   labs(x = "log10(evaluations)", y = "log10(diff_fitness)") +
   theme_minimal() +
-  theme(legend.position = "none", panel.grid.minor = element_blank())
+  theme(legend.position = "none", panel.grid.minor = element_blank(),
+        axis.text   = element_text(size = 6),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        strip.text  = element_text(size = 6))
 @
 
-Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations, showing how the values of the parameters influence directly the quality of the solution: a line from top-right to bottom left will indicate that change in value influences positively the result. This happens for every configuration and the {\sf alpha} value except for the {\sf low\_mutation} version. In all cases, {\sf alpha} = 25\% will obtain better fitness with less evaluations as a {\em direct} result. It should be noted too that the number of steps in the hillclimbing performed in the $\gamma$ layer has a smaller influence, and not clearly in any direction, than the other parameters.
+The effect of the FWL regression are shown in Figure \ref{fig:evoapps27.fwl}, where we split the effects of the parameters, plotting the averages for every parameter combination, and the indirect effect via more evaluations, both with the slope. This slope measures the direct and indirect contribution to the reached fitness value. Looking at the scales on the top and bottom charts, we can compare the relative effect of direct and indirect effects. For all experiments but the last, the effect on fitness is within the same order of magnitude; in the case of {\sf no\_alpha\_mutation} there are almost two orders of magnitude from the best to the worst effect. The same happens to the indirect effect plotted in the lower row: the one achieved by the last level exceeds what is achieved by the rest. In all cases, however, the same-budget effect (via parameters) is more important than the extra-budget effect; however, they complement each other in achieving optimal results.
 
-The results for the rest of the parameters are, however, not so clear, with some combinations of population, for instance, having an effect on the number of evaluations (smaller population meaning less evaluations), but not in general. This is why the {\em indirect} effect becomes more important.
+This is one reason why these experiments are performed until the termination condition is met: it allows us to understand better how direct and indirect effects combine to achieve the final fitness we observe.
 
-<<evoapps27.regression, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
+<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # Same configuration points, one row per parameter, coloured by its level.
 # Arrows join configurations that differ only in that parameter (low -> high):
 # along the across_configs slope = it acts by spending more evaluations;
@@ -376,7 +379,13 @@ ggplot(config_by_param, aes(x, y)) +
        y = "configuration mean log10(diff_fitness)") +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
+@
 
+Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations, showing how the values of the parameters influence directly the quality of the solution: a line from top-right to bottom left will indicate that change in value influences positively the result. This happens for every configuration and the {\sf alpha} value except for the {\sf low\_mutation} version. In all cases, {\sf alpha} = 25\% will obtain better fitness with less evaluations as a {\em direct} result. It should be noted too that the number of steps in the hillclimbing performed in the $\gamma$ layer has a smaller influence, and not clearly in any direction, than the other parameters.
+
+The results for the rest of the parameters are, however, not so clear, with some combinations of population, for instance, having an effect on the number of evaluations (smaller population meaning less evaluations), but not in general. This is why the {\em indirect} effect becomes more important.
+
+<<evoapps27.global, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # ---- FINDINGS so far (2026-11-07), to move to the paper -----------------------
 # diff_fitness is distance to the optimum: lower = better. Slopes are log-log,
 # so 10x more evaluations -> 10^|slope| times better fitness.
