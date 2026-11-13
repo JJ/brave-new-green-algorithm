@@ -916,13 +916,37 @@ ggplot(alpha_net_runs, aes(evaluations_net, fitness_net, colour = alpha)) +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 @
 
-We can again use the FWL theorem on this experiment and the difference between the two parameter levels, shown in Figure \ref{fig:evoapps27.alpha.fwl}, which plots the residuals of the two models for equal values of the other 3 parameters; in this case we are studying the {\sf alpha} percentage but again the mediator variable is the number of evaluations. The chart shows what explains the difference between the two values: when {\sf alpha} = 10\%, it needs more evaluations to achieve the same fitness level; its {\em path} to reach lower fitness levels is only by making more evaluations. For the same number of evaluations, {\sf alpha} = 25\% is 22 times better than the other value, which can keep the algorithm running for longer without stagnation, but is still unable to find better solutions or reach the part of the search space where they are placed.
+We can again use the FWL theorem on this experiment and the difference between the two parameter levels, shown in Figure \ref{fig:evoapps27.alpha.fwl}, which plots the residuals of the two models for equal values of the other 3 parameters; in this case we are studying the {\sf alpha} percentage but again the mediator variable is the number of evaluations. The chart shows what explains the difference between the two values: when {\sf alpha} = 10\%, it needs more evaluations to achieve the same fitness level; its {\em path} to reach lower fitness levels is only by making more evaluations. For the same number of evaluations, {\sf alpha} = 25\% is 22 times better than the other value, which can keep the algorithm running for longer without stagnation, but is still unable to find better solutions or reach the part of the search space where they are placed. This can be explained, in turn, by fact that the $\gamma$ caste changes in the opposite direction of $\alpha$: when this takes 10\% of the population, $\gamma$ would have 60\%. The hillclimbing performed by this layer will still make evolution advance to lower fitness values, but at the cost of several evaluations.
 
 
 \section{Discussion and conclusions}\label{sec:conclusions}
 
+% Future work: is the gamma caste useless? In the current design a single
+% parameter sets every caste size (delta = epsilon = 5%, beta = 2 x alpha,
+% gamma the rest), so going from alpha = 10% to alpha = 25% moves gamma from
+% 60% to 15% of the population. The better same-budget fitness and the cheaper
+% generations of alpha = 25% cannot then be attributed to a smaller gamma caste
+% or to larger alpha and beta castes separately. Besides, the number of
+% hill-climbing steps (16 vs. 64) has no measurable effect on fitness or
+% evaluations, which suggests gamma's local search contributes little. Two
+% experiments would settle this:
+% (1) Decoupling the caste sizes: keep alpha fixed and move population between
+%     beta and gamma (e.g. gamma = 15%, 35%, 60%), so the effect of gamma's size
+%     can be measured with the FWL decomposition used here, at the same alpha.
+% (2) Removing gamma's local search: run with steps = 0, or with no gamma caste
+%     at all (its share given to beta or to the explorative delta/epsilon
+%     castes). If same-budget fitness does not worsen, gamma is effectively
+%     useless in this setup; if it does, gamma keeps some diversity that the
+%     smallest size tested (15%) still provides.
+% Both should be run for no_mutation_alpha, where the alpha effect is ~9x
+% larger than in the other versions, and for at least one version with
+% mutation in the alpha caste, to check whether the gain comes from removing
+% gamma or from feeding a crossover-only alpha caste with a larger beta.
 
-%\begin{credits}
+\section{Acknowledgements}
+
+Supported by a grant\\
+taking this much space.
 %\subsubsection{\ackname}
 %
 % This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
