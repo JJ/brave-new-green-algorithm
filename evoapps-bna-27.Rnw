@@ -80,6 +80,8 @@ From the initial paper by Eiben and Schippers \cite{eiben98}, and despite having
 
 Recent approaches have tackled the problem differently, however. An article by Ferhat et al. \cite{ferhat2025measures} focus mainly on measures of diversity and convergence rates; however, these are at most indirect measures that do not really reflect how exploration and exploitation affect fitness improvement. A novel measure of exploration and exploration is proposed in \cite{math14091406} where exploitation is intra-peak motion in search space, and exploitation between peak. This is also applied to other algorithms \cite{math14173119}, but even if this is an operative way of understanding these measures, it needs to assume and model search space in order to apply them; in this search space models such as the one proposed in \cite{laredo20} can help, providing more efficient sampling methods for what they call {\em exploitation}.
 
+From a slightly different point of view, Rojas et al. \cite{ANOVA} look at the influence of different parameters and types of operators on the obtained fitness; they are also interested on diversity and how parameters affect them. They analyze different factors: population size, crossover and mutation probability, as well as different types of selection, crossover and mutation operators. They conclude that these operators, as well as mutation rate, are the ones with the biggest influence on diversity, implying that they are the ones that affect the EEB.
+
 In this paper, however, we will try to attack the problem of optimizing the improvement of fitness per individual evaluation, without the reference to specific search space models or even to a balance between two opposing forces.
 
 \section{A brave new algorithm} \label{sec:bna}
@@ -762,7 +764,7 @@ split_table <- do.call(rbind, lapply(params, function(p) {
 # cat("\nno_mutation_alpha: separation of the fitness bands by parameter",
 #     "(offset = high - low level, log10 units):\n")
 # print(split_table, digits = 3, row.names = FALSE)
-# split_param <- split_table$param[1]
+split_param <- split_table$param[1]
 # cat("Parameter that best explains the split:", split_param, "\n")
 
 # Mediation by the evaluation budget for no_mutation_alpha (from section 4):
@@ -829,7 +831,7 @@ ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
 
 The first analysis looks for the "split": Figure \ref{fig:evoapps27.alpha} plots with different colors high-low values of the different parameters, along with the respective log-log fitness-evaluations slope for them. The {\sf alpha} value is the first one, and clearly explains the split in two clusters. The slopes are very similar; however, the higher value where the $\alpha$ layer gets 25\% of the population clearly needs less evaluations to reach the same fitness. All other parameters being equal, same-budget fitness reached favors this configuration.
 
-The same happens for the other parameters, except for {\sf steps}, that shows no difference. The slopes are the same, but the distribution of evaluations/fitness reached depends on the value; the slopes are not significant, because they cut across clusters thus not being really relevant for the different mechanism used to reach better fitness values
+The same happens for the other parameters, except for {\sf steps}, that shows no difference. The slopes are the same, but the distribution of evaluations/fitness reached depends on the value; the slopes are not significant, because they cut across clusters thus not being really relevant for the different mechanism used to reach better fitness values.
 
 <<evoapps27.alpha.params, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # no_mutation_alpha: is the shorter run length of a larger alpha caste a matter
@@ -873,8 +875,8 @@ run_length_by_alpha <- no_mutation_alpha_runs %>%
             median_evaluations                = median(evaluations),
             median_evaluations_per_generation = median(evaluations / generations),
             .groups = "drop")
-cat("\nno_mutation_alpha: run length by alpha caste size:\n")
-print(as.data.frame(run_length_by_alpha), digits = 4, row.names = FALSE)
+#cat("\nno_mutation_alpha: run length by alpha caste size:\n")
+#print(as.data.frame(run_length_by_alpha), digits = 4, row.names = FALSE)
 
 run_length_measures <- c("evaluations_change", "generations_change",
                          "evaluations_per_generation_change",
@@ -929,31 +931,31 @@ run_length_table <- data.frame(
   }),
   row.names = NULL)
 
-cat("\nno_mutation_alpha: change in log10 run length (low -> high) split into",
-    "generations and evaluations per generation, 95% bootstrap CI:\n")
-print(run_length_table, row.names = FALSE)
+# cat("\nno_mutation_alpha: change in log10 run length (low -> high) split into",
+#     "generations and evaluations per generation, 95% bootstrap CI:\n")
+# print(run_length_table, row.names = FALSE)
+#
+# cat("\nno_mutation_alpha: log10 fitness per log10 generations vs per log10",
+#     "evaluations per generation, 95% bootstrap CI:\n")
+# print(data.frame(slope = names(slopes_point),
+#                  estimate = sapply(names(slopes_point), function(name) {
+#                    format_estimate(slopes_point[[name]], slopes_bootstrap[name, ])
+#                  }),
+#                  row.names = NULL),
+#       row.names = FALSE)
 
-cat("\nno_mutation_alpha: log10 fitness per log10 generations vs per log10",
-    "evaluations per generation, 95% bootstrap CI:\n")
-print(data.frame(slope = names(slopes_point),
-                 estimate = sapply(names(slopes_point), function(name) {
-                   format_estimate(slopes_point[[name]], slopes_bootstrap[name, ])
-                 }),
-                 row.names = NULL),
-      row.names = FALSE)
-
-no_mutation_alpha_runs %>%
-  transmute(alpha,
-            `log10(generations)`                = log_generations,
-            `log10(evaluations per generation)` = log_evaluations_per_generation) %>%
-  tidyr::pivot_longer(-alpha, names_to = "run_length_part", values_to = "value") %>%
-  ggplot(aes(alpha, value, fill = alpha)) +
-  geom_boxplot(outlier.size = 0.5) +
-  facet_wrap(~ run_length_part, scales = "free_y") +
-  labs(x = "alpha caste size", y = NULL,
-       title = "no_mutation_alpha: run length parts by alpha caste size") +
-  theme_minimal() +
-  theme(legend.position = "none", panel.grid.minor = element_blank())
+# no_mutation_alpha_runs %>%
+#   transmute(alpha,
+#             `log10(generations)`                = log_generations,
+#             `log10(evaluations per generation)` = log_evaluations_per_generation) %>%
+#   tidyr::pivot_longer(-alpha, names_to = "run_length_part", values_to = "value") %>%
+#   ggplot(aes(alpha, value, fill = alpha)) +
+#   geom_boxplot(outlier.size = 0.5) +
+#   facet_wrap(~ run_length_part, scales = "free_y") +
+#   labs(x = "alpha caste size", y = NULL,
+#        title = "no_mutation_alpha: run length parts by alpha caste size") +
+#   theme_minimal() +
+#   theme(legend.position = "none", panel.grid.minor = element_blank())
 
 # Where the evaluations go. One point per run, x = log10(generations),
 # y = log10(evaluations per generation). Because log10(evaluations) is their
@@ -993,24 +995,24 @@ equal_evaluation_labels <- equal_evaluation_lines %>%
 
 rank_colours <- c(low = "#1b9e77", high = "#d95f02")
 
-ggplot(runs_by_parameter_level,
-       aes(log_generations, log_evaluations_per_generation, colour = level_rank)) +
-  geom_abline(data = equal_evaluation_lines, aes(intercept = log_evaluations, slope = -1),
-              linetype = "dashed", colour = "grey75", linewidth = 0.3) +
-  geom_text(data = equal_evaluation_labels, aes(label_x, label_y, label = label),
-            hjust = 1, vjust = -0.3, size = 2.3, colour = "grey50",
-            inherit.aes = FALSE) +
-  geom_point(alpha = 0.15, size = 0.7) +
-  geom_text(data = level_names, aes(label = label), x = -Inf, y = Inf,
-            hjust = -0.05, vjust = 1.3, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
-  facet_wrap(~ parameter, nrow = 1) +
-  scale_colour_manual(values = rank_colours, name = "Level") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
-  labs(x = "log10(generations)", y = "log10(evaluations per generation)",
-       title = "no_mutation_alpha: run length (generations) vs cost of a generation, by parameter level",
-       subtitle = "Dashed lines: equal total evaluations (labelled 10^x at the right edge)") +
-  theme_minimal() +
-  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+# ggplot(runs_by_parameter_level,
+#        aes(log_generations, log_evaluations_per_generation, colour = level_rank)) +
+#   geom_abline(data = equal_evaluation_lines, aes(intercept = log_evaluations, slope = -1),
+#               linetype = "dashed", colour = "grey75", linewidth = 0.3) +
+#   geom_text(data = equal_evaluation_labels, aes(label_x, label_y, label = label),
+#             hjust = 1, vjust = -0.3, size = 2.3, colour = "grey50",
+#             inherit.aes = FALSE) +
+#   geom_point(alpha = 0.15, size = 0.7) +
+#   geom_text(data = level_names, aes(label = label), x = -Inf, y = Inf,
+#             hjust = -0.05, vjust = 1.3, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
+#   facet_wrap(~ parameter, nrow = 1) +
+#   scale_colour_manual(values = rank_colours, name = "Level") +
+#   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+#   labs(x = "log10(generations)", y = "log10(evaluations per generation)",
+#        title = "no_mutation_alpha: run length (generations) vs cost of a generation, by parameter level",
+#        subtitle = "Dashed lines: equal total evaluations (labelled 10^x at the right edge)") +
+#   theme_minimal() +
+#   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
 # Companion of the fitness vs evaluations plot above, with generations on the
 # x axis: the convergence lines now measure fitness gained per generation, so a
@@ -1018,19 +1020,19 @@ ggplot(runs_by_parameter_level,
 # population_size) shows up as a vertical gap, not as a shift along x.
 # Point size = evaluations per generation, so the cost of reaching each point
 # stays visible: big points spent more evaluations per generation.
-ggplot(runs_by_parameter_level, aes(log_generations, log_fit, colour = level_rank)) +
-  geom_point(aes(size = evaluations_per_generation), alpha = 0.15, shape = 16) +
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
-  geom_text(data = level_names, aes(label = label), x = -Inf, y = -Inf,
-            hjust = -0.05, vjust = -0.6, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
-  facet_wrap(~ parameter, nrow = 1) +
-  scale_colour_manual(values = rank_colours, name = "Level") +
-  scale_size_area(max_size = 2.5, name = "Evaluations per generation") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
-  labs(x = "log10(generations)", y = "log10(diff_fitness)",
-       title = "no_mutation_alpha: fitness vs generations by parameter level") +
-  theme_minimal() +
-  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+# ggplot(runs_by_parameter_level, aes(log_generations, log_fit, colour = level_rank)) +
+#   geom_point(aes(size = evaluations_per_generation), alpha = 0.15, shape = 16) +
+#   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
+#   geom_text(data = level_names, aes(label = label), x = -Inf, y = -Inf,
+#             hjust = -0.05, vjust = -0.6, size = 2.6, colour = "grey30", inherit.aes = FALSE) +
+#   facet_wrap(~ parameter, nrow = 1) +
+#   scale_colour_manual(values = rank_colours, name = "Level") +
+#   scale_size_area(max_size = 2.5, name = "Evaluations per generation") +
+#   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+#   labs(x = "log10(generations)", y = "log10(diff_fitness)",
+#        title = "no_mutation_alpha: fitness vs generations by parameter level") +
+#   theme_minimal() +
+#   theme(legend.position = "bottom", panel.grid.minor = element_blank())
 
 # ---- FINDINGS (2026-11-07), section 7 -----------------------------------------
 #
