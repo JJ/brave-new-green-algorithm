@@ -759,24 +759,24 @@ split_table <- do.call(rbind, lapply(params, function(p) {
              agreement = max(sum(diag(tab)), sum(tab) - sum(diag(tab))) / sum(tab))
 })) %>% arrange(desc(agreement))
 
-cat("\nno_mutation_alpha: separation of the fitness bands by parameter",
-    "(offset = high - low level, log10 units):\n")
-print(split_table, digits = 3, row.names = FALSE)
-split_param <- split_table$param[1]
-cat("Parameter that best explains the split:", split_param, "\n")
+# cat("\nno_mutation_alpha: separation of the fitness bands by parameter",
+#     "(offset = high - low level, log10 units):\n")
+# print(split_table, digits = 3, row.names = FALSE)
+# split_param <- split_table$param[1]
+# cat("Parameter that best explains the split:", split_param, "\n")
 
 # Mediation by the evaluation budget for no_mutation_alpha (from section 4):
 # the split parameter should show a large *direct* (same_budget) effect.
-cat("\nno_mutation_alpha: total / direct (same_budget) / mediated (via_budget)",
-    "effect of each parameter (from section 4):\n")
-print(mediation_table %>%
-        filter(group == "no_mutation_alpha") %>%
-        transmute(param,
-                  total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
-                  same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
-                  via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
-                  budget_share = round(budget_share, 2)),
-      row.names = FALSE)
+# cat("\nno_mutation_alpha: total / direct (same_budget) / mediated (via_budget)",
+#     "effect of each parameter (from section 4):\n")
+# print(mediation_table %>%
+#         filter(group == "no_mutation_alpha") %>%
+#         transmute(param,
+#                   total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
+#                   same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
+#                   via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
+#                   budget_share = round(budget_share, 2)),
+#       row.names = FALSE)
 
 # Convergence line (log_fit ~ log_evals) for every level of every parameter.
 # Pooling the two bands flattens the slope, so within-level slopes for the
@@ -794,8 +794,8 @@ nma_level_slopes <- nma_long %>%
                lower = ci[[1]], upper = ci[[2]])
   }) %>%
   ungroup()
-cat("\nno_mutation_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
-print(as.data.frame(nma_level_slopes), digits = 3, row.names = FALSE)
+# cat("\nno_mutation_alpha: log10(diff_fitness) ~ log10(evaluations) per parameter level:\n")
+# print(as.data.frame(nma_level_slopes), digits = 3, row.names = FALSE)
 
 # Mediation for the other parameters *within* each level of the split
 # parameter, so their effects are not confounded with the band they fall in.
@@ -815,7 +815,7 @@ within_split <- bind_rows(lapply(levels(nma_data[[split_param]]), function(l) {
                via_budget  = b * marginal_effect(mm, d, p))
   }))
 }))
-print(within_split, digits = 3, row.names = FALSE)
+# print(within_split, digits = 3, row.names = FALSE)
 
 ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
   geom_point(alpha = 0.15, size = 0.7) +
@@ -825,7 +825,13 @@ ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
        title = "no_mutation_alpha: fitness vs evaluations by parameter level") +
   theme_minimal() +
   theme(legend.position = "bottom", panel.grid.minor = element_blank())
+@
 
+The first analysis looks for the "split": Figure \ref{fig:evoapps27.alpha} plots with different colors high-low values of the different parameters, along with the respective log-log fitness-evaluations slope for them. The {\sf alpha} value is the first one, and clearly explains the split in two clusters. The slopes are very similar; however, the higher value where the $\alpha$ layer gets 25\% of the population clearly needs less evaluations to reach the same fitness. All other parameters being equal, same-budget fitness reached favors this configuration.
+
+The same happens for the other parameters, except for {\sf steps}, that shows no difference. The slopes are the same, but the distribution of evaluations/fitness reached depends on the value; the slopes are not significant, because they cut across clusters thus not being really relevant for the different mechanism used to reach better fitness values
+
+<<evoapps27.alpha.params, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # no_mutation_alpha: is the shorter run length of a larger alpha caste a matter
 # of generations or of evaluations per generation?
 #
