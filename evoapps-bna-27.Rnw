@@ -680,25 +680,25 @@ version_slope_kable <- do.call(rbind, lapply(version_slope_results, function(res
              total       = estimate_with_interval(result, "total"),
              same_budget = estimate_with_interval(result, "same_budget"),
              same_budget_improvement = improvement_factor_with_interval(result, "same_budget"),
-             via_budget= estimate_with_interval(result, "via_budget"),
-             at_old_rate = estimate_with_interval(result, "at_old_rate"),
-             better_use  = estimate_with_interval(result, "better_use"))
+             via_budget  = estimate_with_interval(result, "via_budget"),
+             via_budget_improvement = improvement_factor_with_interval(result, "via_budget"))
 }))
 
 version_slope_kable %>%
-  kableExtra::kbl(format = "latex", booktabs = TRUE, escape = FALSE, align = "lcccccc",
+  kableExtra::kbl(format = "latex", booktabs = TRUE, escape = FALSE, align = "lccccc",
                   row.names = FALSE, label = "evoapps27.version.slopes",
-                  col.names = c("Version change", "Total", "Effect",
-                                "Fitness improvement", "Total", "At old rate", "Better use"),
+                  col.names = c("Version change", "Total", "Effect", "Fitness improvement",
+                                "Effect", "Fitness improvement"),
                   caption = paste("Effect of each version change on $\\log_{10}$ fitness difference",
                                   "(negative = better fitness) with version-specific convergence",
                                   "slopes, split into the direct effect at the same number of",
                                   "evaluations and the effect via the number of evaluations.",
                                   "Fitness improvement is how many times closer to the optimum",
-                                  "the new version gets with the same number of evaluations",
-                                  "(ratio of geometric means; above 1 = better).",
+                                  "the new version gets through each path: with the same number",
+                                  "of evaluations, and through the change in the number of",
+                                  "evaluations it uses (ratio of geometric means; above 1 = better).",
                                   "95\\% bootstrap confidence intervals in brackets.")) %>%
-  kableExtra::add_header_above(c(" " = 2, "Same evaluations" = 2, "Via evaluations" = 3),
+  kableExtra::add_header_above(c(" " = 2, "Same evaluations" = 2, "Via evaluations" = 2),
                                bold = TRUE) %>%
   kableExtra::row_spec(0, bold = TRUE) %>%
   kableExtra::kable_styling(latex_options = c("scale_down", "hold_position"), font_size = 8)
