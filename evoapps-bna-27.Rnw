@@ -5,6 +5,8 @@
 \usepackage{url}
 \usepackage{color}
 \usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{makecell}
 
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
@@ -301,9 +303,9 @@ run_points <- fitness_data %>%
   group_by(group, alpha, steps, max_gens, population_size) %>%
   mutate(x = log_evals_run_dev, y = log_fit - mean(log_fit), runs = 1) %>%
   ungroup() %>%
-  mutate(view = "across runs (distance from configuration mean)")
+  mutate(view = "across runs\n(distance from mean)")
 
-views <- c("across configurations", "across runs (distance from configuration mean)")
+views <- c("across configurations", "across runs\n(distance from mean)")
 config_run_points <- bind_rows(config_points, run_points) %>%
   mutate(view = factor(view, levels = views))
 
@@ -335,7 +337,7 @@ The effect of the FWL regression are shown in Figure \ref{fig:evoapps27.fwl}, wh
 
 This is one reason why these experiments are performed until the termination condition is met: it allows us to understand better how direct and indirect effects combine to achieve the final fitness we observe.
 
-<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
+<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # Same configuration points, one row per parameter, coloured by its level.
 # Arrows join configurations that differ only in that parameter (low -> high):
 # along the across_configs slope = it acts by spending more evaluations;
@@ -372,20 +374,23 @@ ggplot(config_by_param, aes(x, y)) +
             x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
             size = 2.5, colour = "grey30", inherit.aes = FALSE) +
   facet_wrap(~ param + group, ncol = length(versions), scales = "free",
-             labeller = label_wrap_gen(width = 26, multi_line = FALSE)) +
+             labeller = label_value) +
   scale_colour_manual(values = c(low = "#1b9e77", high = "#d95f02"), name = "Level") +
   scale_size_area(max_size = 3, guide = "none") +
   labs(x = "configuration mean log10(evaluations)",
        y = "configuration mean log10(diff_fitness)") +
   theme_minimal() +
-  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+  theme(legend.position = "bottom", panel.grid.minor = element_blank(),
+        axis.text   = element_text(size = 6),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        strip.text  = element_text(size = 6))
 @
 
 Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations, showing how the values of the parameters influence directly the quality of the solution: a line from top-right to bottom left will indicate that change in value influences positively the result. This happens for every configuration and the {\sf alpha} value except for the {\sf low\_mutation} version. In all cases, {\sf alpha} = 25\% will obtain better fitness with less evaluations as a {\em direct} result. It should be noted too that the number of steps in the hillclimbing performed in the $\gamma$ layer has a smaller influence, and not clearly in any direction, than the other parameters.
 
 The results for the rest of the parameters are, however, not so clear, with some combinations of population, for instance, having an effect on the number of evaluations (smaller population meaning less evaluations), but not in general. This is why the {\em indirect} effect becomes more important.
 
-<<evoapps27.global, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
+<<evoapps27.table, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
 # ---- FINDINGS so far (2026-11-07), to move to the paper -----------------------
 # diff_fitness is distance to the optimum: lower = better. Slopes are log-log,
 # so 10x more evaluations -> 10^|slope| times better fitness.
@@ -524,16 +529,16 @@ mediation_by_group <- function(g) {
 
 mediation_table <- bind_rows(lapply(levels(fitness_data$group), mediation_by_group))
 
-cat("\nEffect on log10(diff_fitness) of switching each parameter low -> high",
-    "(negative = better fitness): same_budget = direct, via_budget = mediated",
-    "by the evaluation budget, 95% bootstrap CI:\n")
-print(mediation_table %>%
-        transmute(group, param,
-                  total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
-                  same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
-                  via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
-                  budget_share = round(budget_share, 2)),
-      row.names = FALSE)
+# cat("\nEffect on log10(diff_fitness) of switching each parameter low -> high",
+#     "(negative = better fitness): same_budget = direct, via_budget = mediated",
+#     "by the evaluation budget, 95% bootstrap CI:\n")
+# print(mediation_table %>%
+#         transmute(group, param,
+#                   total       = sprintf("%.3f [%.3f, %.3f]", total, total_lo, total_hi),
+#                   same_budget = sprintf("%.3f [%.3f, %.3f]", same_budget, same_budget_lo, same_budget_hi),
+#                   via_budget  = sprintf("%.3f [%.3f, %.3f]", via_budget, via_budget_lo, via_budget_hi),
+#                   budget_share = round(budget_share, 2)),
+#       row.names = FALSE)
 
 # ---- 5. Version effects (consecutive pairs, as in the paper) ------------------
 #
@@ -572,8 +577,8 @@ version_table <- do.call(rbind, lapply(version_pairs, function(pair) {
              row.names = NULL)
 }))
 
-cat("\nEffect of each version change on log10(diff_fitness), 95% bootstrap CI:\n")
-print(version_table, row.names = FALSE)
+#cat("\nEffect of each version change on log10(diff_fitness), 95% bootstrap CI:\n")
+#print(version_table, row.names = FALSE)
 
 # ---- 5b. Version effects with a version-specific convergence slope ------------
 #
@@ -651,12 +656,58 @@ version_slope_rates <- do.call(rbind, lapply(version_slope_results, function(r) 
                   setNames(lapply(cols, function(k) fmt_ci(r$point[k], r$q[1, k], r$q[2, k])), cols)))
 }))
 
-cat("\nVersion change effect on log10(diff_fitness) with version-specific slopes,",
-    "95% bootstrap CI:\n")
-print(version_slope_table, row.names = FALSE)
-cat("\nConvergence slopes (log10 fitness per log10 evaluation) in each pair, 95% bootstrap CI:\n")
-print(version_slope_rates, row.names = FALSE)
+version_label <- function(version) sprintf("{\\sf %s}", gsub("_", "\\\\_", version))
 
+estimate_with_interval <- function(result, column) {
+  kableExtra::linebreak(sprintf("%.3f\n{\\scriptsize [%.3f, %.3f]}",
+                                result$point[column], result$q[1, column], result$q[2, column]),
+                        align = "c")
+}
+
+# diff_fitness is a distance to the optimum (lower = better), so a log10 effect
+# of e means the new version's diff_fitness is 10^e times the old one; the
+# improvement factor is 10^(-e). The interval bounds swap when negated.
+improvement_factor_with_interval <- function(result, column) {
+  kableExtra::linebreak(sprintf("%.2f$\\times$\n{\\scriptsize [%.2f, %.2f]}",
+                                10^(-result$point[column]),
+                                10^(-result$q[2, column]), 10^(-result$q[1, column])),
+                        align = "c")
+}
+
+version_slope_kable <- do.call(rbind, lapply(version_slope_results, function(result) {
+  versions_in_pair <- strsplit(result$change, " -> ", fixed = TRUE)[[1]]
+  data.frame(change      = paste(version_label(versions_in_pair), collapse = " $\\to$ "),
+             total       = estimate_with_interval(result, "total"),
+             same_budget = estimate_with_interval(result, "same_budget"),
+             same_budget_improvement = improvement_factor_with_interval(result, "same_budget"),
+             via_budget= estimate_with_interval(result, "via_budget"),
+             at_old_rate = estimate_with_interval(result, "at_old_rate"),
+             better_use  = estimate_with_interval(result, "better_use"))
+}))
+
+version_slope_kable %>%
+  kableExtra::kbl(format = "latex", booktabs = TRUE, escape = FALSE, align = "lcccccc",
+                  row.names = FALSE, label = "evoapps27.version.slopes",
+                  col.names = c("Version change", "Total", "Effect",
+                                "Fitness improvement", "Total", "At old rate", "Better use"),
+                  caption = paste("Effect of each version change on $\\log_{10}$ fitness difference",
+                                  "(negative = better fitness) with version-specific convergence",
+                                  "slopes, split into the direct effect at the same number of",
+                                  "evaluations and the effect via the number of evaluations.",
+                                  "Fitness improvement is how many times closer to the optimum",
+                                  "the new version gets with the same number of evaluations",
+                                  "(ratio of geometric means; above 1 = better).",
+                                  "95\\% bootstrap confidence intervals in brackets.")) %>%
+  kableExtra::add_header_above(c(" " = 2, "Same evaluations" = 2, "Via evaluations" = 3),
+                               bold = TRUE) %>%
+  kableExtra::row_spec(0, bold = TRUE) %>%
+  kableExtra::kable_styling(latex_options = c("scale_down", "hold_position"), font_size = 8)
+#cat("\nConvergence slopes (log10 fitness per log10 evaluation) in each pair, 95% bootstrap CI:\n")
+#print(version_slope_rates, row.names = FALSE)
+@
+
+
+<<evoapps27.plot, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # ---- 6. Plot ------------------------------------------------------------------
 
 ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
