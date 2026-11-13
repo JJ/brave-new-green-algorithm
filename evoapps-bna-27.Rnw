@@ -328,7 +328,9 @@ ggplot(config_run_points, aes(x, y, colour = group)) +
   theme(legend.position = "none", panel.grid.minor = element_blank())
 @
 
-Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations.
+Figure \ref{fig:evoapps27.param.comparison} compares the effects of the values of different parameters across configurations, showing how the values of the parameters influence directly the quality of the solution: a line from top-right to bottom left will indicate that change in value influences positively the result. This happens for every configuration and the {\sf alpha} value except for the {\sf low\_mutation} version. In all cases, {\sf alpha} = 25\% will obtain better fitness with less evaluations as a {\em direct} result. It should be noted too that the number of steps in the hillclimbing performed in the $\gamma$ layer has a smaller influence, and not clearly in any direction, than the other parameters.
+
+The results for the rest of the parameters are, however, not so clear, with some combinations of population, for instance, having an effect on the number of evaluations (smaller population meaning less evaluations), but not in general. This is why the {\em indirect} effect becomes more important.
 
 <<evoapps27.regression, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
 # Same configuration points, one row per parameter, coloured by its level.
