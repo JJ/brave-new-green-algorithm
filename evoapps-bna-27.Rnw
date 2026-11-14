@@ -18,7 +18,7 @@
 %
 \title{Exploring More or Exploiting Better? Where Fitness Gains Come From in the Exploration/Exploitation Feedback Loop}
 %
-\titlerunning{}
+\titlerunning{Exploring More or Exploiting Better?}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
@@ -37,10 +37,7 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-%% Changes to improve flow
-% Making an optimization (or genetic) algorithm more effective? Later in the text
-% there are references to properties applied only to these algorithms. - M
-Making an algorithm more effective often involves a series of trade-offs
+Designing an algorithm or making it more effective often involves a series of trade-offs, which have been often condensed in the expression Exploration/Exploitation Balance. In this paper we propose a new way of looking at algorithm efficiency by splitting it into what would be a direct effect of the parametrization and design ("exploring better"), and indirect effects achieved via enabling more evaluations ("exploring more"). We use a statistical model based on the Frisch-Waugh-Lovell theorem, and apply it to different versions and parametrizations of a stratified-population metaheuristic. This methodology allows us to understand better what makes a configuration or version better, giving us insight on how to design more efficient algorithms; it also proposes an alternative framework to better understand how population-based metaheuristics work.
 \keywords{ \and Metaheuristics.}
 \end{abstract}
 %
@@ -263,7 +260,7 @@ This is where we begin to understand the exploration and exploitation balance. H
 
 We can clearly see already that the {\sf no\_mutation\_alpha} reaches the lowest fitness values. Although it does so using more evaluations, the slope indicates that, for the same number of evaluations, this configuration is able to optimize fitness more efficiently than the rest of the configurations.
 
-<<evoapps27.fwl, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
+<<evoapps27.fwl, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.5, fig.pos="h!tb", fig.cap="Across configuration (top row) and across runs (bottom row) FWL decomposition of log(evaluations) vs. log(fitness)">>=
 # Sanity check: operating conditions should NOT explain fitness. Only meaningful
 # if temperatures are added to fitness_data; left here as a reminder.
 
@@ -342,7 +339,7 @@ The effect of the FWL regression are shown in Figure \ref{fig:evoapps27.fwl}, wh
 
 This is one reason why these experiments are performed until the termination condition is met: it allows us to understand better how direct and indirect effects combine to achieve the final fitness we observe.
 
-<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE,fig.height=6, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
+<<evoapps27.param.comparison, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE,fig.height=5, fig.pos="h!tb", fig.cap="Effects of different parameter values (low or high) on evaluations or fitness for the different experiment levels (left to right) and algorithm parameters (top to bottom)">>=
 # Same configuration points, one row per parameter, coloured by its level.
 # Arrows join configurations that differ only in that parameter (low -> high):
 # along the across_configs slope = it acts by spending more evaluations;
@@ -719,7 +716,7 @@ Changing to a lower mutation rate, however (third row) improves same-budget resu
 
 The definitive improvement comes from suppressing mutation in the $\alpha$ layer: fitness is two orders of magnitude better via same-budget, with an additional (roughly) order of magnitude due to the fact that every run lasts longer, with more evaluations sampling additional areas of the search space.
 
-<<evoapps27.plot, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
+<<evoapps27.plot, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=3.5, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
 # ---- 6. Plot ------------------------------------------------------------------
 
 ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
@@ -731,7 +728,7 @@ ggplot(fitness_data, aes(x = log_evals, y = log_fit, color = group)) +
 
 This effect can be observed in Figure \ref{fig:evoapps27.plot}. When experimental points run more to the right, it is a signal of that additional number of evaluations obtained when the algorithm is not stuck in a local minima and new, better individuals are being found. The {\em slope} is also what shows how much fitness is being improved by every additional evaluation. The steeper slope is shown by the {\sf no\_alpha\_mutation} experiment (lower cloud, in pink). However, we see that the slope cuts across two different clusters of experiments; as a matter of fact, the vertical and horizontal extension might indicate some internal dynamics that might be interesting to investigate.
 
-<<evoapps27.alpha, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=4, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 5 different experiment levels, showing the fitted slope.">>=
+<<evoapps27.alpha, echo=FALSE, message=FALSE, warnings=FALSE, fig.height=3.5, fig.pos="h!tb", fig.cap="Logarithmic plot of evaluations vs. fitness for the 4 parameters in the experiment with no mutation in the alpha layer.">>=
 # ---- 7. no_mutation_alpha: which parameter splits the fitness/evaluations cloud?
 #
 # In the plot above the no_mutation_alpha cloud is visibly split in two
@@ -826,10 +823,9 @@ ggplot(nma_long, aes(log_evals, log_fit, colour = level)) +
   geom_point(alpha = 0.15, size = 0.7) +
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 0.8) +
   facet_wrap(~ param, nrow = 1) +
-  labs(x = "log10(evaluations)", y = "log10(diff_fitness)", colour = "Level",
-       title = "no_mutation_alpha: fitness vs evaluations by parameter level") +
+  labs(x = "log10(evaluations)", y = "log10(diff_fitness)", colour = "Level") +
   theme_minimal() +
-  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+  theme(legend.position = "right", panel.grid.minor = element_blank())
 @
 
 The first analysis looks for an explanation of the "split": Figure \ref{fig:evoapps27.alpha} plots with different colors high-low values of the different parameters, along with the respective log-log fitness-evaluations slope for them. The {\sf alpha} value is the first one, and clearly explains the split in two clusters. The slopes are very similar; however, the higher value where the $\alpha$ layer gets 25\% of the population clearly needs less evaluations to reach the same fitness. All other parameters being equal, same-budget fitness reached favors this configuration.
