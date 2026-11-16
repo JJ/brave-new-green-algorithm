@@ -117,7 +117,7 @@ it allows customization for specific problems or problem sizes.
 The free parameters are thus:
 \begin{itemize}
 \item Population size:
-Note that all castes need to have a non-zero integer size, which limits the possible values for this parameter due to the relationship between the population size for $\alpha$ and $\beta$ caste.
+Note that all castes need to have a non-zero integer size, which limits the possible values for this parameter due to the relationship between the population sizes for $\alpha$ and $\beta$ castes.
 \item $\alpha$ percentage: {\em a priori}
 the essential parameter for controlling the balance between exploitation and exploration.
 \item Mutation rates
@@ -127,40 +127,40 @@ the essential parameter for controlling the balance between exploitation and exp
 \end{itemize}
 
 Note that the orchestrated use of local improvement within this general evolutionary engine makes BNA fall within the general scope of memetic algorithms \cite{cotta2025harnessing}. %
-The algorithm is written in Julia \cite{perkel2019julia} and released as open source \cite{Ceci2021bnea-anon}. Julia is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of
-BNA, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
+The algorithm is written in Julia \cite{perkel2019julia} and released as open source \cite{Ceci2021bnea-anon}. Julia is a language designed with a JIT for speed and introduces native concurrent execution. It has already been used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of
+BNA, opening new research venues as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
 \section{Experiments and results}\label{sec:exp}
 
-We have used the an AMD Ryzen 9 9950X 16-Core Processor running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}. The experiments will be run from a Perl script, capturing output from {\sf pinpoint} and saving it to a CSV file. These files are available from GitHub and also from this paper's repository. We make 30 executions for every parameter combination. For every experiment, we save the following data:\begin{itemize}
-\item Algorithm parameters: {\tt max\_gens}, that is, maximum number of generations without change before stopping, {\tt steps}, the maximum number of hill-climbing steps in the $\gamma$ caste, {\tt alpha}, which is the percentage of individuals that are going to be placed in the $\alpha$ caste, and {\tt population\_size}.
+We used an AMD Ryzen 9 9950X 16-core processor running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}. The experiments will be run using a Perl script that captures the output from {\sf pinpoint} and saving it to a CSV file. These files are available from GitHub and also from this paper's repository. We make 30 executions for every parameter combination. For every experiment, we save the following data:\begin{itemize}
+\item Algorithm parameters: {\tt max\_gens}, that is, the maximum number of generations without change before stopping, {\tt steps}, the maximum number of hill-climbing steps in the $\gamma$ caste, {\tt alpha}, which is the percentage of individuals that are going to be placed in the $\alpha$ caste, and {\tt population\_size}.
 \item Number of generations that have been actually run
-\item Number of evaluations, which include also those made during the hillclimbing step.
+\item Number of evaluations, which also include those made during the hill-climbing step.
 \end{itemize}
 
-Please take into account that these experiments have an algorithm-driven, not fixed budget, termination condition. When the population is stagnated, it will no longer improve fitness, which forces the algorithm to stop via the {\em max\_gen} condition.
+Please take into account that these experiments use an algorithm-driven, not a fixed budget, termination condition. When the population stagnates, it will no longer improve the fitness, which forces the algorithm to stop via the {\em max\_gen} condition.
 
-For this paper, we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures) and the algorithm parameters as well as results (fitness, evaluations). Introducing more degrees of freedom would not give us more insights into this model, and it might confuse the interpretation of results. Statistical analysis, however, provides the certainty we need to draw sound conclusions from this set of experiments. Although not a multimodal problem, it is a baseline for understanding how the EEB works and how it is affected by the algorithm versions, its implementations and its parameters.
+For this paper, we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures), and the algorithm parameters as well as results (fitness, evaluations). Introducing more degrees of freedom would not give us more insights into this model, and it might confuse the interpretation of results. Statistical analysis, however, provides the certainty we need to draw sound conclusions from this set of experiments. Although not a multimodal problem, it is a baseline for understanding how the EEB works and how it is affected by the algorithm versions, its implementations, and its parameters.
 
-Our intention is to try, with experiments, to understand the dependence of fitness reached on algorithm parameters as well as implementation and algorithm versions in order to check if it is possible at all to reach lower levels of fitness spending less or the same amount of evaluations. Ultimately, we want to understand energy consumption by algorithm implementations, of which an important component is the number of evaluations and the running time needed for them.
+Our intention is to use these experiments, to understand the dependence of fitness reached on algorithm parameters as well as implementation and algorithm versions in order to check if it is possible at all to reach lower levels of fitness spending less or the same amount of evaluations. Ultimately, we want to understand energy consumption by algorithm implementations, of which an important component is the number of evaluations and the running time needed for them.
 
 The four parameters and the levels we will be changing are:\begin{itemize}
-\item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are looking for better fitness values with less space exploration (less evaluations).
+\item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are looking for better fitness values with less space exploration (fewer evaluations).
 \item The number or {\sf steps} for hill-climbing in the $\gamma$ caste is related to
 exploitation. We will test 16 and 64 steps.
 \item The number of generations without improvement to stop or {\sf max\_gens} will be set to 10 and 25; more generations allow more exploration and the possibility to go up a notch in fitness, but it can also mean generating more useless solutions.
-\item Population size is going to be set to 400 and 800; larger population means more initial diversity giving it a better chance to exploit existing values, but also more exploration.
+\item Population size is going to be set to 400 and 800; a larger population means more initial diversity, giving it a better chance to exploit existing values, but also more exploration.
 \end{itemize}
 
 This gives us 8 different parameter settings times 30 for every algorithm/implementation configuration. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random.
-We have an open science policy and therefore, all code, experimental results and analyses are available under a free license at our repository \cite{Ceci2021bnea-anon}.
+We have an open science policy, and therefore, all code, experimental results and analyses are available under a free license at our repository \cite{Ceci2021bnea-anon}.
 
-These are the five versions of the algorithm we will test with the same set of parameters: \begin{itemize}
+These are the five versions of the algorithm that we will test with the same set of parameters: \begin{itemize}
 \item The first batch of experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range. This is the default version of the algorithm, named {\sf baseline}
 \item The second batch will lower mutation rate to 10\%, meaning that when changing a chromosome, only one element of the chromosome will be changed. While this might seem an obvious way of reducing random search, (i.e., exploration). We are calling this batch {\sf low\_mutation}
 \item The {\sf microopt} version in principle changes only the algorithm implementation by performing a series of micro-optimizations at the framework and programming level: eliminate unneeded libraries, and other low-level programming adjustments.
-\item The {\sf gamma} variant makes a slight change in the selection process, making the $\gamma$ layer the {\em third} one instead of the last one; by applying hillclimbing to individuals that theoretically have a higher ranking, it should be able to exploit solutions faster.
-\item the {\sf no\_alpha\_mutation} version eliminates mutation for the alpha layer, making it a crossover-only stratum. Theoretically, this should reduce exploration and make it a pure exploitation layer
+\item The {\sf gamma} variant makes a slight change in the selection process, making the $\gamma$ layer the {\em third} one instead of the last one; by applying hill-climbing to individuals that theoretically have a higher ranking, it should be able to exploit solutions faster.
+\item The {\sf no\_alpha\_mutation} version eliminates mutation for the alpha layer, making it a crossover-only stratum. Theoretically, this should reduce exploration and make it a pure exploitation layer.
 \end{itemize}
 
 <<evoapps27.setup, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Log-log plot of the residuals of delta fitness vs. number of evaluations for the 4 experiments and baseline", fig.height=3.5 >>=
