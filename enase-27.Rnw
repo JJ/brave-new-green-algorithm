@@ -1,54 +1,55 @@
-\documentclass[runningheads]{llncs}
-%
+\documentclass[a4paper,twoside]{article}
+
+\usepackage{epsfig}
+\usepackage{subcaption}
+\usepackage{calc}
+\usepackage{amssymb}
+\usepackage{amstext}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{multicol}
+\usepackage{pslatex}
+\usepackage{apalike}
+\usepackage{algorithm2e}
+\usepackage[bottom]{footmisc}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \usepackage{url}
-\usepackage{color}
-\usepackage{amsmath}
+\usepackage{SCITEPRESS}     % Please add other packages that you may need BEFORE the SCITEPRESS.sty package.
 
-\renewcommand\UrlFont{\color{blue}\rmfamily}
-\urlstyle{rm}
-%
 \begin{document}
 %% knitr handles this
 %\SweaveOpts{concordance=TRUE}
 
-%
-\title{}
-%
-\titlerunning{}
-% If the paper title is too long for the running head, you can set
-% an abbreviated paper title here
-%
-% \author{JJ Merelo\inst{1,2}\orcidID{0000-0002-1385-9741} \and Cecilia Merelo Molina\inst{3}\orcidID{0000-0002-5902-0159} \and Mario García-Valdez \inst{4} \and Carlos Cotta\orcidID{0000-0001-8478-7549} \inst{5}}
-% \institute{Dept. of Computer Engineering, Automatics and Robotics, University of Granada \email{jmerelo@ugr.es}\and CITIC, UGR, Spain
-% \and
-% Zenzorrito, Granada, Spain
-% \and
-% Tecnológico Nacional de México, Tijuana, Mexico
-% \and
-% ITIS Software, Universidad de Málaga, Spain
+\title{Evaluation of energy consumption in metaheuristics}
+
+% \author{\authorname{JJ Merelo\sup{1,2}\orcidAuthor{0000-0002-1385-9741}, Cecilia Merelo Molina\sup{3}\orcidAuthor{0000-0002-5902-0159}, Mario García-Valdez\sup{4} and Carlos Cotta\sup{5}\orcidAuthor{0000-0001-8478-7549}}
+% \affiliation{\sup{1}Dept. of Computer Engineering, Automatics and Robotics, University of Granada, Spain}
+% \affiliation{\sup{2}CITIC, UGR, Spain}
+% \affiliation{\sup{3}Zenzorrito, Granada, Spain}
+% \affiliation{\sup{4}Tecnológico Nacional de México, Tijuana, Mexico}
+% \affiliation{\sup{5}ITIS Software, Universidad de Málaga, Spain}
+% \email{jmerelo@ugr.es}
 % }
-%
-%\authorrunning{Merelo et al.}
-%
-\maketitle              % typeset the header of the contribution
-%
-\begin{abstract}
-%% Changes to improve flow
-% Making an optimization (or genetic) algorithm more effective? Later in the text
-% there are references to properties applied only to these algorithms. - M
-Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with a stratified population, %populations? - M
+\author{Hidden authors}
+
+\keywords{Green Computing, Energy Profiling Methodologies, Metaheuristics.}
+
+\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with a stratified population, %populations? - M
 %called Brave New Algorithm, %% Commented out for generalizability -Carlos
 we %reach a parametrization and implementation
 attain an algorithmic solution that reaches an optimum at a very low cost or %reach certain levels of fitness
-approximates it spending much less energy than others evaluated.
-\keywords{Green computing  \and Energy profiling methodologies \and Metaheuristics.}
-\end{abstract}
+approximates it spending much less energy than others evaluated.}
+
+\onecolumn
+\maketitle
+\normalsize
+\setcounter{footnote}{0}
+\vfill
 %
 %
 %
-\section{Introduction and state of the art}
+\section{\uppercase{Introduction and State of the Art}}
 
 An algorithm is an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences the measured energy consumption of any algorithm's implementation. %% Make this more compact -Carlos
 When implementing a metaheuristic, adapting it, or tweaking its parameters, we are usually aiming for efficiency in both performance and energy consumption if possible. However, relying on energy measurements to take decisions requires the latter to be reliable and reproducible.
@@ -69,7 +70,7 @@ describe the experimental design (Sect. \ref{sec:bna}), followed by the experime
 (Sect. \ref{sec:exp});
 finally, we discuss these results and draw our conclusions in Sect. \ref{sec:conclusions}.
 
-\section{State of the art}\label{sec:soa}
+\section{\uppercase{State of the Art}}\label{sec:soa}
 
 Recent work in green computing has focused on understanding how different factors influence the total energy consumption of computational workloads, particularly in demanding applications such as large-scale deep learning training and inference workloads \cite{fernandez2025energy}. These factors include compilation strategies, hardware platforms, parallelization techniques, and architectural design choices.
 
@@ -95,7 +96,7 @@ behavior, including process scheduling and task migration across CPU cores. Thes
 
 In this work, we address this challenge by proposing a measurement methodology that incorporates controlled waiting intervals to manage these dynamic effects. By stabilizing thermal and system conditions prior to measurement, our approach reduces variability and enables more consistent energy profiling on commodity hardware platforms.
 
-\section{A brave new algorithm} \label{sec:bna}
+\section{\uppercase{A Brave New Algorithm}} \label{sec:bna}
 
 Far from trying to obscure the meaning of a metaheuristic by using a metaphor \cite{sorensen}, our description of a Brave New Algorithm (BNA), based in the novel Brave New World, by Aldous Huxley \cite{huxley2022brave}, searches to simplify the explanation of a stratified evolutionary algorithm (EA), by giving every {\em stratum} a name that is relatively easy to understand for those familiar with this book.  %% comienzo a editar -Carlos
 Thus, we are not proposing a new metaheuristic, but rather a new way of structuring the population and the reproduction process, which can be applied to any metaheuristic that uses a population of individuals, aiming to introduce a new way of balancing exploration and exploitation, as well as a new way of keeping diversity in the population. The algorithm is described in more detail in \cite{merelo2022brave-anon,bna25-anon}, but we will give a brief description here for the sake of completeness.%% termino de editar -Carlos
@@ -143,7 +144,7 @@ Note that the orchestrated use of local improvement within this general evolutio
 The algorithm is written in Julia \cite{perkel2019julia} and released as open source \cite{Ceci2021bnea-anon}. Julia is a language designed with a JIT compiler to be fast and introduces native concurrent execution. It has been already used in a number of evolutionary algorithm implementations such as \cite{sanchez2023evolp}. In our case, this parallel execution feature matches well the multi-caste evolution of
 BNA, opening new venues of research as well as energy-saving. In this paper, however, we are still profiling and optimizing at the single-processor level.
 
-\section{Experiments and results}\label{sec:exp}
+\section{\uppercase{Experiments and Results}}\label{sec:exp}
 
 We have used the following hardware-software stack for the experiments\begin{itemize}
 \item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 16 cores and 32 threads in a functionally heterogeneous configuration, with cores power-capped depending on their certified performance. Although architecturally both dies are identical, cores are grouped in descending order of frequency rating, making it in practice a heterogeneous configurarion.
@@ -186,7 +187,7 @@ We have an open science policy and therefore, all code, experimental results and
 
 The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; using this baseline, we will perform different experiments changing algorithm or parameters.
 
-<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments", fig.height=4, fig.pos="!tbp">>=
+<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
 source("R/process_deltas.R")
 library(dplyr)
 library(ggplot2)
@@ -233,7 +234,7 @@ what we are interested in is the way it will affect the operating conditions fir
 
 In order to take that into account, we will perform a sequential series of models, residualizing several parts of the complex model, so that we can have a more accurate picture of the dependence of energy on energy parameters and, especially, on the change of the values that we have performed here.
 
-<<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="!tbp">>=
+<<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
 low_mutation_group_temp_model <- glm( initial_temp ~ group + work, data = comparison_microopt_low_mutation )
 comparison_microopt_low_mutation$residual_initial_temp <- residuals( low_mutation_group_temp_model )
 
@@ -266,7 +267,7 @@ anova_low_mutation_energy_model_table  %>%
 anova_low_mutation_energy_model_top10$F_value <- NULL
 anova_low_mutation_energy_model_top10$p_value <- NULL
 
-kable(anova_low_mutation_energy_model_top10, caption = "Top 10 coefficients in the ANOVA model for the low mutation change",  format = "latex" ) %>%
+kable(anova_low_mutation_energy_model_top10, caption = "Top 10 coefficients in the ANOVA model for the low mutation change.",  format = "latex", table.envir = "table*", ) %>%
   kable_styling( full_width = F, position = "center" )
 
 low_mutation_energy_interaction_model <- glm( PKG ~ PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + group*evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
@@ -283,7 +284,7 @@ low_mutation_energy_mediated_model <- glm( PKG ~ group + PKG_baseline_prev + PKG
 Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature, delta, and seconds. Using GLM, we create a model that includes all variables as well as the baseline PKG values, which would account for the framework overhead. Indeed, the previous $B$ PKG value is the top variable explaining the variance. We can already query this model about how much energy we are saving or not with this model; the coefficient is
 \Sexpr{round(low_mutation_energy_model$coefficients["groupmicroopt"], 2)}; all things being equal, this is the saving in Joules you will get on average if we do not apply this change. This is a small quantity, however; we must consider that there is a relatively small dependence on the number of evaluations (\Sexpr{signif(low_mutation_energy_model$coefficients["evaluations"], digits=2)}) that, however, is significant only at the \Sexpr{round(summary(low_mutation_energy_model)$coefficients["evaluations","Pr(>|t|)"], 3)} level.
 
-<<ppsn.low.mutation.fitness.table, message=FALSE, echo=FALSE, fig.cap="Fitness vs evaluations, colored by PKG energy spend in Joules", fig.height=4, fig.pos="!tbp">>=
+<<ppsn.low.mutation.fitness.table, message=FALSE, echo=FALSE, fig.cap="Fitness vs evaluations, colored by PKG energy spend in Joules.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
 comparison_microopt_low_mutation_covariates %>% group_by( population_size, steps, max_gens, alpha, group ) %>%
   summarise( mean_diff_fitness = mean(diff_fitness),
              trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
@@ -307,7 +308,7 @@ it is slightly redder, more evaluations and more energy expenses, much better fi
 
 The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
 
-<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments", fig.height=3, fig.pos="!tbp">>=
+<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
 load("data/ppsn_no_alpha.rds")
 ppsn_no_alpha$group <- "no_alpha"
 comparison_low_mutation_no_alpha <- rbind(ppsn_no_alpha, ppsn_low_mutation)
@@ -334,7 +335,7 @@ The achieved fitness, however, can probably be improved, so we will try to perfo
 
 It is interesting to see that there is not a large difference between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, eliminating mutation makes a difference in fitness, with a higher percentage leading to lower fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to effectively check if we have finally achieved a free lunch.
 
-<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp">>=
+<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
 comparison_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
 comparison_low_mutation_no_alpha_covariates$max_gens <- factor(comparison_low_mutation_no_alpha_covariates$max_gens)
@@ -397,7 +398,7 @@ We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per con
 
 We have thus found a very economical lunch indeed, which can even be free if we take into account that the energy needed by {\sf no\_alpha} to reach the -3 level is lower than the energy needed by {\sf low\_mutation} to reach the level above, -2.
 
-\section{Discussion and conclusions}\label{sec:conclusions}
+\section{\uppercase{Discussion and Conclusions}}\label{sec:conclusions}
 
 We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or do it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try to obtain better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
 
@@ -418,15 +419,19 @@ Although the main point of the paper has been well proved by using a single BBOB
 On the other hand, this methodology of researching energy efficiency together with online performance positions the Brave New Algorithm to achieve more competitive results can be achieved, so an investigation into its possibilities in the BBOB suite is already within reach. This, however, is left as future work.
 
 
-%\begin{credits}
-%\subsubsection{\ackname}
-%
-% This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
-%
-%\end{credits}
+\section*{\uppercase{Acknowledgements}}
 
-\bibliographystyle{splncs04}
-\bibliography{energy,ga-energy,GAs,metaheuristics,ours,julia}
+% \begin{itemize}
+%   \item \textbf{Conflicts of Interest:} The authors have no conflicts of interest or competing interests to declare in the context of this paper.
+%   \item \textbf{Financial and other Support:} This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
+%   \item \textbf{Author Contributions:} All the authors contributed equally and their names were listed in alphabetical order.
+%   \item \textbf{Data Sharing:} A dataset was generated and analyzed during the current study, available at our repository \cite{Ceci2021bnea-anon}.
+%   \item \textbf{AI Tools:} The paper used AI tools for text correction purposes only.
+% \end{itemize}
+
+\bibliographystyle{apalike}
+{\small
+\bibliography{energy,ga-energy,GAs,metaheuristics,ours,julia}}
 
 \end{document}
 
