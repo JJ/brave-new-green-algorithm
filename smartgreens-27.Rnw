@@ -216,24 +216,23 @@ comparison_gg <- ggplot(comparison_gamma_w, aes(x = diff_fitness, y = delta_PKG,
 
 ggMarginal(comparison_gg, type="density", groupFill=T, alpha=0.5)
 
-baseline_fitness_model <- glm( diff_fitness ~ initial_temp + final_temp + delta_seconds + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
+# Raw (unadjusted) differences between the gamma upgrade and the baseline
+gamma_group_means <- comparison_gamma_w %>%
+  group_by( group ) %>%
+  summarise( mean_delta_PKG = mean(delta_PKG),
+             mean_delta_seconds = mean(delta_seconds),
+             mean_evaluations = mean(evaluations),
+             mean_initial_temp = mean(initial_temp),
+             mean_final_temp = mean(final_temp),
+             mean_diff_fitness = mean(diff_fitness),
+             .groups = "drop" )
+gamma_raw_difference <- function(column) {
+  gamma_group_means[[column]][gamma_group_means$group == "gamma_upgrade"] -
+    gamma_group_means[[column]][gamma_group_means$group == "baseline"]
+}
 
-comparison_gamma_w %>%
-  group_by( steps, population_size, max_gens, alpha, group ) %>%
-  summarise( mean_diff_fitness = mean(diff_fitness),
-             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
-             mean_delta_PKG = mean(delta_PKG),
-             trim_mean_delta_PKG = mean(delta_PKG, trim=0.2),
-              mean_delta_seconds = mean(delta_seconds),
-             trim_mean_delta_seconds = mean(delta_seconds, trim=0.2),
-             mean_evaluations = mean(evaluations) ) -> summary_comparison_gamma_upgrade
-
-# Comparison of operating context
-baseline_gamma_time_model <- glm( delta_seconds ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
-comparison_gamma_w$residual_seconds <- residuals(baseline_gamma_time_model)
-baseline_gamma_final_temp_model <- glm( final_temp ~ initial_temp + delta_seconds + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_gamma_w)
-comparison_gamma_w$residual_final_temp <- residuals(baseline_gamma_final_temp_model)
-comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21", "22" )
+# Does the upgrade change the fitness reached, all parameters being equal?
+gamma_fitness_model <- glm( diff_fitness ~ group + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
 @
 
 In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot to the third one; that is, instead of applying hill-climbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG energy, measured as a difference to the $B$ runs
@@ -242,44 +241,59 @@ alleged $\gamma$ upgrade.
 
 <<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 
-base_gamma_model <- glm( delta_PKG ~ initial_temp + residual_final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_gamma_w)
-# Variance decomposition. Previously this was F/sum(F) over the top 10
-# significant terms of a sequential (Type I) anova(): that is each term's share
-# of the mean squares of the selected terms, forced to sum to 100% and
-# dependent on term order, so it was not "variance explained". We now use Type
-# II sums of squares (order-independent) and report, per term, the percentage
-# of the total variance of delta_PKG it accounts for and its partial eta^2.
-# See R/type_two_variance.R for the definitions.
-source("R/type_two_variance.R")
-base_gamma_variance <- type_two_variance(base_gamma_model)
+# Why does the gamma upgrade spend more energy? We follow the causal chain
+#   group -> evaluations -> running time -> final temperature -> delta_PKG
+# and add the mediators one at a time to the energy model, watching how much of
+# the gamma effect each one absorbs. initial_temp is measured before the run
+# starts, so it is a covariate (operating context), not a mediator, and it is in
+# every model. The group enters additively (no group:evaluations interaction):
+# with an interaction, the group coefficient is the effect at zero evaluations,
+# which is what the previous version of this model was reporting.
+gamma_effect <- function(model, term = "groupgamma_upgrade") {
+  coefficients_table <- summary(model)$coefficients
+  estimate <- coefficients_table[term, "Estimate"]
+  standard_error <- coefficients_table[term, "Std. Error"]
+  c( estimate = estimate,
+     lower = estimate - qnorm(0.975) * standard_error,
+     upper = estimate + qnorm(0.975) * standard_error,
+     p_value = coefficients_table[term, "Pr(>|t|)"] )
+}
 
-# Type II shares of the individual terms do not add up to 100% (nor to R^2),
-# since variance explained jointly by correlated terms is credited to none of
-# them. variance_table_with_totals() appends "other terms", "shared among
-# terms" and "residual" rows plus a total, so the column adds up to 100%.
-base_gamma_variance_top10 <- variance_table_with_totals( base_gamma_variance )
+gamma_energy_total_model <- glm( delta_PKG ~ group + initial_temp + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
+gamma_energy_evaluations_model <- update( gamma_energy_total_model, . ~ . + evaluations )
+gamma_energy_time_model <- update( gamma_energy_evaluations_model, . ~ . + delta_seconds )
+gamma_energy_temperature_model <- update( gamma_energy_time_model, . ~ . + final_temp )
 
-options( knitr.kable.NA = "" ) # blank, not "NA", for the partial eta^2 of summary rows
-kable(base_gamma_variance_top10, digits = 3, row.names = FALSE,
-      caption = paste0("Top 10 significant terms of the energy model for the gamma upgrade, by Type II sum of squares. Model R-squared = ",
-                       round(attr(base_gamma_variance, "r_squared"), 3), "."),
-      col.names=c("Model term","Percentage of total variance","Partial eta squared"),
-      format = "latex", table.envir = "table*" ) %>%
-  kable_styling( full_width = F, position = "center" ) %>%
-  row_spec( nrow(base_gamma_variance_top10) - 4, hline_after = TRUE ) %>% # separate terms from summary rows
-  row_spec( nrow(base_gamma_variance_top10) - 1, hline_after = TRUE )     # and summary rows from total
+gamma_energy_models <- list( gamma_energy_total_model,
+                             gamma_energy_evaluations_model,
+                             gamma_energy_time_model,
+                             gamma_energy_temperature_model )
+gamma_energy_effects <- as.data.frame( do.call( rbind, lapply( gamma_energy_models, gamma_effect ) ) )
+gamma_total_effect <- gamma_energy_effects$estimate[1]
+gamma_mediation_table <- data.frame(
+  controlling_for = c( "Parameters and initial temperature only",
+                       "+ evaluations",
+                       "+ running time",
+                       "+ final temperature" ),
+  estimate = gamma_energy_effects$estimate,
+  interval = sprintf( "[%.1f, %.1f]", gamma_energy_effects$lower, gamma_energy_effects$upper ),
+  p_value = format.pval( gamma_energy_effects$p_value, digits = 2, eps = 1e-4 ),
+  percentage_of_total = 100 * (1 - gamma_energy_effects$estimate / gamma_total_effect)
+)
+
+# Each link of the chain, all parameters being equal
+gamma_evaluations_model <- glm( evaluations ~ group + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
+gamma_seconds_model <- glm( delta_seconds ~ group + evaluations + initial_temp + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
+gamma_final_temp_model <- glm( final_temp ~ group + delta_seconds + evaluations + initial_temp + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
+
+kable( gamma_mediation_table, digits = c(0, 2, 0, 0, 1), row.names = FALSE,
+       caption = "Extra energy (in J) spent by the gamma upgrade with respect to the baseline, all algorithm parameters being equal, as variables along the evaluations, running time, final temperature chain are added to the model. The last column is the part of the first-row effect that is accounted for by the variables added so far.",
+       col.names = c( "Model controlling for", "Gamma effect (J)", "95\\% CI", "p-value", "\\% of effect accounted for" ),
+       format = "latex", escape = FALSE, table.envir = "table*" ) %>%
+  kable_styling( full_width = F, position = "center" )
 @
 
-We need to find out the reason this occurs, and we will model the behavior of $\Delta$PKG in phases, so that we can separate the effect of the operating environment through temperature and time needed for running a single experiment, and the algorithm parameters, as well as the change introduced. We will group parameters of the models in several different groups: separated initial and final temp, resulting from the average of the temperatures of the two dies; the interaction of the group (baseline or
-$\gamma$
-upgrade) with the number of
-evaluations, since we are assuming that the upgrade is resulting in many more evaluations and the consequent expense of energy; the four algorithm parameters will be modeled as interacting too. Thus, we will first model $\Delta R$ (where R is the running time) as a
-function
-of the rest of the parameters and create a residual $\Delta R$. Next, we model the final temperature as a function of the other parameters, with the creation of another residual; this way, the residualized $\Delta R$ and final temperature will have no dependence on the rest of the parameters, and the final model will be able to express the dependence on algorithm parameters or operating environment. This model yields a significant effect of the
-$\gamma$
-upgrade group with a coefficient \Sexpr{round(coef(base_gamma_model)["groupgamma_upgrade"], 2)}; that is, all other parameters being equal, the
-upgrade
-makes the algorithm implementation consume those additional number of Joules.
+%% PROPOSAL: On average, a $W$ run of the $\gamma$ upgrade spends \Sexpr{round(gamma_raw_difference("delta_PKG"), 1)} J more than the baseline, and we need to find out why. Energy is spent while the algorithm runs, so the most likely explanation is a chain of effects: the upgrade performs more evaluations; more evaluations take more time ($\Delta R$, where $R$ is the running time); a longer run heats up the CPU, and a hotter CPU draws more power. To check this chain, we start from a model of $\Delta$PKG that includes the group (baseline or $\gamma$ upgrade), the four algorithm parameters (interacting) and the initial temperature (the average of the two dies); the latter is measured before the run starts, so it reflects the operating context, not the run itself. Then we add, one at a time, the variables along the chain: the number of evaluations, $\Delta R$ and the final temperature. If the chain explains the extra energy, the coefficient of the group will shrink as these variables are added; whatever is left at the end is energy the upgrade spends with the same evaluations, running time and temperature, that is, a higher power draw.
 
 <<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
 load("data/ppsn_microopt.rds")
@@ -320,18 +334,13 @@ microopt_energy_model <- glm( delta_PKG ~ initial_temp + final_temp + group*eval
 # R/type_two_variance.R. The text below used to pick terms by position in the
 # top-10 list ([1], [2]), which silently changes meaning if the ranking
 # changes; it now looks them up by name with variance_of_term().
+source("R/type_two_variance.R")
+options( knitr.kable.NA = "" ) # blank, not "NA", for the partial eta^2 of summary rows
 microopt_variance <- type_two_variance(microopt_energy_model)
 
 @
 
-%% Table now reports Type II (order-independent) shares of the total variance
-%% and partial eta^2; shares no longer add up to 100%. Re-check the
-%% interpretation below against the new numbers after rendering. -JJ/Claude
-An analysis of the variance explained by the top 10 significant terms of the joint model, using Type II sums of squares so that the result does not depend on the order of the terms, is shown in Table \ref{tab:ppsn.gamma.model}; for each term we give the percentage of the total variance of $\Delta$PKG it accounts for once the rest of the terms have been taken into account, and its partial $\eta^2$, the fraction of the variance left unexplained by the other terms that it explains. The dependence on the operating conditions, over all time, is expected. It is interesting to check how the experimental protocol has been able to separate the $\alpha$ caste percentage from another operating condition, the final temperature; however,
-regarding
-our comparison between the baseline and the $\gamma$ upgrade, we see that the number of evaluations as well as the group itself explain a small, but significant, part of the variance; the upgrade provokes more evaluations as well as an overall energy expense that cannot be explained simply by that number of evaluations.
-%
-We can draw two conclusions here: the experimental protocol as well as the statistical models help us understand how one single change in the algorithm can affect, or not, energy consumption as well as fitness. In this case, quite clearly the change should be rejected since we are spending more energy to an unnoticeable effect on fitness.
+%% PROPOSAL: Table \ref{tab:ppsn.gamma.model} shows the result. With the same parameters and initial temperature, the upgrade spends \Sexpr{round(gamma_total_effect, 1)} J more than the baseline (first row). It also performs \Sexpr{round(gamma_effect(gamma_evaluations_model)["estimate"])} more evaluations per run (p = \Sexpr{format.pval(gamma_effect(gamma_evaluations_model)["p_value"], digits = 2, eps = 1e-4)}); once evaluations are in the model, the effect of the upgrade drops to \Sexpr{round(gamma_energy_effects$estimate[2], 1)} J, so evaluations account for \Sexpr{round(gamma_mediation_table$percentage_of_total[2])}\% of it. With the same number of evaluations, the upgrade still runs \Sexpr{round(gamma_effect(gamma_seconds_model)["estimate"], 3)} s longer (p = \Sexpr{format.pval(gamma_effect(gamma_seconds_model)["p_value"], digits = 2, eps = 1e-4)}), which means its evaluations, or the work it does around them, take longer; adding $\Delta R$ brings the share of the effect accounted for to \Sexpr{round(gamma_mediation_table$percentage_of_total[3])}\%. Final temperature brings it to \Sexpr{round(gamma_mediation_table$percentage_of_total[4])}\%, leaving \Sexpr{round(gamma_energy_effects$estimate[4], 1)} J \Sexpr{gamma_mediation_table$interval[4]} that the upgrade spends with the same evaluations, running time and temperature. Fitness, however, does not improve: all parameters being equal, the upgrade changes the difference to the optimum by \Sexpr{round(gamma_effect(gamma_fitness_model)["estimate"], 2)} (p = \Sexpr{format.pval(gamma_effect(gamma_fitness_model)["p_value"], digits = 2, eps = 1e-4)}). The change should therefore be rejected, since it spends more energy for no noticeable effect on fitness.
 
 A possible fitness-neutral path to optimization is to work on the platform, making it faster. In the case of Julia, one straightforward path is to look for unused libraries in the dependencies list and eliminate it. That, however, will work on the $B$ runs. In order to also optimize the
 $W$
