@@ -240,23 +240,31 @@ alleged $\gamma$ upgrade.
 <<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
 
 base_gamma_model <- glm( delta_PKG ~ initial_temp + residual_final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_gamma_w)
-anova_base_gamma_model <- anova(base_gamma_model)
+# Variance decomposition. Previously this was F/sum(F) over the top 10
+# significant terms of a sequential (Type I) anova(): that is each term's share
+# of the mean squares of the selected terms, forced to sum to 100% and
+# dependent on term order, so it was not "variance explained". We now use Type
+# II sums of squares (order-independent) and report, per term, the percentage
+# of the total variance of delta_PKG it accounts for and its partial eta^2.
+# See R/type_two_variance.R for the definitions.
+source("R/type_two_variance.R")
+base_gamma_variance <- type_two_variance(base_gamma_model)
 
-anova_base_gamma_model_table <- data.frame( term = rownames(anova_base_gamma_model),
-           F_value = anova_base_gamma_model$F,
-           p_value = anova_base_gamma_model$`Pr(>F)`)
+# Type II shares of the individual terms do not add up to 100% (nor to R^2),
+# since variance explained jointly by correlated terms is credited to none of
+# them. variance_table_with_totals() appends "other terms", "shared among
+# terms" and "residual" rows plus a total, so the column adds up to 100%.
+base_gamma_variance_top10 <- variance_table_with_totals( base_gamma_variance )
 
-anova_base_gamma_value <- anova_base_gamma_model_table %>%
-  filter( !is.na(F_value) ) %>%
-  filter ( p_value < 0.05 ) %>%
-  arrange( desc(F_value) ) %>%
-  head(10) %>%
-  mutate( percentage_variance = F_value / sum(F_value, na.rm=T) * 100 ) -> anova_base_gamma_value_top10
-
-anova_base_gamma_value_top10$F_value <- NULL
-anova_base_gamma_value_top10$p_value <- NULL
-kable(anova_base_gamma_value_top10, caption = "Top 10 coefficients in the ANOVA model for the gamma upgrade.", col.names=c("Model term","Percentage of variance explained"), format = "latex", table.envir = "table*" ) %>%
-  kable_styling( full_width = F, position = "center" )
+options( knitr.kable.NA = "" ) # blank, not "NA", for the partial eta^2 of summary rows
+kable(base_gamma_variance_top10, digits = 3, row.names = FALSE,
+      caption = paste0("Top 10 significant terms of the energy model for the gamma upgrade, by Type II sum of squares. Model R-squared = ",
+                       round(attr(base_gamma_variance, "r_squared"), 3), "."),
+      col.names=c("Model term","Percentage of total variance","Partial eta squared"),
+      format = "latex", table.envir = "table*" ) %>%
+  kable_styling( full_width = F, position = "center" ) %>%
+  row_spec( nrow(base_gamma_variance_top10) - 4, hline_after = TRUE ) %>% # separate terms from summary rows
+  row_spec( nrow(base_gamma_variance_top10) - 1, hline_after = TRUE )     # and summary rows from total
 @
 
 We need to find out the reason this occurs, and we will model the behavior of $\Delta$PKG in phases, so that we can separate the effect of the operating environment through temperature and time needed for running a single experiment, and the algorithm parameters, as well as the change introduced. We will group parameters of the models in several different groups: separated initial and final temp, resulting from the average of the temperatures of the two dies; the interaction of the group (baseline or
@@ -305,22 +313,18 @@ comparison_microopt_w %>% group_by( population_size, steps, max_gens, alpha, gro
              mean_evaluations = mean(evaluations) ) -> summary_comparison_microopt
 
 microopt_energy_model <- glm( delta_PKG ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha+residual_seconds, data = comparison_microopt_w)
-anova_microopt_energy_model <- anova(microopt_energy_model)
-
-anova_microopt_energy_model_table <- data.frame( term = rownames(anova_microopt_energy_model),
-           F_value = anova_microopt_energy_model$F,
-           p_value = anova_microopt_energy_model$`Pr(>F)`)
-
-anova_microopt_energy_model_table  %>%
-  filter( !is.na(F_value) ) %>%
-  filter ( p_value < 0.05 ) %>%
-  arrange( desc(F_value) ) %>%
-  head(10) %>%
-  mutate( percentage_variance = F_value / sum(F_value, na.rm=T) * 100 ) -> anova_microopt_top10
+# Type II variance decomposition instead of F/sum(F) on a Type I anova(); see
+# R/type_two_variance.R. The text below used to pick terms by position in the
+# top-10 list ([1], [2]), which silently changes meaning if the ranking
+# changes; it now looks them up by name with variance_of_term().
+microopt_variance <- type_two_variance(microopt_energy_model)
 
 @
 
-An ANOVA analysis of the variance explained by the top 10 terms of the joint model is shown in Table \ref{tab:ppsn.gamma.model}. The dependence on the operating conditions, over all time, is expected. It is interesting to check how the experimental protocol has been able to separate the $\alpha$ caste percentage from another operating condition, the final temperature; however,
+%% Table now reports Type II (order-independent) shares of the total variance
+%% and partial eta^2; shares no longer add up to 100%. Re-check the
+%% interpretation below against the new numbers after rendering. -JJ/Claude
+An analysis of the variance explained by the top 10 significant terms of the joint model, using Type II sums of squares so that the result does not depend on the order of the terms, is shown in Table \ref{tab:ppsn.gamma.model}; for each term we give the percentage of the total variance of $\Delta$PKG it accounts for once the rest of the terms have been taken into account, and its partial $\eta^2$, the fraction of the variance left unexplained by the other terms that it explains. The dependence on the operating conditions, over all time, is expected. It is interesting to check how the experimental protocol has been able to separate the $\alpha$ caste percentage from another operating condition, the final temperature; however,
 regarding
 our comparison between the baseline and the $\gamma$ upgrade, we see that the number of evaluations as well as the group itself explain a small, but significant, part of the variance; the upgrade provokes more evaluations as well as an overall energy expense that cannot be explained simply by that number of evaluations.
 %
@@ -336,7 +340,10 @@ Figure \ref{fig:ppsn.microopt}, which plots baseline measurements in red and thi
 %
 Effectively, the generalized linear model (GLM) yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the number of seconds that have been gained with this optimization, all other things being equal.
 
-If we analyze via ANOVA the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that micro-optimization explains \Sexpr{round(anova_microopt_top10$percentage_variance[2], 2)}\% of the variance; almost the same as the residualized seconds \Sexpr{round(anova_microopt_top10$percentage_variance[1], 2)}\%. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
+%% Numbers are now Type II percentages of the total variance of delta_PKG,
+%% looked up by term name ("group" = micro-optimization). They will be smaller
+%% than the old F/sum(F) figures; check "almost the same" still holds. -JJ/Claude
+If we analyze via ANOVA (Type II sums of squares) the variance explained by every parameter of the $\Delta$PKG model using residualized seconds, we find that micro-optimization accounts for \Sexpr{round(variance_of_term(microopt_variance, "group"), 2)}\% of the total variance (partial $\eta^2$ = \Sexpr{round(variance_of_term(microopt_variance, "group", "partial_eta_squared"), 3)}); almost the same as the residualized seconds, \Sexpr{round(variance_of_term(microopt_variance, "residual_seconds"), 2)}\% (partial $\eta^2$ = \Sexpr{round(variance_of_term(microopt_variance, "residual_seconds", "partial_eta_squared"), 3)}), out of a model $R^2$ of \Sexpr{round(attr(microopt_variance, "r_squared"), 3)}. With this, we prove that this methodology is able to analyze changes in algorithm implementation and check if they lead to real improvements; in this case what we see, through the statistical analysis, is that implementation optimizations can effectively lead to energy savings, and in what amount.
 
 <<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
 load("data/ppsn_low_mutation.rds")
@@ -351,8 +358,8 @@ comparison_microopt_low_mutation[ !startsWith( comparison_microopt_low_mutation$
 
 comparison_microopt_low_mutation %>% group_by( work, group, die ) %>% summarise( count = n(), .groups="drop" ) -> comparison_microopt_low_mutation_summary
 
-comparison_microopt_low_mutation$initial_temp <- comparison_microopt_low_mutation$initial_temp_1 + comparison_microopt_low_mutation$initial_temp_2 / 2
-comparison_microopt_low_mutation$final_temp <- comparison_microopt_low_mutation$final_temp_1 + comparison_microopt_low_mutation$final_temp_2 / 2
+comparison_microopt_low_mutation$initial_temp <- (comparison_microopt_low_mutation$initial_temp_1 + comparison_microopt_low_mutation$initial_temp_2 )/ 2
+comparison_microopt_low_mutation$final_temp <- (comparison_microopt_low_mutation$final_temp_1 + comparison_microopt_low_mutation$final_temp_2 )/ 2
 
 comparison_microopt_low_mutation %>% group_by( work, group, die ) %>%
   summarise( mean_initial_temp = mean(initial_temp),
@@ -395,24 +402,27 @@ comparison_microopt_low_mutation_covariates$residual_seconds <- residuals( low_m
 
 low_mutation_energy_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
 
-anova_low_mutation_energy_model <- anova( low_mutation_energy_model )
+# Type II variance decomposition instead of F/sum(F) on a Type I anova(); see
+# R/type_two_variance.R. Note that in the old sequential table PKG_baseline_prev
+# came first in the formula after group, so it was credited with all the
+# variance it shares with PKG_baseline_post and the operating covariates;
+# Type II only credits it with what it explains on its own.
+low_mutation_variance <- type_two_variance(low_mutation_energy_model)
 
-anova_low_mutation_energy_model_table <- data.frame( term = rownames(anova_low_mutation_energy_model),
-           F_value = anova_low_mutation_energy_model$F,
-           p_value = anova_low_mutation_energy_model$`Pr(>F)`)
+# Same as the gamma table: add "other", "shared", "residual" and total rows so
+# the percentage column adds up to 100%. Here the listed terms only account for
+# ~29% on their own, against an R^2 of ~0.93: most of the explained variance is
+# shared among correlated terms (baselines, running time, ...).
+low_mutation_variance_top10 <- variance_table_with_totals( low_mutation_variance )
 
-anova_low_mutation_energy_model_table  %>%
-  filter( !is.na(F_value) ) %>%
-  filter ( p_value < 0.05 ) %>%
-  arrange( desc(F_value) ) %>%
-  head(10) %>%
-  mutate( percentage_variance = F_value / sum(F_value, na.rm=T) * 100 ) -> anova_low_mutation_energy_model_top10
-
-anova_low_mutation_energy_model_top10$F_value <- NULL
-anova_low_mutation_energy_model_top10$p_value <- NULL
-
-kable(anova_low_mutation_energy_model_top10, caption = "Top 10 coefficients in the ANOVA model for the low mutation change.",  format = "latex", table.envir = "table*", ) %>%
-  kable_styling( full_width = F, position = "center" )
+kable(low_mutation_variance_top10, digits = 3, row.names = FALSE,
+      caption = paste0("Top 10 significant terms of the energy model for the low mutation change, by Type II sum of squares. Model R-squared = ",
+                       round(attr(low_mutation_variance, "r_squared"), 3), "."),
+      col.names=c("Model term","Percentage of total variance","Partial eta squared"),
+      format = "latex", table.envir = "table*" ) %>%
+  kable_styling( full_width = F, position = "center" ) %>%
+  row_spec( nrow(low_mutation_variance_top10) - 4, hline_after = TRUE ) %>%
+  row_spec( nrow(low_mutation_variance_top10) - 1, hline_after = TRUE )
 
 low_mutation_energy_interaction_model <- glm( PKG ~ PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + group*evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
 
@@ -425,7 +435,11 @@ comparison_microopt_low_mutation_covariates$residual_evaluations <- residuals( e
 low_mutation_energy_mediated_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + residual_evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
 @
 
-Table \ref{tab:ppsn.low.mutation.model} shows the percentage of variance explained by the top 10 significant terms in the model, where we have residualized initial temperature, delta, and seconds. Using GLM, we create a model that includes all variables as well as the baseline PKG values, which would account for the framework overhead. Indeed, the previous $B$ PKG value is the top variable explaining the variance. We can already query this model about how much energy we are saving or not with this model; the coefficient is
+%% "previous B PKG is the top variable" only held under the old sequential
+%% ordering, where it was entered first. With Type II, residual_seconds comes
+%% first and the two baselines come next. Text rewritten to match; the
+%% \Sexpr{} values come from the table rows. -JJ/Claude
+Table \ref{tab:ppsn.low.mutation.model} shows the percentage of the total variance (Type II sums of squares) and partial $\eta^2$ of the top 10 significant terms in the model, where we have residualized initial temperature, delta, and seconds. The table also includes the variance that the model explains but that cannot be credited to any single term, because correlated terms explain it jointly, and the unexplained (residual) variance, so the percentages add up to 100\%. Using GLM, we create a model that includes all variables as well as the baseline PKG values, which would account for the framework overhead. The residualized running time is the term that accounts for the most variance on its own, followed by the two $B$ PKG values (posterior and previous), which confirms that the framework overhead must be part of the model. However, most of the explained variance (\Sexpr{round(variance_of_term(low_mutation_variance_top10, "Shared among terms"), 1)}\%) is shared among these correlated terms and cannot be attributed to any one of them. We can already query this model about how much energy we are saving or not with this model; the coefficient is
 \Sexpr{round(low_mutation_energy_model$coefficients["groupmicroopt"], 2)}; all things being equal, this is the saving in Joules you will get on average if we do not apply this change. This is a small quantity, however; we must consider that there is a relatively small dependence on the number of evaluations (\Sexpr{signif(low_mutation_energy_model$coefficients["evaluations"], digits=2)}) that, however, is significant only at the \Sexpr{round(summary(low_mutation_energy_model)$coefficients["evaluations","Pr(>|t|)"], 3)} level.
 
 <<ppsn.low.mutation.fitness.table, message=FALSE, echo=FALSE, fig.cap="Fitness vs evaluations, colored by PKG energy spend in Joules.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
@@ -459,9 +473,9 @@ comparison_low_mutation_no_alpha <- rbind(ppsn_no_alpha, ppsn_low_mutation)
 comparison_low_mutation_no_alpha[ startsWith( comparison_low_mutation_no_alpha$work, "base-"),]$work <- "Base"
 comparison_low_mutation_no_alpha[ !startsWith( comparison_low_mutation_no_alpha$work, "Base"),]$work <- "Work"
 
-comparison_low_mutation_no_alpha$initial_temp <- comparison_low_mutation_no_alpha$initial_temp_1 + comparison_low_mutation_no_alpha$initial_temp_2 / 2
+comparison_low_mutation_no_alpha$initial_temp <- (comparison_low_mutation_no_alpha$initial_temp_1 + comparison_low_mutation_no_alpha$initial_temp_2 )/ 2
 
-comparison_low_mutation_no_alpha$final_temp <- comparison_low_mutation_no_alpha$final_temp_1 + comparison_low_mutation_no_alpha$final_temp_2 / 2
+comparison_low_mutation_no_alpha$final_temp <- (comparison_low_mutation_no_alpha$final_temp_1 + comparison_low_mutation_no_alpha$final_temp_2 )/ 2
 
 comparison_low_mutation_no_alpha_covariates <- process_covariates( comparison_low_mutation_no_alpha )
 
