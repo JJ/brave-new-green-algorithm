@@ -274,12 +274,12 @@ We need to find out the reason this occurs, and we will model the behavior of $\
 $\gamma$
 upgrade) with the number of
 evaluations, since we are assuming that the upgrade is resulting in many more evaluations and the consequent expense of energy; the four algorithm parameters will be modeled as interacting too. Thus, we will first model $\Delta R$ (where R is the running time) as a
-product %% function? -Carlos
+function
 of the rest of the parameters and create a residual $\Delta R$. Next, we model the final temperature as a function of the other parameters, with the creation of another residual; this way, the residualized $\Delta R$ and final temperature will have no dependence on the rest of the parameters, and the final model will be able to express the dependence on algorithm parameters or operating environment. This model yields a significant effect of the
 $\gamma$
 upgrade group with a coefficient \Sexpr{round(coef(base_gamma_model)["groupgamma_upgrade"], 2)}; that is, all other parameters being equal, the
 upgrade
-makes the algorithm implementation consume that number of Joules.
+makes the algorithm implementation consume those additional number of Joules.
 
 <<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
 load("data/ppsn_microopt.rds")
