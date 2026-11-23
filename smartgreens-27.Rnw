@@ -176,16 +176,16 @@ Statistical analysis, however, provides the certainty we need to draw sound conc
 Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions, and the dependence of fitness reached on the latter, in order to check if it is possible at all to reach lower levels of fitness spending less or the same energy. The four parameters that we will be changing are:\begin{itemize}
 \item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are looking for better fitness values with less space exploration (less evaluations).
 \item The number or {\sf steps} for hill-climbing in the $\gamma$ caste is related to
-exploitation. %% local search is an intensifying operator, so more steps means more fitness-oriented exploitation.
+exploitation. Local search is an intensifying operator, so more steps means more fitness-oriented exploitation.
 We will test 16 and 64 steps.
 \item The number of generations without improvement to stop or {\sf max\_gens} will be set to 10 and 25; more generations allow more exploration and the possibility to go up a notch in fitness.
 \item Population size is going to be set to 400 and 800; larger population means more diversity giving it a better chance to exploit existing values, but also more exploration.
 \end{itemize}
 
-This gives us 8 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random.
+This gives us 16 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random.
 We have an open science policy and therefore, all code, experimental results and analyses are available under a free license at our repository \cite{Ceci2021bnea-anon}.
 
-The first batch experiments will be used as baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated will change randomly within a certain range; using this baseline, we will perform different experiments changing algorithm or parameters.
+The first batch of experiments will be used as experimental baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated (whose dimension is 10) will change randomly within a certain range; using this baseline, we will perform different experiments changing algorithm implementation or design.
 
 <<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
 source("R/process_deltas.R")
@@ -236,9 +236,8 @@ comparison_gamma_w$residual_final_temp <- residuals(baseline_gamma_final_temp_mo
 comparison_gamma_w$shape <- ifelse( comparison_gamma_w$group == "baseline", "21", "22" )
 @
 
-In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot two tiers up, to the third slot; that is, instead of applying hill-climbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG
-%% this is really a delta workload PKG (with respect to empty load?). Please, explain -Carlos
-energy and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for higher energy consumption for the
+In order to test the influence of configuration changes in fitness and energy, we will perform one single change: we will change the rank of the $\gamma$ caste from the last slot to the third one; that is, instead of applying hill-climbing to the chromosomes with the lowest fitness, it will be applied to those with a fitness in the middle. A priori, that would seem like a way of speeding up exploitation by carrying a population with a decent fitness up the ladder, thus reducing the number of evaluations. The results can be observed in Figure \ref{fig:ppsn.baseline}, where we plot the two measures we are interested in, the workload PKG energy, measured as a difference to the $B$ runs
+and the difference to an optimal fitness; in the margins the distribution for the two measures is also plotted. There seems to be no change in the distribution of fitness; however, energy spent is distributed along a single peak for the baseline, while there are other small peaks for higher energy consumption for the
 alleged $\gamma$ upgrade.
 
 <<ppsn.gamma.model, message=FALSE, echo=FALSE, fig.cap="Model for the gamma upgrade.", fig.height=4, fig.pos="h!tbp">>=
