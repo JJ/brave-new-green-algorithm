@@ -187,7 +187,7 @@ We have an open science policy and therefore, all code, experimental results and
 
 The first batch of experiments will be used as experimental baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated (whose dimension is 10) will change randomly within a certain range; using this baseline, we will perform different experiments changing algorithm implementation or design.
 
-<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 source("R/process_deltas.R")
 library(dplyr)
 library(ggplot2)
@@ -286,14 +286,71 @@ gamma_evaluations_model <- glm( evaluations ~ group + steps*max_gens*population_
 gamma_seconds_model <- glm( delta_seconds ~ group + evaluations + initial_temp + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
 gamma_final_temp_model <- glm( final_temp ~ group + delta_seconds + evaluations + initial_temp + steps*max_gens*population_size*alpha, data = comparison_gamma_w )
 
-kable( gamma_mediation_table, digits = c(0, 2, 0, 0, 1), row.names = FALSE,
-       caption = "Extra energy (in J) spent by the gamma upgrade with respect to the baseline, all algorithm parameters being equal, as variables along the evaluations, running time, final temperature chain are added to the model. The last column is the part of the first-row effect that is accounted for by the variables added so far.",
-       col.names = c( "Model controlling for", "Gamma effect (J)", "95\\% CI", "p-value", "\\% of effect accounted for" ),
-       format = "latex", escape = FALSE, table.envir = "table*" ) %>%
-  kable_styling( full_width = F, position = "center" )
+# What the upgrade buys, per configuration: difference (gamma - baseline) in
+# median energy and median fitness, with Holm-corrected Wilcoxon p-values.
+# Fitness does not change anywhere; energy goes up in most configurations, and
+# gamma performs fewer evaluations (see gamma_raw_difference("evaluations")).
+gamma_per_configuration <- comparison_gamma_w %>%
+  group_by( population_size, alpha, steps, max_gens ) %>%
+  summarise( energy_difference = median(delta_PKG[group == "gamma_upgrade"]) - median(delta_PKG[group == "baseline"]),
+             fitness_difference = median(diff_fitness[group == "gamma_upgrade"]) - median(diff_fitness[group == "baseline"]),
+             evaluations_difference = median(evaluations[group == "gamma_upgrade"]) - median(evaluations[group == "baseline"]),
+             energy_p_value = wilcox.test( delta_PKG ~ group, exact = FALSE )$p.value,
+             fitness_p_value = wilcox.test( diff_fitness ~ group, exact = FALSE )$p.value,
+             .groups = "drop" ) %>%
+  mutate( energy_p_holm = p.adjust( energy_p_value, "holm" ),
+          fitness_p_holm = p.adjust( fitness_p_value, "holm" ) )
+
+# Is the extra energy spent through evaluations? It is if the upgrade performs
+# significantly more evaluations AND adding evaluations to the energy model
+# accounts for most (> 50%) of the gamma effect. Wording for the text is built
+# here so the sentence stays correct whatever the numbers are.
+gamma_evaluations_effect <- gamma_effect( gamma_evaluations_model )
+gamma_evaluations_share <- gamma_mediation_table$percentage_of_total[2]
+gamma_energy_through_evaluations <- gamma_evaluations_effect["estimate"] > 0 &&
+  gamma_evaluations_effect["p_value"] < 0.05 &&
+  gamma_evaluations_share > 50
+gamma_evaluations_direction <- ifelse( gamma_evaluations_effect["estimate"] > 0, "more", "fewer" )
+gamma_evaluations_share_text <- if ( gamma_evaluations_share >= 0 ) {
+  paste0( "accounts for ", round(gamma_evaluations_share), "\\% of the extra energy" )
+} else {
+  paste0( "makes the extra energy ", round(-gamma_evaluations_share), "\\% larger instead of smaller" )
+}
+
+# How large is the extra energy in practical terms? Compare the gamma effect
+# (first row of the mediation table) with the total energy of a baseline
+# workload run (PKG, not delta) and with the run-to-run spread left over once
+# group, parameters and initial temperature are accounted for (mostly
+# operating conditions).
+# "p = 0.18" or "p < 0.0001", for inline use in the text
+format_p_value <- function(p_value) {
+  if ( p_value < 1e-4 ) "$p < 0.0001$" else paste0( "$p = ", signif(p_value, 2), "$" )
+}
+gamma_evaluations_difference_text <- if ( gamma_evaluations_effect["p_value"] < 0.05 ) {
+  paste0( "performs ", format(abs(round(gamma_evaluations_effect["estimate"])), big.mark = ","), " ",
+          gamma_evaluations_direction, " evaluations per run than the baseline" )
+} else {
+  "does not perform a significantly different number of evaluations than the baseline"
+}
+gamma_total_effect_p_value <- gamma_energy_effects$p_value[1]
+gamma_total_energy_per_run <- mean( comparison_gamma_w$PKG[comparison_gamma_w$group == "baseline"] )
+gamma_effect_percentage_of_run <- 100 * gamma_total_effect / gamma_total_energy_per_run
+gamma_run_to_run_spread <- sd( residuals( gamma_energy_total_model ) )
+gamma_significance_text <- if ( gamma_total_effect_p_value < 0.05 ) "statistically significant but small" else "not statistically significant, and small"
+
+# kable( gamma_mediation_table, digits = c(0, 2, 0, 0, 1), row.names = FALSE,
+#        caption = "Extra energy (in J) spent by the gamma upgrade with respect to the baseline, all algorithm parameters being equal, as variables along the evaluations, running time, final temperature chain are added to the model. The last column is the part of the first-row effect that is accounted for by the variables added so far.",
+#        col.names = c( "Model controlling for", "Gamma effect (J)", "95\\% CI", "p-value", "\\% of effect accounted for" ),
+#        format = "latex", escape = FALSE, table.envir = "table*" ) %>%
+#   kable_styling( full_width = F, position = "center" )
 @
 
 %% PROPOSAL: On average, a $W$ run of the $\gamma$ upgrade spends \Sexpr{round(gamma_raw_difference("delta_PKG"), 1)} J more than the baseline, and we need to find out why. Energy is spent while the algorithm runs, so the most likely explanation is a chain of effects: the upgrade performs more evaluations; more evaluations take more time ($\Delta R$, where $R$ is the running time); a longer run heats up the CPU, and a hotter CPU draws more power. To check this chain, we start from a model of $\Delta$PKG that includes the group (baseline or $\gamma$ upgrade), the four algorithm parameters (interacting) and the initial temperature (the average of the two dies); the latter is measured before the run starts, so it reflects the operating context, not the run itself. Then we add, one at a time, the variables along the chain: the number of evaluations, $\Delta R$ and the final temperature. If the chain explains the extra energy, the coefficient of the group will shrink as these variables are added; whatever is left at the end is energy the upgrade spends with the same evaluations, running time and temperature, that is, a higher power draw.
+
+The extra energy spent by the $\gamma$ upgrade is \Sexpr{if (gamma_energy_through_evaluations) "" else "not "}due to a larger number of evaluations: all parameters being equal, it \Sexpr{gamma_evaluations_difference_text} (\Sexpr{format_p_value(gamma_evaluations_effect["p_value"])}), and adding the number of evaluations to the energy model
+% \Sexpr{gamma_evaluations_share_text} (Table \ref{tab:ppsn.gamma.model}).
+does not change the extra energy.
+This extra energy, \Sexpr{round(gamma_total_effect, 1)} J (\Sexpr{format_p_value(gamma_total_effect_p_value)}), is \Sexpr{gamma_significance_text}: it is \Sexpr{round(gamma_effect_percentage_of_run, 1)}\% of the \Sexpr{round(gamma_total_energy_per_run)} J that a workload run spends in total, and well below the \Sexpr{round(gamma_run_to_run_spread)} J standard deviation of run-to-run energy left once the algorithm parameters and initial temperature are accounted for, which reflects mostly the operating conditions. This means that we are not buying anything with this change, and losing something: a small but significant amount of energy. We need then to reject this change, even if {\em a priori} it seemed a good idea. So let us try and perform additional changes to the algorithm or parameter values, always looking for better fitness/energy ratios.
 
 <<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
 load("data/ppsn_microopt.rds")
