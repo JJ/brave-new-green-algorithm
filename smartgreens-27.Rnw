@@ -656,6 +656,39 @@ After this parametric change we found that we can effectively achieve a better f
 
 It is interesting to see that there is not a large difference in the distribution of fitness or energy spent between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, eliminating mutation does create a significant  difference in fitness for the {\sf no\_alpha\_mutation} version, with a higher percentage leading to worse fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to effectively check if we have finally achieved a free lunch.
 
+<<smartgreens.no.alpha.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
+# Same analysis as smartgreens.low.mutation.operating.conditions, now with
+# low_mutation as the reference. Savings are positive when no_alpha_mutation
+# spends less, negative when it spends more.
+# The version is relabelled no_alpha_mutation (its name in the text) on a copy,
+# so that the group column used by the following chunks stays as it is.
+# process_deltas() relies on the same B W B ... B blocks of 61 runs as
+# process_covariates() in ppsn.cero.alpha.
+comparison_low_mutation_no_alpha_mutation <- comparison_low_mutation_no_alpha
+comparison_low_mutation_no_alpha_mutation$group[ comparison_low_mutation_no_alpha_mutation$group == "no_alpha" ] <- "no_alpha_mutation"
+comparison_low_mutation_no_alpha_mutation_w <- process_deltas( comparison_low_mutation_no_alpha_mutation )
+
+no_alpha_mutation_operating <- operating_conditions( comparison_low_mutation_no_alpha_mutation_w, "low_mutation", "no_alpha_mutation" )
+
+no_alpha_mutation_seconds_saved                 <- no_alpha_mutation_operating$seconds_saved                 # s per run
+no_alpha_mutation_energy_saved                  <- no_alpha_mutation_operating$energy_saved                  # J per run
+no_alpha_mutation_energy_saved_same_time        <- no_alpha_mutation_operating$energy_saved_same_time        # J, power
+no_alpha_mutation_energy_saved_through_time     <- no_alpha_mutation_operating$energy_saved_through_time     # J, running time
+no_alpha_mutation_percentage_saved_through_time <- no_alpha_mutation_operating$percentage_saved_through_time
+
+# Named low_mutation, no_alpha_mutation, difference_p_value
+no_alpha_mutation_power                       <- no_alpha_mutation_operating$power                       # J per s of running time (W)
+no_alpha_mutation_seconds_per_degree          <- no_alpha_mutation_operating$seconds_per_degree          # s per degree C
+no_alpha_mutation_energy_per_degree           <- no_alpha_mutation_operating$energy_per_degree           # J per degree C, total
+no_alpha_mutation_energy_per_degree_same_time <- no_alpha_mutation_operating$energy_per_degree_same_time # J per degree C, same running time
+no_alpha_mutation_seconds                     <- no_alpha_mutation_operating$seconds                     # median s
+no_alpha_mutation_initial_temp                <- no_alpha_mutation_operating$initial_temp                # median degrees C
+
+# Referenced as Table \ref{tab:smartgreens.no.alpha.mutation.operating.conditions}
+operating_conditions_kable( no_alpha_mutation_operating, "low_mutation", "no_alpha_mutation",
+  caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
+@
+
 <<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
 comparison_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
