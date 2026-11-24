@@ -352,6 +352,9 @@ The extra energy spent by the $\gamma$ upgrade is \Sexpr{if (gamma_energy_throug
 does not change the extra energy.
 This extra energy, \Sexpr{round(gamma_total_effect, 1)} J (\Sexpr{format_p_value(gamma_total_effect_p_value)}), is \Sexpr{gamma_significance_text}: it is \Sexpr{round(gamma_effect_percentage_of_run, 1)}\% of the \Sexpr{round(gamma_total_energy_per_run)} J that a workload run spends in total, and well below the \Sexpr{round(gamma_run_to_run_spread)} J standard deviation of run-to-run energy left once the algorithm parameters and initial temperature are accounted for, which reflects mostly the operating conditions. This means that we are not buying anything with this change, and losing something: a small but significant amount of energy. We need then to reject this change, even if {\em a priori} it seemed a good idea. So let us try and perform additional changes to the algorithm or parameter values, always looking for better fitness/energy ratios.
 
+A possible fitness-neutral path to optimization is to work on the platform, making it faster, which in principle will it make spend less energy. In the case of Julia, one straightforward way is to look for unused libraries in the dependencies list and eliminate it. That, however, will work on the $B$ runs. In order to also optimize the
+$W$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations where $p$ is the population size.
+
 <<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=3, fig.pos="!tbp", fig.env="figure*">>=
 load("data/ppsn_microopt.rds")
 
@@ -382,6 +385,37 @@ ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5)
 
 In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better.
 
+<<ppsn.microopt.energy.fitness, message=FALSE, echo=FALSE>>=
+# Energy effort per fitness level: energy-fitness product (median delta_PKG x
+# median diff_fitness) and its log10, the energy-fitness score; see
+# R/energy_fitness_product.R. Lower is better; one fitness level (10x closer
+# to the optimum) at the same energy = 1 less in the score.
+# All vectors are named by version: e.g. microopt_energy["microopt"].
+source("R/energy_fitness_product.R")
+microopt_energy_fitness <- energy_fitness_product( comparison_microopt_w, energy_column = "delta_PKG" )
+
+microopt_energy               <- setNames( microopt_energy_fitness$energy, microopt_energy_fitness$version )               # median delta_PKG, J
+microopt_fitness              <- setNames( microopt_energy_fitness$fitness, microopt_energy_fitness$version )              # median diff_fitness
+microopt_fitness_level        <- setNames( microopt_energy_fitness$fitness_level, microopt_energy_fitness$version )        # log10(median diff_fitness)
+microopt_energy_fitness_product <- setNames( microopt_energy_fitness$energy_fitness_product, microopt_energy_fitness$version ) # J x diff_fitness
+microopt_energy_fitness_score <- setNames( microopt_energy_fitness$energy_fitness_score, microopt_energy_fitness$version )  # log10 of the product
+
+# microopt vs baseline: ratio of the products (0.5 = half the energy for the
+# same fitness, or the same energy for half the distance to the optimum) and
+# difference of the scores (= log10 of that ratio).
+microopt_energy_fitness_ratio <- microopt_energy_fitness_product[["microopt"]] / microopt_energy_fitness_product[["baseline"]]
+microopt_energy_fitness_score_change <- microopt_energy_fitness_score[["microopt"]] - microopt_energy_fitness_score[["baseline"]]
+
+# Referenced as Table \ref{tab:ppsn.microopt.energy.fitness} (label taken from the chunk name)
+kable( microopt_energy_fitness[, c("version", "energy", "fitness", "energy_fitness_score")],
+       digits = c(0, 1, 2, 2), row.names = FALSE,
+       caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for the baseline and the micro-optimized version. Lower is better in all columns.",
+       col.names = c( "Version", "$\\Delta$PKG (J)", "{\\sf diff\\_fitness}", "Score" ),
+       format = "latex", escape = FALSE ) %>%
+  kable_styling( full_width = F, position = "center" )
+@
+
+
 <<ppsn.microopt.model, message=FALSE, echo=FALSE, fig.cap="Model for the micro-optimization", fig.height=4, fig.pos="!tbp">>=
 
 microopt_time_model <- glm( delta_seconds ~ initial_temp + final_temp + group*evaluations + steps*max_gens*population_size*alpha, data = comparison_microopt_w)
@@ -408,11 +442,6 @@ microopt_variance <- type_two_variance(microopt_energy_model)
 
 @
 
-A possible fitness-neutral path to optimization is to work on the platform, making it faster, which in principle will it make spend less energy. In the case of Julia, one straightforward way is to look for unused libraries in the dependencies list and eliminate it. That, however, will work on the $B$ runs. In order to also optimize the
-$W$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations where $p$ is the population size.
-
-Figure \ref{fig:ppsn.microopt}, which plots baseline measurements in red and this optimized version in blue-turquoise, shows that, effectively, we have a lower energy consumption for any value of $\alpha$, shown with different shapes. And this is achieved through the reduction in running time brought by optimization.
-%
 Effectively, the generalized linear model (GLM) yields a coefficient for the microoptimization group of \Sexpr{round(coef(microopt_time_model)["groupmicroopt"], 2)}, which is the number of seconds that have been gained with this optimization, all other things being equal.
 
 %% Numbers are now Type II percentages of the total variance of delta_PKG,
