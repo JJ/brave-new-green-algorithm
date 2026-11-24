@@ -556,6 +556,13 @@ Table \ref{tab:smartgreens.low.mutation.operating.conditions} explains why more 
 # This chunk: links of the chain. Next chunk: mediation of the additional
 # energy. Code: R/run_length_chain.R.
 source("R/run_length_chain.R")
+# Power drawn by the workload itself (W): delta_PKG / delta_seconds, the same
+# baseline-subtracted quantities used for energy and running time. Memory use
+# is not recorded; dynamic memory activity shows only as power.
+comparison_microopt_low_mutation_w$power <- comparison_microopt_low_mutation_w$delta_PKG / comparison_microopt_low_mutation_w$delta_seconds
+# Runs whose delta_seconds is close to 0 or negative give extreme or negative
+# power; check how many there are before reading the power results
+low_mutation_runs_short_delta_seconds <- sum( comparison_microopt_low_mutation_w$delta_seconds <= 0.1 )
 low_mutation_chain <- run_length_chain( comparison_microopt_low_mutation_w, "microopt", "low_mutation" )
 
 # Version effects, low_mutation - microopt, same configuration (estimate, lower, upper, p_value)
@@ -565,6 +572,17 @@ low_mutation_additional_seconds     <- low_mutation_chain$version_effects$second
 low_mutation_additional_energy      <- low_mutation_chain$version_effects$energy      # J per run, same initial temperature
 low_mutation_additional_seconds_overall <- low_mutation_chain$version_effects$seconds_overall # s per run, any initial temperature
 low_mutation_additional_energy_overall  <- low_mutation_chain$version_effects$energy_overall  # J per run, any initial temperature (includes carry-over heating)
+low_mutation_additional_power           <- low_mutation_chain$version_effects$power_overall   # W, average power of the workload run
+
+# Power branch of the chain (estimate, lower, upper, p_value):
+# generations -> power: additional total power of low_mutation at the same
+# initial temperature, without and with the number of generations as a control,
+# and the percentage of it the additional generations account for
+low_mutation_additional_power_same_temperature <- low_mutation_chain$power_links$additional_power                  # W
+low_mutation_additional_power_same_generations <- low_mutation_chain$power_links$additional_power_same_generations # W
+low_mutation_power_percentage_through_generations <- low_mutation_chain$power_links$power_percentage_through_generations
+# power -> final temperature, at the same initial temperature and running time
+low_mutation_degrees_per_watt <- low_mutation_chain$power_links$degrees_per_watt # degrees C per W
 
 # Links of the chain (estimate, lower, upper, p_value)
 low_mutation_evaluations_per_generation               <- low_mutation_chain$links$evaluations_per_generation
@@ -580,12 +598,13 @@ run_length_differences_kable( low_mutation_chain,
 # Additional energy spent by a low_mutation run with respect to microopt,
 # starting from the total and adding, in causal order, initial temperature
 # (carry-over from previous runs), generations, evaluations, running time and
-# final temperature. Percentages: part of the total absorbed by each step on
-# its own (negative = the additional energy grows); steps + unexplained = 100.
+# power. Percentages: part of the total absorbed by each step on its own
+# (negative = the additional energy grows); steps + unexplained = 100.
 low_mutation_percentage_through_initial_temperature <- low_mutation_chain$percentage_through_initial_temperature # carry-over
 low_mutation_percentage_through_run_length          <- low_mutation_chain$percentage_through_run_length          # generations + evaluations + running time
-low_mutation_percentage_through_final_temperature   <- low_mutation_chain$percentage_through_final_temperature   # heating during the run
+low_mutation_percentage_through_power               <- low_mutation_chain$percentage_through_power               # power drawn, on top of run length
 low_mutation_percentage_unexplained                 <- low_mutation_chain$percentage_unexplained
+low_mutation_total_additional_energy                <- low_mutation_chain$mediation$estimate[1]                  # J, configuration only
 # TRUE if every link is positive and significant and carry-over + run length are over 50%
 low_mutation_chain_supported <- low_mutation_chain$chain_supported
 # Additional energy at the same initial temperature, generations, evaluations and running time (estimate, lower, upper, p_value)
@@ -594,7 +613,9 @@ low_mutation_additional_energy_same_run_length <- unlist( subset( low_mutation_c
 
 # Referenced as Table \ref{tab:smartgreens.low.mutation.run.length.energy}
 run_length_mediation_kable( low_mutation_chain,
-  caption = "Additional energy ($\\Delta$PKG) spent by a {\\sf low\\_mutation} workload run with respect to {\\sf microopt}, with the same configuration. The first row is the total; then the variables are added one at a time, in causal order: initial temperature (left by the previous runs), the run length (generations, evaluations, running time) and the final temperature. Last column: part of the total accounted for by each step on its own (negative: the additional energy grows); together with the part not explained, they add up to 100\\%." )
+  caption = paste0( "Part of the additional energy ($\\Delta$PKG) spent by a {\\sf low\\_mutation} workload run with respect to {\\sf microopt} with the same configuration (",
+                    round( low_mutation_total_additional_energy, 1 ),
+                    " J) accounted for by each variable, added to the energy model one at a time in causal order: initial temperature (left by the previous runs), run length (generations, evaluations, running time) and power drawn by the workload. Negative: the additional energy grows once that variable is accounted for. With the part not explained, they add up to 100\\%." ) )
 @
 
 <<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
