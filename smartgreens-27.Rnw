@@ -393,7 +393,8 @@ In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the differen
 # to the optimum) at the same energy = 1 less in the score.
 # All vectors are named by version: e.g. microopt_energy["microopt"].
 source("R/energy_fitness_product.R")
-microopt_energy_fitness <- energy_fitness_product( comparison_microopt_w, energy_column = "delta_PKG" )
+microopt_energy_fitness <- energy_fitness_product( comparison_microopt_w, energy_column = "delta_PKG",
+                                                   versions = c("baseline", "microopt") )
 
 microopt_energy               <- setNames( microopt_energy_fitness$energy, microopt_energy_fitness$version )               # median delta_PKG, J
 microopt_fitness              <- setNames( microopt_energy_fitness$fitness, microopt_energy_fitness$version )              # median diff_fitness
@@ -404,16 +405,13 @@ microopt_energy_fitness_score <- setNames( microopt_energy_fitness$energy_fitnes
 # microopt vs baseline: ratio of the products (0.5 = half the energy for the
 # same fitness, or the same energy for half the distance to the optimum) and
 # difference of the scores (= log10 of that ratio).
-microopt_energy_fitness_ratio <- microopt_energy_fitness_product[["microopt"]] / microopt_energy_fitness_product[["baseline"]]
-microopt_energy_fitness_score_change <- microopt_energy_fitness_score[["microopt"]] - microopt_energy_fitness_score[["baseline"]]
+microopt_energy_fitness_change       <- energy_fitness_change( microopt_energy_fitness, "baseline", "microopt" )
+microopt_energy_fitness_ratio        <- microopt_energy_fitness_change[["ratio"]]
+microopt_energy_fitness_score_change <- microopt_energy_fitness_change[["score_change"]]
 
 # Referenced as Table \ref{tab:smartgreens.microopt.energy.fitness} (label taken from the chunk name)
-kable( microopt_energy_fitness[, c("version", "energy", "fitness", "energy_fitness_score")],
-       digits = c(0, 1, 2, 2), row.names = FALSE,
-       caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for the baseline and the micro-optimized version. Lower is better in all columns.",
-       col.names = c( "Version", "$\\Delta$PKG (J)", "{\\sf diff\\_fitness}", "Score" ),
-       format = "latex", escape = FALSE ) %>%
-  kable_styling( full_width = F, position = "center", latex_options = "hold_position" ) # [!h]: as close to the text as LaTeX allows
+energy_fitness_kable( microopt_energy_fitness,
+  caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for the baseline and the micro-optimized version. Lower is better in all columns." )
 @
 
 Table \ref{tab:smartgreens.microopt.energy.fitness} shows the median $\Delta$PKG, fitness difference to optimum, as well as a composite {\em fitness-energy score} which is the sum of the 10-base logarithm of both quantities, lower is better; a difference in 1 in the energy or fitness part will mean it is 10x better. In general, this term will be dominated by fitness. In this case the difference is \Sexpr{microopt_energy_fitness_score_change} but it shows anyway an improvement over the old value.
@@ -498,7 +496,32 @@ ggMarginal(comparison_micro_low, type="density", groupFill=T, alpha=0.5)
 
 After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate was set at 40\%, in this case, we will lower it to 10\%, meaning that when changing a chromosome, only one element of the chromosome will be changed. While this might seem an obvious way of reducing random search, (i.e., exploration),
 what we are interested in is the way it will affect the operating conditions first, and then obviously the energy consumed as well as the fitness reached. This is why we compare in Figure \ref{fig:smartgreens.low.mutation} what is the distribution of energy consumption and fitness per run. The initial impression is that fitness reaches a totally different level, although energy spent is distributed in a different way, with two peaks at higher energy levels than {\sf microopt}.
+%
+<<smartgreens.low.mutation.energy.fitness, message=FALSE, echo=FALSE>>=
+# Same as smartgreens.microopt.energy.fitness, microopt as the reference.
+# All vectors are named by version: e.g. low_mutation_energy["low_mutation"].
+low_mutation_energy_fitness <- energy_fitness_product( comparison_microopt_low_mutation_w, energy_column = "delta_PKG",
+                                                       versions = c("microopt", "low_mutation") )
 
+low_mutation_energy                 <- setNames( low_mutation_energy_fitness$energy, low_mutation_energy_fitness$version )                 # median delta_PKG, J
+low_mutation_fitness                <- setNames( low_mutation_energy_fitness$fitness, low_mutation_energy_fitness$version )                # median diff_fitness
+low_mutation_fitness_level          <- setNames( low_mutation_energy_fitness$fitness_level, low_mutation_energy_fitness$version )          # log10(median diff_fitness)
+low_mutation_energy_fitness_product <- setNames( low_mutation_energy_fitness$energy_fitness_product, low_mutation_energy_fitness$version ) # J x diff_fitness
+low_mutation_energy_fitness_score   <- setNames( low_mutation_energy_fitness$energy_fitness_score, low_mutation_energy_fitness$version )   # log10 of the product
+
+# low_mutation vs microopt: ratio of the products and difference of the scores
+low_mutation_energy_fitness_change       <- energy_fitness_change( low_mutation_energy_fitness, "microopt", "low_mutation" )
+low_mutation_energy_fitness_ratio        <- low_mutation_energy_fitness_change[["ratio"]]
+low_mutation_energy_fitness_score_change <- low_mutation_energy_fitness_change[["score_change"]]
+
+# Referenced as Table \ref{tab:smartgreens.low.mutation.energy.fitness}
+energy_fitness_kable( low_mutation_energy_fitness,
+  caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for {\\sf microopt} and {\\sf low\\_mutation}. Lower is better in all columns." )
+@
+%
+
+Table \ref{tab:smartgreens.low.mutation.energy.fitness} summarizes the previous figure, showing median workload energy in Joules as well as median fitness difference, together with the logarithmic score. The difference \Sexpr{low_mutation_energy_fitness_score_change} highlights the overall improvement achieved despite having spent more energy in the process (almost 50\% more) in the process.
+%
 <<smartgreens.low.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
 # Same analysis as smartgreens.microopt.operating.conditions, microopt as the
 # reference. Savings are positive when low_mutation spends less, negative when
@@ -523,6 +546,8 @@ low_mutation_initial_temp                <- low_mutation_operating$initial_temp 
 operating_conditions_kable( low_mutation_operating, "microopt", "low_mutation",
   caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for {\\sf microopt} and {\\sf low\\_mutation}, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
 @
+%
+Table \ref{tab:smartgreens.low.mutation.operating.conditions} explains why more energy is spent in the {\sf low\_mutation} experiment level: workload runs operate at a higher temperature and they take a slightly longer time. Although energy per degree of initial temperature or per degree at the same running time is lower, the fact is that they run longer starting at a higher temperature. $B$ and $W$ runs take longer, thus leave the processor a bit hotter, making the next one spend more energy. What we learn from the optimizations performed so far is that optimizing for performance has a double effect: they take less time, so they do not heat the processor so much. The opposite is also true, which will imply that, in general, there is no free lunch: achieving better fitness will mean obtaining more samples of the space, which will make eventually the algorithm run for longer. At any rate, the balance is positive, as exemplified by the improvement of the energy/fitness score..
 
 <<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
 low_mutation_group_temp_model <- glm( initial_temp ~ group + work, data = comparison_microopt_low_mutation )
