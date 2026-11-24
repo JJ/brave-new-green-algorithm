@@ -425,81 +425,29 @@ We need to understand better, however, how this new value of energy is achieved;
 # the number of evaluations (~0 J per evaluation)? Through the operating
 # conditions of the run: its running time (delta_seconds, workload minus the
 # two sandwiching B runs) and the initial temperature it finds, which the
-# previous B run leaves behind.
-# Energy = power x time, so the version effect on delta_PKG splits into
-#   - through running time: microopt runs are shorter;
-#   - at the same running time: microopt draws less power.
-# Every slope is allowed to differ between versions (group * ...), so version
-# effects are averaged over all runs with predict(), not read from a single
-# coefficient. Evaluations and the configuration are kept as controls.
-operating_formula <- function(response, terms) {
-  as.formula(paste(response, "~", terms, "+ evaluations + steps*max_gens*population_size*alpha"))
-}
-operating_time_model         <- lm( operating_formula("delta_seconds", "group * initial_temp"), data = comparison_microopt_w )
-operating_energy_total_model <- lm( operating_formula("delta_PKG", "group * initial_temp"), data = comparison_microopt_w )
-operating_energy_model       <- lm( operating_formula("delta_PKG", "group * (delta_seconds + initial_temp)"), data = comparison_microopt_w )
-
-# microopt - baseline, every run kept as it is except for the version
-operating_version_effect <- function(model) {
-  as_microopt <- comparison_microopt_w; as_microopt$group <- "microopt"
-  as_baseline <- comparison_microopt_w; as_baseline$group <- "baseline"
-  mean( predict(model, as_microopt) - predict(model, as_baseline) )
-}
-
-# Slope of a variable in each version, and p-value of their difference
-operating_slopes <- function(model, variable) {
-  coefficients <- coef(model)
-  interaction  <- paste0("groupmicroopt:", variable)
-  c( baseline = coefficients[[variable]],
-     microopt = coefficients[[variable]] + coefficients[[interaction]],
-     difference_p_value = summary(model)$coefficients[interaction, "Pr(>|t|)"] )
-}
+# previous B run leaves behind. Models and table: R/operating_conditions.R.
+source("R/operating_conditions.R")
+microopt_operating <- operating_conditions( comparison_microopt_w, "baseline", "microopt" )
 
 # Savings (positive = microopt spends less), same configuration, evaluations
 # and initial temperature
-microopt_seconds_saved             <- -operating_version_effect( operating_time_model )         # s per run
-microopt_energy_saved              <- -operating_version_effect( operating_energy_total_model ) # J per run
-microopt_energy_saved_same_time    <- -operating_version_effect( operating_energy_model )       # J, lower power
-microopt_energy_saved_through_time <- microopt_energy_saved - microopt_energy_saved_same_time  # J, shorter runs
-microopt_percentage_saved_through_time <- 100 * microopt_energy_saved_through_time / microopt_energy_saved
+microopt_seconds_saved                 <- microopt_operating$seconds_saved                 # s per run
+microopt_energy_saved                  <- microopt_operating$energy_saved                  # J per run
+microopt_energy_saved_same_time        <- microopt_operating$energy_saved_same_time        # J, lower power
+microopt_energy_saved_through_time     <- microopt_operating$energy_saved_through_time     # J, shorter runs
+microopt_percentage_saved_through_time <- microopt_operating$percentage_saved_through_time
 
-# Version-specific slopes (named baseline, microopt, difference_p_value)
-microopt_power                       <- operating_slopes( operating_energy_model, "delta_seconds" )      # J per s of running time (W)
-microopt_seconds_per_degree          <- operating_slopes( operating_time_model, "initial_temp" )         # s per degree C
-microopt_energy_per_degree           <- operating_slopes( operating_energy_total_model, "initial_temp" ) # J per degree C, total
-microopt_energy_per_degree_same_time <- operating_slopes( operating_energy_model, "initial_temp" )       # J per degree C, same running time
-
-microopt_initial_temp <- tapply( comparison_microopt_w$initial_temp, comparison_microopt_w$group, median )  # degrees C
-microopt_seconds      <- tapply( comparison_microopt_w$delta_seconds, comparison_microopt_w$group, median ) # s
-
-microopt_operating_table <- data.frame(
-  quantity = c( "Running time per $^\\circ$C of initial temperature (s/$^\\circ$C)",
-                "Energy per $^\\circ$C of initial temperature (J/$^\\circ$C)",
-                "\\quad same running time (J/$^\\circ$C)",
-                "Energy per second of running time (W)" ),
-  rbind( microopt_seconds_per_degree, microopt_energy_per_degree,
-         microopt_energy_per_degree_same_time, microopt_power ),
-  row.names = NULL )
-# Only the slopes that differ significantly between versions go in the table;
-# the p-values of all four remain in the microopt_* vectors above.
-microopt_operating_table_significant <- microopt_operating_table[ microopt_operating_table$difference_p_value < 0.05,
-                                                                  c("quantity", "baseline", "microopt") ]
-# Absolute operating conditions, so the table shows both the slopes and the
-# values they multiply
-microopt_operating_table_significant <- rbind(
-  microopt_operating_table_significant,
-  data.frame( quantity = c( "Median running time (s)",
-                            "Median initial temperature ($^\\circ$C)" ),
-              baseline = c( microopt_seconds[["baseline"]], microopt_initial_temp[["baseline"]] ),
-              microopt = c( microopt_seconds[["microopt"]], microopt_initial_temp[["microopt"]] ) ) )
+# Named baseline, microopt, difference_p_value
+microopt_power                       <- microopt_operating$power                       # J per s of running time (W)
+microopt_seconds_per_degree          <- microopt_operating$seconds_per_degree          # s per degree C
+microopt_energy_per_degree           <- microopt_operating$energy_per_degree           # J per degree C, total
+microopt_energy_per_degree_same_time <- microopt_operating$energy_per_degree_same_time # J per degree C, same running time
+microopt_seconds                     <- microopt_operating$seconds                     # median s
+microopt_initial_temp                <- microopt_operating$initial_temp                # median degrees C
 
 # Referenced as Table \ref{tab:smartgreens.microopt.operating.conditions}
-kable( microopt_operating_table_significant, digits = 2, row.names = FALSE,
-       caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for each version, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown.",
-       col.names = c( "", "baseline", "microopt" ),
-       format = "latex", escape = FALSE ) %>%
-  kable_styling( full_width = F, position = "center", latex_options = "hold_position", font_size = 8 ) %>%
-  column_spec( 1, width = "2.8cm" )   # wrap the legends so the table fits one column
+operating_conditions_kable( microopt_operating, "baseline", "microopt",
+  caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for each version, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
 @
 %
 What we show in Table \ref{tab:smartgreens.microopt.operating.conditions} is how these energy savings are achieved; the main way of changing total energy spent is through running time, but also through the indirect influence in the operating conditions, mainly temperature: higher temperature would mean more energy is spent. The initial temperature for the $W$ (Workload) runs is influenced by all runs in the batch so far, but more directly by the $B$ run that precedes it; in that sense, the {\sf microopt} experiment $W$ runs start at a slightly higher temperature. However, it incurs in less energy expenses by every degree of initial temperature, so the total balance tips towards this new experimental level. The same occurs on the running time side: it runs faster, and it spends less energy for each second. This change, effectively, is the closest we will get to a {\em free ride}: spend less energy for a better fitness. So we will keep it as the new baseline.
@@ -550,6 +498,31 @@ ggMarginal(comparison_micro_low, type="density", groupFill=T, alpha=0.5)
 
 After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate was set at 40\%, in this case, we will lower it to 10\%, meaning that when changing a chromosome, only one element of the chromosome will be changed. While this might seem an obvious way of reducing random search, (i.e., exploration),
 what we are interested in is the way it will affect the operating conditions first, and then obviously the energy consumed as well as the fitness reached. This is why we compare in Figure \ref{fig:smartgreens.low.mutation} what is the distribution of energy consumption and fitness per run. The initial impression is that fitness reaches a totally different level, although energy spent is distributed in a different way, with two peaks at higher energy levels than {\sf microopt}.
+
+<<smartgreens.low.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
+# Same analysis as smartgreens.microopt.operating.conditions, microopt as the
+# reference. Savings are positive when low_mutation spends less, negative when
+# it spends more.
+low_mutation_operating <- operating_conditions( comparison_microopt_low_mutation_w, "microopt", "low_mutation" )
+
+low_mutation_seconds_saved                 <- low_mutation_operating$seconds_saved                 # s per run
+low_mutation_energy_saved                  <- low_mutation_operating$energy_saved                  # J per run
+low_mutation_energy_saved_same_time        <- low_mutation_operating$energy_saved_same_time        # J, power
+low_mutation_energy_saved_through_time     <- low_mutation_operating$energy_saved_through_time     # J, running time
+low_mutation_percentage_saved_through_time <- low_mutation_operating$percentage_saved_through_time
+
+# Named microopt, low_mutation, difference_p_value
+low_mutation_power                       <- low_mutation_operating$power                       # J per s of running time (W)
+low_mutation_seconds_per_degree          <- low_mutation_operating$seconds_per_degree          # s per degree C
+low_mutation_energy_per_degree           <- low_mutation_operating$energy_per_degree           # J per degree C, total
+low_mutation_energy_per_degree_same_time <- low_mutation_operating$energy_per_degree_same_time # J per degree C, same running time
+low_mutation_seconds                     <- low_mutation_operating$seconds                     # median s
+low_mutation_initial_temp                <- low_mutation_operating$initial_temp                # median degrees C
+
+# Referenced as Table \ref{tab:smartgreens.low.mutation.operating.conditions}
+operating_conditions_kable( low_mutation_operating, "microopt", "low_mutation",
+  caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for {\\sf microopt} and {\\sf low\\_mutation}, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
+@
 
 <<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
 low_mutation_group_temp_model <- glm( initial_temp ~ group + work, data = comparison_microopt_low_mutation )
