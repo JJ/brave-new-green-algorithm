@@ -380,7 +380,7 @@ ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5)
 #   ) + theme(legend.position = "bottom") + theme_minimal()
 @
 
-In Figure \cite{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \cite{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better.
+In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better.
 
 <<ppsn.microopt.model, message=FALSE, echo=FALSE, fig.cap="Model for the micro-optimization", fig.height=4, fig.pos="!tbp">>=
 
