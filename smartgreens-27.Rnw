@@ -626,88 +626,10 @@ We can only advance a supposition of the possible causes of this change: every g
 
 At any rate, what is clear is that algorithmic as well as simple parametric decisions will have an impact in every aspect of the performance, and that this is impossible to predict in advance: a sound measuring protol, like the one we are using here, as well ad statistical analysis beyond central measures, is needed to understand what is really happening and why it is happening.
 
-<<ppsn.low.mutation.model, message=FALSE, echo=FALSE, fig.cap="Model for the low mutation change.", fig.height=4, fig.pos="h!tbp">>=
-low_mutation_group_temp_model <- glm( initial_temp ~ group + work, data = comparison_microopt_low_mutation )
-comparison_microopt_low_mutation$residual_initial_temp <- residuals( low_mutation_group_temp_model )
-
-low_mutation_group_final_temp_model <- glm( delta_temp ~ group + work + initial_temp + seconds, data = comparison_microopt_low_mutation )
-comparison_microopt_low_mutation$residual_delta_temp <- residuals( low_mutation_group_final_temp_model )
-
-source("R/process_covariates.R")
-
-comparison_microopt_low_mutation_covariates <- process_covariates( comparison_microopt_low_mutation )
-
-low_mutation_time_model <- glm( seconds ~ seconds_baseline_prev + seconds_baseline_post + group + residual_initial_temp + residual_delta_temp + evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
-
-comparison_microopt_low_mutation_covariates$residual_seconds <- residuals( low_mutation_time_model )
-
-low_mutation_energy_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
-
-# Type II variance decomposition instead of F/sum(F) on a Type I anova(); see
-# R/type_two_variance.R. Note that in the old sequential table PKG_baseline_prev
-# came first in the formula after group, so it was credited with all the
-# variance it shares with PKG_baseline_post and the operating covariates;
-# Type II only credits it with what it explains on its own.
-low_mutation_variance <- type_two_variance(low_mutation_energy_model)
-
-# Same as the gamma table: add "other", "shared", "residual" and total rows so
-# the percentage column adds up to 100%. Here the listed terms only account for
-# ~29% on their own, against an R^2 of ~0.93: most of the explained variance is
-# shared among correlated terms (baselines, running time, ...).
-low_mutation_variance_top10 <- variance_table_with_totals( low_mutation_variance )
-
-kable(low_mutation_variance_top10, digits = 3, row.names = FALSE,
-      caption = paste0("Top 10 significant terms of the energy model for the low mutation change, by Type II sum of squares. Model R-squared = ",
-                       round(attr(low_mutation_variance, "r_squared"), 3), "."),
-      col.names=c("Model term","Percentage of total variance","Partial eta squared"),
-      format = "latex", table.envir = "table*" ) %>%
-  kable_styling( full_width = F, position = "center" ) %>%
-  row_spec( nrow(low_mutation_variance_top10) - 4, hline_after = TRUE ) %>%
-  row_spec( nrow(low_mutation_variance_top10) - 1, hline_after = TRUE )
-
-low_mutation_energy_interaction_model <- glm( PKG ~ PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + group*evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
-
-# compare these two models using AIC
-model_comparison <- AIC( low_mutation_energy_model, low_mutation_energy_interaction_model )
-
-evaluations_model <- glm( evaluations ~ group + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
-comparison_microopt_low_mutation_covariates$residual_evaluations <- residuals( evaluations_model )
-
-low_mutation_energy_mediated_model <- glm( PKG ~ group + PKG_baseline_prev + PKG_baseline_post + residual_initial_temp + residual_delta_temp + residual_seconds + residual_evaluations + alpha*steps*max_gens*population_size, data = comparison_microopt_low_mutation_covariates )
-@
-
-%% "previous B PKG is the top variable" only held under the old sequential
-%% ordering, where it was entered first. With Type II, residual_seconds comes
-%% first and the two baselines come next. Text rewritten to match; the
-%% \Sexpr{} values come from the table rows. -JJ/Claude
-Table \ref{tab:ppsn.low.mutation.model} shows the percentage of the total variance (Type II sums of squares) and partial $\eta^2$ of the top 10 significant terms in the model, where we have residualized initial temperature, delta, and seconds. The table also includes the variance that the model explains but that cannot be credited to any single term, because correlated terms explain it jointly, and the unexplained (residual) variance, so the percentages add up to 100\%. Using GLM, we create a model that includes all variables as well as the baseline PKG values, which would account for the framework overhead. The residualized running time is the term that accounts for the most variance on its own, followed by the two $B$ PKG values (posterior and previous), which confirms that the framework overhead must be part of the model. However, most of the explained variance (\Sexpr{round(variance_of_term(low_mutation_variance_top10, "Shared among terms"), 1)}\%) is shared among these correlated terms and cannot be attributed to any one of them. We can already query this model about how much energy we are saving or not with this model; the coefficient is
-\Sexpr{round(low_mutation_energy_model$coefficients["groupmicroopt"], 2)}; all things being equal, this is the saving in Joules you will get on average if we do not apply this change. This is a small quantity, however; we must consider that there is a relatively small dependence on the number of evaluations (\Sexpr{signif(low_mutation_energy_model$coefficients["evaluations"], digits=2)}) that, however, is significant only at the \Sexpr{round(summary(low_mutation_energy_model)$coefficients["evaluations","Pr(>|t|)"], 3)} level.
-
-<<ppsn.low.mutation.fitness.table, message=FALSE, echo=FALSE, fig.cap="Fitness vs evaluations, colored by PKG energy spend in Joules.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
-comparison_microopt_low_mutation_covariates %>% group_by( population_size, steps, max_gens, alpha, group ) %>%
-  summarise( mean_diff_fitness = mean(diff_fitness),
-             trim_mean_diff_fitness = mean(diff_fitness, trim=0.2),
-             mean_PKG = mean(PKG),
-             trim_mean_PKG = mean(PKG, trim=0.2),
-             mean_evaluations = mean(evaluations) ) -> summary_comparison_low_mutation
-ggplot(comparison_microopt_low_mutation_covariates, aes(x = evaluations, y = diff_fitness, shape=group,color=PKG)) +
-  scale_x_log10() +
-  scale_y_log10() +
-  scale_color_gradient(low = "blue", high = "red") +
-  geom_point(alpha=0.5,size=3) +
-  labs(y = "Diff Fitness",
-    x = "Evaluations"
-  ) + theme(legend.position = "bottom") + theme_minimal()
-@
-
-So, a price had to be paid for this lunch, although it was not an expensive one. The question turns out to be whether we managed to achieve better fitness in the process, to compensate for this price.
-In Figure \ref{fig:ppsn.low.mutation.fitness.table} we plot with different shapes the new baseline, {\sf microopt}, vs. the current {\sf low\_mutation} which uses circles, using log-scaled evaluations as $x$ axis and log-scaled difference to optimum fitness ({\sf diff\_fitness}) as $y$; the color scale stands for PKG energy in joules. There are two distinct {\em clouds} for every shape: the triangle ({\sf microopt}) cloud starts to the left, that is, fewer evaluations, and on top, worse {\sf diff\_fitness}. There is an issue with this block: the slope is very small, that is, more evaluations achieve only a small improvement in fitness. On the other hand, that does not happen with the {\sf low\_mutation} cluster: while
-it is slightly redder, more evaluations and more energy expenses, much better fitness is effectively achieved.
-% Check the sentence above -Carlos
-
 The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
 
-<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and zero alpha set of experiments.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
+<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the low mutation and zero alpha set of experiments.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
+source("R/process_covariates.R")
 load("data/ppsn_no_alpha.rds")
 ppsn_no_alpha$group <- "no_alpha"
 comparison_low_mutation_no_alpha <- rbind(ppsn_no_alpha, ppsn_low_mutation)
