@@ -656,10 +656,8 @@ After this parametric change we found that we can effectively achieve a better f
 
 It is interesting to see that there is not a large difference in the distribution of fitness or energy spent between the two $\alpha$ values in the {\sf low\_mutation} experiment; however, eliminating mutation does create a significant  difference in fitness for the {\sf no\_alpha\_mutation} version, with a higher percentage leading to worse fitness values. But what is more important here is that there are no big differences in energy spent. We will try to dig into the model to effectively check if we have finally achieved a free lunch.
 
-<<smartgreens.no.alpha.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
-# Same analysis as smartgreens.low.mutation.operating.conditions, now with
-# low_mutation as the reference. Savings are positive when no_alpha_mutation
-# spends less, negative when it spends more.
+<<smartgreens.no.alpha.mutation.energy.fitness, message=FALSE, echo=FALSE>>=
+# Same as smartgreens.microopt.energy.fitness, low_mutation as the reference.
 # The version is relabelled no_alpha_mutation (its name in the text) on a copy,
 # so that the group column used by the following chunks stays as it is.
 # process_deltas() relies on the same B W B ... B blocks of 61 runs as
@@ -667,6 +665,32 @@ It is interesting to see that there is not a large difference in the distributio
 comparison_low_mutation_no_alpha_mutation <- comparison_low_mutation_no_alpha
 comparison_low_mutation_no_alpha_mutation$group[ comparison_low_mutation_no_alpha_mutation$group == "no_alpha" ] <- "no_alpha_mutation"
 comparison_low_mutation_no_alpha_mutation_w <- process_deltas( comparison_low_mutation_no_alpha_mutation )
+
+# All vectors are named by version: e.g. no_alpha_mutation_energy["no_alpha_mutation"].
+no_alpha_mutation_energy_fitness <- energy_fitness_product( comparison_low_mutation_no_alpha_mutation_w, energy_column = "delta_PKG",
+                                                            versions = c("low_mutation", "no_alpha_mutation") )
+
+no_alpha_mutation_energy                 <- setNames( no_alpha_mutation_energy_fitness$energy, no_alpha_mutation_energy_fitness$version )                 # median delta_PKG, J
+no_alpha_mutation_fitness                <- setNames( no_alpha_mutation_energy_fitness$fitness, no_alpha_mutation_energy_fitness$version )                # median diff_fitness
+no_alpha_mutation_fitness_level          <- setNames( no_alpha_mutation_energy_fitness$fitness_level, no_alpha_mutation_energy_fitness$version )          # log10(median diff_fitness)
+no_alpha_mutation_energy_fitness_product <- setNames( no_alpha_mutation_energy_fitness$energy_fitness_product, no_alpha_mutation_energy_fitness$version ) # J x diff_fitness
+no_alpha_mutation_energy_fitness_score   <- setNames( no_alpha_mutation_energy_fitness$energy_fitness_score, no_alpha_mutation_energy_fitness$version )   # log10 of the product
+
+# no_alpha_mutation vs low_mutation: ratio of the products and difference of the scores
+no_alpha_mutation_energy_fitness_change       <- energy_fitness_change( no_alpha_mutation_energy_fitness, "low_mutation", "no_alpha_mutation" )
+no_alpha_mutation_energy_fitness_ratio        <- no_alpha_mutation_energy_fitness_change[["ratio"]]
+no_alpha_mutation_energy_fitness_score_change <- no_alpha_mutation_energy_fitness_change[["score_change"]]
+
+# Referenced as Table \ref{tab:smartgreens.no.alpha.mutation.energy.fitness}
+energy_fitness_kable( no_alpha_mutation_energy_fitness,
+  caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}. Lower is better in all columns." )
+@
+
+<<smartgreens.no.alpha.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
+# Same analysis as smartgreens.low.mutation.operating.conditions, now with
+# low_mutation as the reference. Savings are positive when no_alpha_mutation
+# spends less, negative when it spends more. Runs prepared in
+# smartgreens.no.alpha.mutation.energy.fitness.
 
 no_alpha_mutation_operating <- operating_conditions( comparison_low_mutation_no_alpha_mutation_w, "low_mutation", "no_alpha_mutation" )
 
