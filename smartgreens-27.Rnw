@@ -504,7 +504,7 @@ kable( microopt_operating_table_significant, digits = 2, row.names = FALSE,
 %
 What we show in Table \ref{tab:smartgreens.microopt.operating.conditions} is how these energy savings are achieved; the main way of changing total energy spent is through running time, but also through the indirect influence in the operating conditions, mainly temperature: higher temperature would mean more energy is spent. The initial temperature for the $W$ (Workload) runs is influenced by all runs in the batch so far, but more directly by the $B$ run that precedes it; in that sense, the {\sf microopt} experiment $W$ runs start at a slightly higher temperature. However, it incurs in less energy expenses by every degree of initial temperature, so the total balance tips towards this new experimental level. The same occurs on the running time side: it runs faster, and it spends less energy for each second. This change, effectively, is the closest we will get to a {\em free ride}: spend less energy for a better fitness. So we will keep it as the new baseline.
 
-<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments.", fig.height=4, fig.pos="!tbp", fig.env="figure*">>=
+<<ppsn.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments.", fig.height=3, fig.pos="!tbp", fig.env="figure*">>=
 source("R/type_two_variance.R")
 load("data/ppsn_low_mutation.rds")
 load("data/ppsn_microopt.rds") # redo this, we can use the die now
@@ -530,13 +530,22 @@ comparison_microopt_low_mutation %>% group_by( work, group, die ) %>%
 
 comparison_microopt_low_mutation$delta_temp <- comparison_microopt_low_mutation$final_temp - comparison_microopt_low_mutation$initial_temp
 
-ggplot(comparison_microopt_low_mutation, aes(x = final_temp, y = PKG, color=group )) +
+comparison_microopt_low_mutation_w <- process_deltas(comparison_microopt_low_mutation)
+
+# ggplot(comparison_microopt_low_mutation, aes(x = final_temp, y = PKG, color=group )) +
+#   geom_point(alpha=0.5) +
+#   facet_wrap(~work) +
+#   labs(x = "Final Temperature",
+#     y = "PKG Energy"
+#   ) + theme(legend.position = "bottom") + theme_minimal()
+
+comparison_micro_low <- ggplot(comparison_microopt_low_mutation_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) +
   geom_point(alpha=0.5) +
-  facet_wrap(~work) +
-  labs(x = "Final Temperature",
-    y = "PKG Energy"
+  labs(x = "Diff Fitness",
+    y = "Delta PKG"
   ) + theme(legend.position = "bottom") + theme_minimal()
 
+ggMarginal(comparison_micro_low, type="density", groupFill=T, alpha=0.5)
 @
 
 After this first optimization at the framework layer, we will make an additional change that concerns the algorithm itself. While the mutation rate was set at 40\%, in this case, we will lower it to 10\%, meaning that when changing a chromosome, only one element of the chromosome will be changed. While this might seem an obvious way of reducing random search,
