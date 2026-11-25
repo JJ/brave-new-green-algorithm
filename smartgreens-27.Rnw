@@ -686,7 +686,7 @@ energy_fitness_kable( no_alpha_mutation_energy_fitness,
   caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}. Lower is better in all columns." )
 @
 
-Table \ref{tab:smartgreens.no.alpha.mutation.energy.fitness} compares energy and fitness for these two last experiment levels, {\sf low\_mutation} and {\sf no\_alpha\_mutation}. The score changes by \Sexpr{sprintf("%.2f", no_alpha_mutation_energy_fitness_score_change)} with a very small increment in energy; the improvement in orders of magnitude in fitness carries the score to a negative value (lower is better).
+Table \ref{tab:smartgreens.no.alpha.mutation.energy.fitness} compares energy and fitness for these two last experiment levels, {\sf low\_mutation} and {\sf no\_alpha\_mutation}. The score changes by \Sexpr{sprintf("%.2f", no_alpha_mutation_energy_fitness_score_change)} with a very small increment in energy; the improvement in orders of magnitude in fitness carries the score to a negative value (lower is better). That is a \Sexpr{sprintf("%.0f",10^(- no_alpha_mutation_energy_fitness_score_change))}x better fitness for the same amount of energy.
 
 <<smartgreens.no.alpha.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
 # Same analysis as smartgreens.low.mutation.operating.conditions, now with
@@ -714,6 +714,8 @@ no_alpha_mutation_initial_temp                <- no_alpha_mutation_operating$ini
 operating_conditions_kable( no_alpha_mutation_operating, "low_mutation", "no_alpha_mutation",
   caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
 @
+
+We show in Table \ref{tab:smartgreens.no.alpha.mutation.operating.conditions} the usual comparison of the influence of the change in the operating conditions; all diferences shown in this table are significant, however, there are no dramatic differences: {\sf no\_alpha\_mutation} spends slightly more energy per second of running time, but less at the same temperature. The slight change in running time also implies a slightly different change in median initial temperature (which is averaged over the two dies). A parametric change that has not altered the energy profile but has, however, achieved a more efficient sampling of the search space, obtaining a dramatic improvement in the fitness level reached.
 
 <<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
@@ -774,9 +776,11 @@ ggplot(comparison_low_mutation_no_alpha_covariates, aes(x = factor(-fitness_leve
   theme_minimal()
 @
 
-We have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, where the latter is the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that the latter needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
+To highlight the differences between the two configurations, we have plotted in Figure \ref{fig:ppsn.no.alpha.model} the energy spent per configuration vs. the fitness level reached, where the latter is the integer part of the logarithm of {\sf diff\_fitness}. The chart explains why {\sf low\_mutation} is spending less energy: when it ends with a relatively bad fitness level, the energy is distributed around the 350-400 J level. It does not change when the -1 level is reached; in order to reach that level, which is the minimum for {\sf no\_alpha}, the latter needs to spend a bit more energy. However already at the -2 level we see that the latter needs less energy, and that the energy ranges changes relatively little to reach deeper energy levels; summarizing, {\sf low\_energy} spends less energy just because it is stopping after a relatively low number of evaluations at a shallow fitness level; when comparable levels of fitness are reached, {\sf no\_alpha} is, indeed, a winner.
 
 We have thus found a very economical lunch indeed, which can even be free if we take into account that the energy needed by {\sf no\_alpha} to reach the -3 level is lower than the energy needed by {\sf low\_mutation} to reach the level above, -2.
+
+We can even apply the same methodology to different configurations within the same experiment. We see in Figure \ref{fig:ppsn.cero.alpha} that there are differences in energy/fitness for different values of alpha, for instance.
 
 \section{\uppercase{Discussion and Conclusions}}\label{sec:conclusions}
 

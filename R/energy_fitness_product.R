@@ -42,12 +42,27 @@ energy_fitness_change <- function(energy_fitness, reference_version, new_version
                    energy_fitness[reference_version, "energy_fitness_score"])
 }
 
+# diff_fitness for a LaTeX table: two decimals down to 0.01, scientific
+# notation ($m \times 10^{e}$) below that, so that fitness values close to the
+# optimum are not printed as 0.00.
+format_fitness_latex <- function(fitness, digits = 2) {
+  vapply(fitness, function(value) {
+    if (is.na(value) || value == 0 || abs(value) >= 10^(-digits)) {
+      return(formatC(value, format = "f", digits = digits))
+    }
+    exponent <- floor(log10(abs(value)))
+    mantissa <- value / 10^exponent
+    sprintf("$%s \\times 10^{%d}$", formatC(mantissa, format = "f", digits = digits - 1), as.integer(exponent))
+  }, character(1))
+}
+
 # LaTeX table: version, median energy, median diff_fitness, score.
 # Needs knitr and kableExtra.
 energy_fitness_kable <- function(energy_fitness, caption, energy_label = "$\\Delta$PKG (J)") {
   table <- energy_fitness[, c("version", "energy", "fitness", "energy_fitness_score")]
   table$version <- paste0("{\\sf ", gsub("_", "\\\\_", table$version), "}")
-  kable(table, digits = c(0, 1, 2, 2), row.names = FALSE, caption = caption,
+  table$fitness <- format_fitness_latex(table$fitness)
+  kable(table, digits = c(0, 1, 2, 2), row.names = FALSE, caption = caption, align = c("l", "r", "r", "r"),
         col.names = c("Version", energy_label, "{\\sf diff\\_fitness}", "Score"),
         format = "latex", escape = FALSE) %>%
     kable_styling(full_width = F, position = "center", latex_options = "hold_position")
