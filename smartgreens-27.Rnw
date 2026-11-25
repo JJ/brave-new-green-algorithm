@@ -782,6 +782,46 @@ We have thus found a very economical lunch indeed, which can even be free if we 
 
 We can even apply the same methodology to different configurations within the same experiment. We see in Figure \ref{fig:ppsn.cero.alpha} that there are differences in energy/fitness for different values of alpha, for instance.
 
+<<smartgreens.no.alpha.mutation.alpha.energy.fitness, message=FALSE, echo=FALSE>>=
+# Same as smartgreens.no.alpha.mutation.energy.fitness, but within the
+# no_alpha_mutation configuration only, comparing its two alpha percentages
+# (10%, 25%; 10% as the reference). Uses the workload runs with delta_PKG
+# computed there (comparison_low_mutation_no_alpha_mutation_w), so the
+# B W B ... B blocks are not broken by the split.
+no_alpha_mutation_w <- comparison_low_mutation_no_alpha_mutation_w[ comparison_low_mutation_no_alpha_mutation_w$group == "no_alpha_mutation", ]
+alpha_values <- sort( unique( no_alpha_mutation_w$alpha ) )
+
+alpha_label <- function( alpha ) paste0( "$\\alpha$ = ", alpha, "\\%" )
+no_alpha_mutation_w$alpha_label <- alpha_label( no_alpha_mutation_w$alpha )
+
+alpha_energy_fitness <- energy_fitness_product( no_alpha_mutation_w, energy_column = "delta_PKG",
+                                                version_column = "alpha_label", versions = alpha_label( alpha_values ) )
+
+# All vectors are named by alpha label, e.g. alpha_energy_fitness_score[alpha_label(25)]
+alpha_energy               <- setNames( alpha_energy_fitness$energy, alpha_energy_fitness$version )               # median delta_PKG, J
+alpha_fitness              <- setNames( alpha_energy_fitness$fitness, alpha_energy_fitness$version )              # median diff_fitness
+alpha_fitness_level        <- setNames( alpha_energy_fitness$fitness_level, alpha_energy_fitness$version )        # log10(median diff_fitness)
+alpha_energy_fitness_score <- setNames( alpha_energy_fitness$energy_fitness_score, alpha_energy_fitness$version ) # log10 of the product
+
+# Higher vs lower alpha: ratio of the products and score difference
+# (negative = higher alpha is better)
+alpha_energy_fitness_change <- energy_fitness_change( alpha_energy_fitness, alpha_label( alpha_values[1] ), alpha_label( alpha_values[2] ) )
+alpha_energy_fitness_ratio  <- alpha_energy_fitness_change[["ratio"]]
+alpha_score_change          <- alpha_energy_fitness_change[["score_change"]]
+
+# Wilcoxon rank-sum tests between the two alpha values
+runs_low_alpha  <- no_alpha_mutation_w[ no_alpha_mutation_w$alpha == alpha_values[1], ]
+runs_high_alpha <- no_alpha_mutation_w[ no_alpha_mutation_w$alpha == alpha_values[2], ]
+alpha_fitness_p_value <- wilcox.test( runs_low_alpha$diff_fitness, runs_high_alpha$diff_fitness )$p.value
+alpha_energy_p_value  <- wilcox.test( runs_low_alpha$delta_PKG, runs_high_alpha$delta_PKG )$p.value
+
+# Referenced as Table \ref{tab:smartgreens.no.alpha.mutation.alpha.energy.fitness}
+energy_fitness_kable( alpha_energy_fitness,
+  caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for the two values of the $\\alpha$ percentage in {\\sf no\\_alpha\\_mutation}. Lower is better in all columns." )
+@
+
+Table \ref{tab:smartgreens.no.alpha.mutation.alpha.energy.fitness} splits the previous comparison by $\alpha$ percentage.
+
 \section{\uppercase{Discussion and Conclusions}}\label{sec:conclusions}
 
 We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or do it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try to obtain better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
