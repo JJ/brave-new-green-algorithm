@@ -820,23 +820,16 @@ energy_fitness_kable( alpha_energy_fitness,
   caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for the two values of the $\\alpha$ percentage in {\\sf no\\_alpha\\_mutation}. Lower is better in all columns." )
 @
 
-Table \ref{tab:smartgreens.no.alpha.mutation.alpha.energy.fitness} splits the previous comparison by $\alpha$ percentage.
+Table \ref{tab:smartgreens.no.alpha.mutation.alpha.energy.fitness} splits the previous comparison by $\alpha$ percentage. Comparing it with Table \ref{tab:smartgreens.no.alpha.mutation.energy.fitness} we see that, in fact, the energy spent if we set $\alpha$ to 25\% is better than the one measured for {\sf low\_mutation} by \Sexpr{no_alpha_mutation_energy[1]-alpha_energy[2]}J. Although that is relatively unfair comparison, considering that we are comparing a specific configuration with all configurations in another version, it is also true that fitness achieved by the former has a very small overlap with that achieved in the current configuration. It is noteworthy, however, to note that the score for $\alpha$ = 25\% is better by a \Sexpr{sprintf("%.0f",10^(- alpha_score_change))}x factor. In fact, as seen in the table, we are achieving better fitness with less energy consumption.
 
 \section{\uppercase{Discussion and Conclusions}}\label{sec:conclusions}
 
 We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or do it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try to obtain better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
 
-%%Simplified the structure. Check. -Carlos
-While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only to find which configuration consumes the most energy, but also which factors among the operating conditions, experimental interventions and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using residualized models that separate the interaction among the different experimental variables.
+While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only to find which configuration consumes the most energy, but also which factors among the operating conditions, experimental interventions and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using different statistical models that separate the interaction among the different experimental variables from the operating conditions.
 
-%%Minor edits here -Carlos
-One of the innovations included in this paper is to include the baseline runs in the model, instead of subtracting averages from the workload; the model shows a strong dependence that {\em explains} a good percentage of the variance, but the modelling allows us to estimate precisely by how much, and thus compare the amount of energy spent only by the workload; this avoids unrealistic scenarios where subtracting averages of baselines from the workload lead to very small or even negative energy values \cite{merelo25}.
-
-%%Maybe this paragraph does not need to mention the algorithmic details (describe din detail in the experimentation), and only the results - Carlos
-Using this experimental framework and analysis, we have been able to discard a specific change in the algorithm and eventually adopt a parametrization
-%leaving the $\alpha$ caste only with crossover, and giving one of the lower castes a high mutation,
-that reaches a $10^{-5}$ difference to optimum fitness with a relatively low energy expense or the order of 10J; however, achieving better fitness levels does not depend strongly on the number of evaluations or the population size, so this provides a path for further, although more limited, improvements in fitness.
-
+% We need to rewrite conclusions
+%
 The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}: we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make-up they leave to their offspring; second, we tip the balance towards exploitation and at the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
 
 Although the main point of the paper has been well proved by using a single BBOB function, it would be interesting to work with other, more energy-demanding functions, as was found in \cite{merelo25}. The energy consumption model will most likely change, giving the number of evaluations a greater influence on the final profile. By how much, however, remains to be seen and measured.
@@ -845,13 +838,13 @@ On the other hand, this methodology of researching energy efficiency together wi
 
 \section*{\uppercase{Acknowledgements}}
 
-% \begin{itemize}
+\begin{itemize}
 %   \item \textbf{Conflicts of Interest:} The authors have no conflicts of interest or competing interests to declare in the context of this paper.
 %   \item \textbf{Financial and other Support:} This work is supported by the Ministerio espa\~{n}ol de Econom\'{\i}a y Competitividad (Spanish Ministry of Competitivity and Economy) under projects PID2023-147409NB-C21 and PID2021-125184NB-I00.
-%   \item \textbf{Author Contributions:} All the authors contributed equally and their names were listed in alphabetical order.
+\item \textbf{Author Contributions:} All the authors contributed equally.
 %   \item \textbf{Data Sharing:} A dataset was generated and analyzed during the current study, available at our repository \cite{Ceci2021bnea-anon}.
 %   \item \textbf{AI Tools:} The paper used AI tools for text correction purposes only.
-% \end{itemize}
+\end{itemize}
 
 \bibliographystyle{apalike}
 {\small
