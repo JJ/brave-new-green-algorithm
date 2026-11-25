@@ -36,10 +36,30 @@
 
 \keywords{Green Computing, Energy Profiling Methodologies, Metaheuristics.}
 
-\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an evolutionary algorithm with a stratified population,
+\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for proximity to the optimum. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an existing evolutionary algorithm based on population stratification,
 we attain an algorithmic solution that reaches an optimum at a very low cost or
 approximates it spending much less energy than others evaluated.}
 
+% It was not clear the role of stratification of the population.
+% I put based, because is an important feature, but it could be "that incorporates". - Mario
+
+% In earlier papers you briefly touched the subject of this argument: "If the algorithm efficient in terms of computational complexity it has to be more energy efficient" 
+% and justify the need (and difficulty) of testing implementations on real hardware. This could be pertinent here.
+ 
+
+% In the case of EAs, we can also define a computational budget
+% in terms of the number of fitness evaluations. However, this
+% does not necessarily translate into an equivalent energy budget.
+
+
+% We have this two points: 
+%    We define a measurement protocol that includes all conditions. 
+%    We model energy consumption including all  conditions.
+% Addressing the influence and interacionts of all parameters.
+% Seems to me that is to broad of a subject (and a long term goal), maybe a more concrete description of the elements 
+% can be better undertood by the readers.
+% Also "the effect of all parameters" needs that we specify which parameters. 
+% - Mario
 \onecolumn
 \maketitle
 \normalsize
@@ -58,10 +78,23 @@ A common approach in this context has been to try to eliminate the dependence of
 In this sense, many authors have proposed fixing the temperature, lock clock frequencies and fix the core \cite{pereira2017energy} where the process is going to be running, performing any other kind of operation like a cool-down period after every run (suggested, for instance, by \cite{cotta25}) or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue remains: in a real environment like the one most scientists can afford, i.e., a desktop computer, the operating context will influence results in complex ways. Furthermore, there is a second issue: the way the implementation will influence that same operating environment, creating hysteresis-like effects \cite{cotta25}. %% Add missing backslash -Carlos
 
 We consider a different approach: to include the operating context variables in
-performance models, so that we can understand how they influence energy consumption and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such. By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels. Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying  implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
+performance models, so that we can understand how they influence energy consumption and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such.
+% About "Time needed to run which is impacted by power-saving measures":
+% I think this is both ways, more time or heavy load can also trigger temperature preserving measures? - Mario 
+
+By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels. Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying  implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
 
 In this work, we take steps in this direction, %% termino de editar -Carlos
 looking at understanding how we can use the models to make decisions about changes, and how such changes, whether at the algorithmic, implementation, or parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with slightly more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
+
+% On this subject: Can the energy consumed, is accessible to the algorithm it self?
+% I mean could it stop when it reaches the energy budget it has?  - Mario
+
+% I think the Introduction needs to be more concrete in a certain point. We measured A, B, and C, and their effects on X, Y, Z. On this EA becuase of D. - Mario
+% And justify why these paramters will help us reach the goals stated above. - Mario
+
+% In other papers, we talked about the need to prime our testing environment to try to have a consistent testing ground. In this Intro 
+% I got lost in many variables, interactions, decisions, issues, models. There are concrete things but they need to be clearly specified? - Mario  
 
 The rest of the paper is organized as follows: next we present
 background and previous work in Sect. \ref{sec:soa}; then, we proceed to
