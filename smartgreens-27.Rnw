@@ -686,6 +686,8 @@ energy_fitness_kable( no_alpha_mutation_energy_fitness,
   caption = "Median workload energy ($\\Delta$PKG), median distance to the optimum ({\\sf diff\\_fitness}) and energy-fitness score, $\\log_{10}$(energy $\\times$ {\\sf diff\\_fitness}), for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}. Lower is better in all columns." )
 @
 
+Table \ref{tab:smartgreens.no.alpha.mutation.energy.fitness} compares energy and fitness for these two last experiment levels, {\sf low\_mutation} and {\sf no\_alpha\_mutation}. The score changes by \Sexpr{sprintf("%.2f", no_alpha_mutation_energy_fitness_score_change)} with a very small increment in energy; the improvement in orders of magnitude in fitness carries the score to a negative value (lower is better).
+
 <<smartgreens.no.alpha.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
 # Same analysis as smartgreens.low.mutation.operating.conditions, now with
 # low_mutation as the reference. Savings are positive when no_alpha_mutation
