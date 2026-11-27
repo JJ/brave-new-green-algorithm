@@ -93,13 +93,16 @@ By understanding these interactions between algorithm operation, measurement met
 % understanding the interaction between the operating context, the measuring approach (techniques), and the metaheuristic algorithm - Mario
 % I think is better to make it explicit - Mario
 % Measurement methodology included - JJ
-Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying  implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
+Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
 
-In this work, we take steps in this direction, %% termino de editar -Carlos
-looking at understanding how we can use the models to make decisions about changes, and how such changes, whether at the algorithmic, implementation, or parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with slightly more energy consumption. As an auxiliary research question, we would like to know whether there is, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
+Thus, what we are going to do in this paper is as follows: we will take a baseline algorithm and measure the fitness achieved and performance for a set of parametrizations. From that baseline configuration, we will perform incremental changes and analyze how energy expenses and fitness level change. The models will allow us to understand why they change; either we accept or reject the change, using the changed configuration as the new baseline if it is accepted. We will then perform additional changes by using the insights gathered by the previous models so that further gains are obtained; since these additional gains are not guaranteed, we always measure and compare, looking for a possible {\em free lunch}.
+
+In this work, we take steps in this direction,
+looking at understanding how we can use the models to make decisions about keeping or rejecting changes in configurations, and how such changes, whether at the algorithmic, implementation, or parametric level, can influence energy consumption and the level of fitness achieved. The main research question is the kind of decisions, and at what level, that can help us to get a very cheap lunch, that is, a slightly worse fitness with much less energy consumption, or a much better fitness with slightly more energy consumption. As an auxiliary research question, we would like to know whether we can find, in fact, a free lunch: better fitness with less energy, and what contexts would favor such a situation.
 
 % On this subject: Can the energy consumed, is accessible to the algorithm it self?
 % I mean could it stop when it reaches the energy budget it has?  - Mario
+% No, we're not using it so far - JJ
 
 % I think the Introduction needs to be more concrete in a certain point. We measured A, B, and C, and their effects on X, Y, Z. On this EA becuase of D. - Mario
 % And justify why these paramters will help us reach the goals stated above. - Mario
