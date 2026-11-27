@@ -36,7 +36,7 @@
 
 \keywords{Green Computing, Energy Profiling Methodologies, Metaheuristics.}
 
-\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes them and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. We apply this model to different versions and configurations of an existing evolutionary algorithm that incorporates population stratification working on a numerical landscape; these different versions include implementation, algorithmic as well as parametrization varations. Via insights gathered by these models, we attain an algorithmic solution that reaches a fitness optimum at a very low cost or approximates it spending much less energy than others evaluated.}
+\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes them and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. We apply this model to different versions and configurations of an existing evolutionary algorithm that incorporates population stratification working on a numerical landscape; these different versions include implementation, algorithmic as well as parametrization variations. Via insights gathered by these models, we attain an algorithmic solution that reaches a fitness optimum at a very low cost or approximates it spending much less energy than others evaluated.}
 
 % added "landscape" something was missing - Mario 
 
@@ -72,7 +72,7 @@
 %
 %
 %
-\section{\uppercase{Introduction and State of the Art}}
+\section{\uppercase{Introduction}} % There is a SoA section - M
 
 An algorithm is an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences energy consumption. %% Make this more compact -Carlos   Deleted a few words, the meaning is the same - M
 When implementing a metaheuristic, adapting it, or tweaking its parameters, we usually aim for efficiency in both the search and, if possible, energy consumption.
@@ -85,7 +85,7 @@ However, relying on energy measurements to take decisions requires the latter to
 A common approach in this context has been to try to decouple energy measurements from the operating context \cite{merelo25,bna25-anon}.
 In this sense, many authors have proposed to keep most operating parameters fixed, including the external temperature, lock clock frequencies and the selected core \cite{pereira2017energy} where the process is going to be running. Moreover, other researchers include additional steps like a cool-down period after every run (suggested, for instance, by \cite{cotta25}) or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue remains: in a real environment like the one most scientists can afford, i.e., a desktop computer, the operating context will influence results in complex ways, which means that the real result obtained in production might be completely different from the one obtained in measurements. Furthermore, there is a second issue: the way a particular implementation will influence that same operating environment, creating hysteresis-like effects \cite{cotta25}.
 
-In our effort to obtain energy savings while optimizing the operation of the algorithm to achieve better fitness, we consider here a different approach: to include the operating context variables when making a statistital model of how energy is spent,
+In our effort to obtain energy savings while optimizing the operation of the algorithm to achieve better fitness, we consider here a different approach: to include the operating context variables when making a statistical model of how energy is spent,
 so that we can understand how they influence energy consumption and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such.
 % About "Time needed to run which is impacted by power-saving measures":
 % I think this is both ways, more time or heavy load can also trigger temperature preserving measures? - Mario
@@ -153,7 +153,7 @@ More precisely, reproduction goes as follows by caste:
 \begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
 \item The $\beta$ caste will reproduce only with members of the $\alpha$ caste, again with mutation and crossover.
-\item The $\delta$ and $\epsilon$ castes will only reproduce via cloning; this clones will then be mutated.
+\item The $\delta$ and $\epsilon$ castes will only reproduce via cloning; these clones will then be mutated.
 \item The $\gamma$ caste will use hill-climbing for a number of steps to improve its fitness.
 \end{itemize}
 
@@ -184,7 +184,7 @@ BNA, opening new venues of research as well as energy-saving. In this paper, how
 \section{\uppercase{Experiments and Results}}\label{sec:exp}
 
 We have used the following hardware-software stack for the experiments\begin{itemize}
-\item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 16 cores and 32 threads in a functionally heterogeneous configuration, with cores power-capped depending on their certified performance. Although architecturally both dies are identical, cores are grouped in descending order of frequency rating, making it in practice a heterogeneous configurarion.
+\item We will be running them in an AMD Ryzen 9 9950X 16-Core Processor. This is a two-chiplet CPU with 16 cores and 32 threads in a functionally heterogeneous configuration, with cores power-capped depending on their certified performance. Although architecturally both dies are identical, cores are grouped in descending order of frequency rating, making it in practice a heterogeneous configuration.
 \item We are running Ubuntu 25.10 with kernel {\tt 6.17.0-19-generic}.
 \item The frequency scaling driver is set to {\tt amd-pstate-epp} and the scaling governor to {\tt powersave}. The energy performance preference is set to {\tt balance\_performance}, which is the default behavior. This again seeks to reproduce actual researcher configuration.
 \item The version of Julia used is 1.11.9. This is not the latest stable release (that would be 1.13), but initial performance tests discarded latest versions.
@@ -220,7 +220,7 @@ We have established another experimental condition, specific for multi-die CPUs,
 For this paper, we have focused on a single problem and a single dimension: The Sphere floating-point fitness function included in the BBOB benchmark \cite{hansen2010comparing} for 10 dimensions. The reason we have not introduced more functions and dimensions is that we wanted to focus on the effect of the operating conditions (measured through running time and temperatures) and the algorithm parameters as well as results (fitness, evaluations). Introducing more degrees of freedom would not give us more insights into this model, and it might confuse the interpretation of results\footnote{In the discussion section we will include how these results can be generalized to other problems and dimensions.}. % We need to check we do this - Done JJ
 Statistical analysis, however, provides the certainty we need to draw sound conclusions from this set of experiments.
 %Additional justification for the use of the Sphere function. --Carlos
-Furthermore, and crucially for the purposes or the study, the Sphere function is relatively inexpensive from a computational point of view, thus making more visible the energy costs associated to the evolutionary machinery (which might be masked to a larger extent were a highly expensive objective function --or a very high-dimensional version thereof-- considered). This allows us to examine more directly how algorithmic and implementation choices and operating conditions influence energy consumption,
+Furthermore, and crucially for the purposes of the study, the Sphere function is relatively inexpensive from a computational point of view, thus making more visible the energy costs associated to the evolutionary machinery (which might be masked to a larger extent were a highly expensive objective function --or a very high-dimensional version thereof-- considered). This allows us to examine more directly how algorithmic and implementation choices and operating conditions influence energy consumption,
 %Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions,
 % "operating conditions" == "operating context" ?  I like operating conditions - Mario
 % yes, pretty much - JJ
@@ -407,7 +407,7 @@ The extra energy spent by the $\gamma$ upgrade is \Sexpr{if (gamma_energy_throug
 does not change the extra energy.
 This extra energy, \Sexpr{round(gamma_total_effect, 1)} J (\Sexpr{format_p_value(gamma_total_effect_p_value)}), is \Sexpr{gamma_significance_text}: it is \Sexpr{round(gamma_effect_percentage_of_run, 1)}\% of the \Sexpr{round(gamma_total_energy_per_run)} J that a workload run spends in total, and well below the \Sexpr{round(gamma_run_to_run_spread)} J standard deviation of run-to-run energy left once the algorithm parameters and initial temperature are accounted for, which reflects mostly the operating conditions. This means that we are not buying anything with this change, and losing something: a small but significant amount of energy. We need then to reject this change, even if {\em a priori} it seemed a good idea. So let us try and perform additional changes to the algorithm or parameter values, always looking for better fitness/energy ratios.
 
-A possible fitness-neutral path to optimization is to work on the platform, making it faster, which in principle will it make spend less energy. In the case of Julia, one straightforward way is to look for unused libraries in the dependencies list and eliminate it. That, however, will work on the $B$ runs. In order to also optimize the
+A possible fitness-neutral path to optimization is to work on the platform, making it faster, which in principle will make it spend less energy. In the case of Julia, one straightforward way is to look for unused libraries in the dependencies list and eliminate it. That, however, will work on the $B$ runs. In order to also optimize the
 $W$ runs we will perform two additional optimizations: reduce memory allocations during caste distribution, and eliminate computing population entropy, a feature that we are not actually using in this case and that involved $p^2$ operations where $p$ is the population size.
 
 <<ppsn.microopt, message=FALSE, echo=FALSE, fig.cap="Comparing baseline with the micro-optimized version of the algorithm.", fig.height=3, fig.pos="!tbp", fig.env="figure*">>=
@@ -422,23 +422,14 @@ comparison_microopt_w <- process_deltas(comparison_microopt)
 
 comparison_microopt_w$initial_temp <- (comparison_microopt_w$initial_temp_1 + comparison_microopt_w$initial_temp_2)/2
 comparison_microopt_w$final_temp <- (comparison_microopt_w$final_temp_1 + comparison_microopt_w$final_temp_2)/2
-
-comparison_bm <- ggplot(comparison_microopt_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) +
-  geom_point(alpha=0.5) +
-  labs(x = "Diff Fitness",
-    y = "Delta PKG"
-  ) + theme(legend.position = "bottom") + theme_minimal()
-
-ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5)
-
-# ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, color=factor(alpha), shape=factor(group))) +
+comparison_bm <- ggplot(comparison_microopt_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) + geom_point(alpha=0.5) + labs(x = "Diff Fitness", y = "Delta PKG") + theme(legend.position = "bottom") + theme_minimal() ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5) # ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, color=factor(alpha), shape=factor(group))) +
 #   geom_point(alpha=0.5) +
 #   labs(x = "Delta Seconds",
 #     y = "Delta PKG"
 #   ) + theme(legend.position = "bottom") + theme_minimal()
 @
 
-In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better.
+In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better. % But the results are safe? - Mario
 
 <<smartgreens.microopt.energy.fitness, message=FALSE, echo=FALSE>>=
 # Energy effort per fitness level: energy-fitness product (median delta_PKG x
@@ -575,7 +566,7 @@ energy_fitness_kable( low_mutation_energy_fitness,
 @
 %
 
-Table \ref{tab:smartgreens.low.mutation.energy.fitness} summarizes the previous figure, showing median workload energy in Joules as well as median fitness difference, together with the logarithmic score. The difference \Sexpr{low_mutation_energy_fitness_score_change} highlights the overall improvement achieved despite having spent more energy in the process (almost 50\% more) in the process.
+Table \ref{tab:smartgreens.low.mutation.energy.fitness} summarizes the previous figure, showing median workload energy in Joules as well as median fitness difference, together with the logarithmic score. The difference \Sexpr{low_mutation_energy_fitness_score_change} highlights the overall improvement achieved despite having spent more energy in the process (almost 50\% more).
 %
 <<smartgreens.low.mutation.operating.conditions, message=FALSE, echo=FALSE>>=
 # Same analysis as smartgreens.microopt.operating.conditions, microopt as the
@@ -680,9 +671,10 @@ Table \ref{tab:smartgreens.low.mutation.run.length.energy} shows the individual 
 
 We can only advance a supposition of the possible causes of this change: every generation, the population is ranked, the old population discarded; this means that if more generations are running, there is an additional need for allocating and discarding memory; since more generations are being run in substantially the same time, this means more power is going to be needed for the code itself as well as possibly garbage collecting in memory.
 
-At any rate, what is clear is that algorithmic as well as simple parametric decisions will have an impact in every aspect of the performance, and that this is impossible to predict in advance: a sound measuring protol, like the one we are using here, as well ad statistical analysis beyond central measures, is needed to understand what is really happening and why it is happening.
+At any rate, what is clear is that algorithmic as well as simple parametric decisions will have an impact in every aspect of the performance, and that this is impossible to predict in advance: a sound measuring protol, like the one we are using here, as well as statistical analysis beyond central measures, is needed to understand what is really happening and why it is happening.
 
-The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
+The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph % Which graph - Mario
+and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
 
 <<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final fitness for the low mutation and zero alpha set of experiments.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 source("R/process_covariates.R")
@@ -771,7 +763,7 @@ operating_conditions_kable( no_alpha_mutation_operating, "low_mutation", "no_alp
   caption = "Influence of the operating conditions on the energy ($\\Delta$PKG) of a workload run, for {\\sf low\\_mutation} and {\\sf no\\_alpha\\_mutation}, with the same algorithm configuration and number of evaluations. Only the values that differ significantly between the two versions ($p < 0.05$) are shown." )
 @
 
-We show in Table \ref{tab:smartgreens.no.alpha.mutation.operating.conditions} the usual comparison of the influence of the change in the operating conditions; all diferences shown in this table are significant, however, there are no dramatic differences: {\sf no\_alpha\_mutation} spends slightly more energy per second of running time, but less at the same temperature. The slight change in running time also implies a slightly different change in median initial temperature (which is averaged over the two dies). A parametric change that has not altered the energy profile but has, however, achieved a more efficient sampling of the search space, obtaining a dramatic improvement in the fitness level reached.
+We show in Table \ref{tab:smartgreens.no.alpha.mutation.operating.conditions} the usual comparison of the influence of the change in the operating conditions; all differences shown in this table are significant, however, there are no dramatic differences: {\sf no\_alpha\_mutation} spends slightly more energy per second of running time, but less at the same temperature. The slight change in running time also implies a slightly different change in median initial temperature (which is averaged over the two dies). A parametric change that has not altered the energy profile but has, however, achieved a more efficient sampling of the search space, obtaining a dramatic improvement in the fitness level reached.
 
 <<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!t", fig.env="figure*">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
@@ -882,9 +874,10 @@ Table \ref{tab:smartgreens.no.alpha.mutation.alpha.energy.fitness} splits the pr
 
 We all know that there is no free lunch \cite{wolpert2002no}: if you want better fitness, you need to search a bigger part of the search space, or do it more efficiently, but the operators that perform that efficient search come at a cost. However, we can always look for a very economic lunch: try to obtain better fitness levels with a small energetic investment. This is what we have achieved through a sequence of changes in the Brave New Algorithm, a stratified evolutionary algorithm.
 
-While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em run-to-idle} protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only to find which configuration consumes the most energy, but also which factors among the operating conditions, experimental interventions and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using different statistical models that separate the interaction among the different experimental variables from the operating conditions.
+While that has been the final objective, we have had to set up an experimental framework and analysis that effectively proves that is the case. This experimental framework firstly relies on examining operating conditions (mainly temperature), setting up a framework that interleaves {\em baseline} (no workload) and workload experiments, and repeats executions of the same configuration and set of runs under different conditions, using a {\em hot-first} % hot-first - Mario
+protocol in a multi-die CPU (so that new processes are always run in the {\em hotter} die). This way, we can eventually create models not only to find which configuration consumes the most energy, but also which factors among the operating conditions, experimental interventions and algorithm parameters contribute the most to energy consumption and in which direction. This latter goal is accomplished using different statistical models that separate the interaction among the different experimental variables from the operating conditions.
 
-We have eventually achieved a configuration which eliminates mutation from the $\alpha$ caste which is able to achieve a significant improvement over all the others examined in this paper, including one from which it is a small change that simply does include mutation in that caste. This change also makes the percentage of population included in that cast much more determinant: the more population is in that caste, the better: including 25\% of the population in that caset has an energy/fitness score that is 7x better than leaving simply 10\%.
+We have eventually achieved a configuration which eliminates mutation from the $\alpha$ caste which is able to achieve a significant improvement over all the others examined in this paper, including one from which it is a small change that simply does include mutation in that caste. This change also makes the percentage of population included in that caste much more determinant: the more population is in that caste, the better: including 25\% of the population in that caste has an energy/fitness score that is 7x better than leaving simply 10\%.
 
 The interesting thing about this change is that, first, it is within the spirit of the zen of evolutionary algorithms \cite{Zen}: we let Nature, in this case, Literature, be our guide and we stick to the spirit of the $\alpha$ caste by not making any random change in the genetic make-up they leave to their offspring; second, we tip the balance towards exploitation and at the same time we save energy by {\em not} applying one specific operator to a percentage of the population.
 
@@ -893,7 +886,7 @@ We should also emphasize how using the logarithmic energy/fitness score measured
 The fact that reducing energy consumption while obtaining better fitness is related to search space sampling and how some configurations avoid non-promising areas to focus on those that lead to global optima is possibly the key to extending the results to different kinds of optimization problems, for instance multimodal ones. What is interesting about the method presented in this paper is that it does not prescribe specific configurations, but a methodology that starts with an energy measurement methodology, continues with the use of statistical models that include system operating conditions to gather insights on how and why energy is spent, and finishes with the use of a single value, the fitness/energy score, to compare them. This methodology can be generalized to any kind of optimization problem, allowing us to seek that {\em free lunch} we have found here, if it is at all available.
 
 Although the main point of the paper has been well proved by using a single BBOB function, it would be interesting to work with other, more energy-demanding functions, as was found in \cite{merelo25}. The energy consumption model will most likely change, giving the number of evaluations a greater influence on the final profile. By how much, however, remains to be seen and measured.
-On the other hand, this methodology of researching energy efficiency together with online performance positions the Brave New Algorithm to achieve more competitive results can be achieved, so an investigation into its possibilities in the BBOB suite is already within reach. This, however, is left as future work, together with the implications in the exploration/exploitation feedback loop of population segments devoted exclusively to crossover and hillclimbing (exploitation) or mutation (exploitation).
+On the other hand, this methodology of researching energy efficiency together with online performance positions the Brave New Algorithm to achieve more competitive results, so an investigation into its possibilities in the BBOB suite is already within reach. This, however, is left as future work, together with the implications in the exploration/exploitation feedback loop of population segments devoted exclusively to crossover and hillclimbing (exploitation) or mutation (exploration).
 
 
 \section*{\uppercase{Acknowledgements}}
