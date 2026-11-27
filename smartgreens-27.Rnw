@@ -75,7 +75,8 @@
 \section{\uppercase{Introduction and State of the Art}}
 
 An algorithm is an abstract construct: it exists independently of any particular hardware platform or programming language. However, once an algorithm is implemented and executed on a physical machine, energy consumption becomes an unavoidable concern. Cotta et al. \cite{cotta25} demonstrated that the operating context (i.e., the set of environmental and system-level conditions under which a program runs, such as CPU temperature, clock frequency, and competing processes) significantly influences energy consumption. %% Make this more compact -Carlos   Deleted a few words, the meaning is the same - M
-When implementing a metaheuristic, adapting it, or tweaking its parameters, we are usually aiming for efficiency in both performance and energy consumption if possible.
+When implementing a metaheuristic, adapting it, or tweaking its parameters, we usually aim for efficiency in both the search and, if possible, energy consumption.
+%we are usually aiming for efficiency in both performance and energy consumption if possible. Changed this - Mario
 % Performance can measure other things: in terms of the quality of the solution, the time it takes to find a feasable solution, or the number of evaluations.
 % aiming to increase the efficiency of the search and energy consumption? - M
 However, relying on energy measurements to take decisions requires the latter to be reliable and reproducible. % the latter -> a framewok? - Mario
