@@ -192,21 +192,21 @@ We have used the following hardware-software stack for the experiments\begin{ite
 
 For every experiment, we save the following data: %Saving space --Carlos
 (i) %\begin{itemize}
-%\item 
+%\item
 Initial and final temperature for every die, (ii)
-%\item 
+%\item
 Die where the process is running, (iii)
-%\item 
+%\item
 PKG (CPU) energy spent, taken from the RAPL counters, and (iv)
-%\item 
+%\item
 Time used.
 %\end{itemize}
 
 Since every run is affected by the overhead, we will try to isolate the workload by having two types of runs (changed by a command line switch): %Saving space --Carlos
 %\begin{itemize}
-%\item 
+%\item
 {\em Baseline} runs, which just generate the initial population,
-%\item 
+%\item
 and {\em workload} runs which run the algorithm until the end conditions are met.
 %\end{itemize}
 
@@ -235,12 +235,12 @@ We will test 16 and 64 steps.
 
 This gives us 16 different parameter settings times 30 $W$ and 31 $B$ runs. To ensure we cover different operating conditions, we repeat every set 4 times after at least one reboot; the distance between one set of experiments and the next is random.
 %Additional info on the statistical model --Carlos
-We use the Frisch-Waugh-Lovell (FWL) theorem \cite{Lovell01121963} to estimate the association between a variable and energy consumption, hence allowing us to analyze the relationship between energy consumption, algorithmic configurations, and operating conditions.
+We model energy consumption ($\Delta$PKG) using linear regressions in which the algorithm configuration (the four parameters, with all their interactions) is always a control, and the version of the algorithm is the variable of interest. To find out {\em why} a version spends more or less energy, we add to the model, one at a time and in causal order, the variables through which the change could act (initial temperature, generations, evaluations, running time and power drawn), and observe how much of the version effect each of them absorbs \cite{baron1986moderator}. We also separate the energy into running time and power drawn by letting the slopes of running time and initial temperature differ between versions. Differences in medians are tested using Wilcoxon rank-sum tests. This allows us to analyze the relationship between energy consumption, algorithmic configurations, and operating conditions.
 We have an open science policy and therefore, all code, experimental results and analyses are available under a free license at our repository \cite{Ceci2021bnea-anon}.
 
 The first batch of experiments will be used as experimental baseline; the mutation rate for every caste will be 40\%, meaning that, on average, 4 components of every individual mutated (whose dimension is 10) will change randomly within a certain range; using this baseline, we will perform different experiments changing algorithm implementation or design.
 
-<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Testing the gamma upgrade against the baseline.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
+<<ppsn.baseline, echo=FALSE, message=FALSE, fig.cap="Delta PKG vs. delta fitness, gamma upgrade against the baseline.", fig.height=3, fig.pos="h!", fig.env="figure*">>=
 source("R/process_deltas.R")
 library(dplyr)
 library(ggplot2)
