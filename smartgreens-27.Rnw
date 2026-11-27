@@ -36,20 +36,22 @@
 
 \keywords{Green Computing, Energy Profiling Methodologies, Metaheuristics.}
 
-\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes all these conditions and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. Applying this model to an existing evolutionary algorithm based on population stratification,
-we attain an algorithmic solution that reaches an optimum at a very low cost or
+\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes them and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. WE apply this model to different versions and configurations of an existing evolutionary algorithm that incorporates population stratification working on a numerical; these different versions include implementation, algorithmic as well as parameter value changes. Via insights gathered by these models, we attain an algorithmic solution that reaches a fitness optimum at a very low cost or
 approximates it spending much less energy than others evaluated.}
 
 % It was not clear the role of stratification of the population.
 % I put based, because is an important feature, but it could be "that incorporates". - Mario
+% changed to that - JJ
 
 % In earlier papers you briefly touched the subject of this argument: "If the algorithm efficient in terms of computational complexity it has to be more energy efficient"
 % and justify the need (and difficulty) of testing implementations on real hardware. This could be pertinent here.
+% We are not really changing complexity as far as I remember. - JJ
 
 
 % In the case of EAs, we can also define a computational budget
 % in terms of the number of fitness evaluations. However, this
 % does not necessarily translate into an equivalent energy budget.
+% The problem is that we are precisely measuring how the algorithm itself regulates its budget and how it translates into better fitness - JJ
 
 
 % We have this two points:
@@ -60,6 +62,7 @@ approximates it spending much less energy than others evaluated.}
 % can be better undertood by the readers.
 % Also "the effect of all parameters" needs that we specify which parameters.
 % - Mario
+% Abstract rewritten. Please take a look - JJ
 \onecolumn
 \maketitle
 \normalsize
