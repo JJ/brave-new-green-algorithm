@@ -489,7 +489,7 @@ operating_conditions_kable( microopt_operating, "baseline", "microopt",
 %
 What we show in Table \ref{tab:smartgreens.microopt.operating.conditions} is how these energy savings are achieved; the main way of changing total energy spent is through running time, but also through the indirect influence in the operating conditions, mainly temperature: higher temperature would mean more energy is spent. The initial temperature for the $W$ (Workload) runs is influenced by all runs in the batch so far, but more directly by the $B$ run that precedes it; in that sense, the {\sf microopt} experiment $W$ runs start at a slightly higher temperature. However, it incurs in less energy expenses by every degree of initial temperature, so the total balance tips towards this new experimental level. The same occurs on the running time side: it runs faster, and it spends less energy for each second. This change, effectively, is the closest we will get to a {\em free ride}: spend less energy for a better fitness. So we will keep it as the new baseline.
 
-<<smartgreens.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the microopt and low mutation set of experiments.", fig.height=3, fig.pos="!tbp", fig.env="figure*">>=
+<<smartgreens.low.mutation, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final fitness for the microopt and low mutation set of experiments.", fig.height=3, fig.pos="!tbp", fig.env="figure*">>=
 source("R/type_two_variance.R")
 load("data/ppsn_low_mutation.rds")
 load("data/ppsn_microopt.rds") # redo this, we can use the die now
@@ -667,7 +667,7 @@ At any rate, what is clear is that algorithmic as well as simple parametric deci
 
 The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
 
-<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final temperature for the low mutation and zero alpha set of experiments.", fig.height=4, fig.pos="h!tbp", fig.env="figure*">>=
+<<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final fitness for the low mutation and zero alpha set of experiments.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
 source("R/process_covariates.R")
 load("data/ppsn_no_alpha.rds")
 ppsn_no_alpha$group <- "no_alpha"
@@ -756,7 +756,7 @@ operating_conditions_kable( no_alpha_mutation_operating, "low_mutation", "no_alp
 
 We show in Table \ref{tab:smartgreens.no.alpha.mutation.operating.conditions} the usual comparison of the influence of the change in the operating conditions; all diferences shown in this table are significant, however, there are no dramatic differences: {\sf no\_alpha\_mutation} spends slightly more energy per second of running time, but less at the same temperature. The slight change in running time also implies a slightly different change in median initial temperature (which is averaged over the two dies). A parametric change that has not altered the energy profile but has, however, achieved a more efficient sampling of the search space, obtaining a dramatic improvement in the fitness level reached.
 
-<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
+<<ppsn.no.alpha.model, message=FALSE, echo=FALSE, warning=F, fig.cap="Violin boxplot, no-alpha vs. low-mutation.", fig.height=3, fig.pos="h!t", fig.env="figure*">>=
 comparison_low_mutation_no_alpha_covariates$alpha <- factor(comparison_low_mutation_no_alpha_covariates$alpha)
 comparison_low_mutation_no_alpha_covariates$steps <- factor(comparison_low_mutation_no_alpha_covariates$steps)
 comparison_low_mutation_no_alpha_covariates$max_gens <- factor(comparison_low_mutation_no_alpha_covariates$max_gens)
