@@ -147,8 +147,6 @@ Thus, we are not proposing a new metaheuristic, but rather a new way of structur
 
 What BNA introduces with respect to other EAs is the division of the population into {\em castes} (i.e., strata);
 each receiving a differentiated treatment for reproduction.
-%% tuning down the metaphor -Carlos
-%% :-) - JJ
 More precisely, reproduction goes as follows by caste:
 \begin{itemize}
 \item The $\alpha$ caste will mate only with other individuals of the same caste, undergoing mutation and then crossover.
@@ -164,20 +162,14 @@ The algorithm uses elitism to keep the best member of the previous population
 (replacing the worst one) but other than that, all individuals reproduce one way or the other. This is the main difference with respect to other EAs: the worst elements are not dropped from the reproduction pool but mutated in a random or directed way (in the case of $\gamma$). This is intended to keep a diverse population, striking a good exploration/exploitation balance again. This diversity can be enhanced by using differential mutation rates for the different castes;
 while
 this adds another parameter for experimental design,
-%but still
 it allows customization for specific problems or problem sizes.
-%
-%The parameters that can be varied in the algorithm are then
 The free parameters are thus:
 \begin{itemize}
 \item Population size:
-%Due to the population structure there are restrictions on the number of individuals; essentially, all castes need to have an integer as size.
 Note that all castes need to have a non-zero integer size, which limits the possible values for this parameter.
 \item $\alpha$ percentage:
-%which is
 the essential parameter for controlling the balance between exploitation and exploration.
 \item Mutation rates
-%for the different castes except $\gamma$, which
 (for all castes except $\gamma$): these can be set to the same value or customized for every caste.
 \item Local-search depth: maximum number of hill-climbing steps while there is still improvement in the fitness.
 \item Stopping criterion: the maximum number of generations without improvement.
@@ -220,6 +212,7 @@ Statistical analysis, however, provides the certainty we need to draw sound conc
 
 Our intention is to try, with experiments, to see the dependence of energy consumption on algorithm parameters as well as operating conditions,
 % "operating conditions" == "operating context" ?  I like operating conditions - Mario
+% yes, pretty much - JJ
 and the dependence of fitness reached on the latter, in order to check if it is possible at all to reach lower levels of fitness spending less or the same energy. The four parameters that we will be changing are:\begin{itemize}
 \item $\alpha$ percentage with two values: 10\% and 25\%. Since it is the main lever for the exploitation/exploration balance, we are looking for better fitness values with less space exploration (less evaluations).
 \item The number or {\sf steps} for hill-climbing in the $\gamma$ caste is related to
