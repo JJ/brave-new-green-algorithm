@@ -57,9 +57,9 @@ approximates it spending much less energy than others evaluated.}
 % We have this two points:
 %    We define a measurement protocol that includes all conditions.
 %    We model energy consumption including all  conditions.
-% Addressing the influence and interacionts of all parameters.
+% Addressing the influence and interactions of all parameters.
 % Seems to me that is to broad of a subject (and a long term goal), maybe a more concrete description of the elements
-% can be better undertood by the readers.
+% can be better understood by the readers.
 % Also "the effect of all parameters" needs that we specify which parameters.
 % - Mario
 % Abstract rewritten. Please take a look - JJ
@@ -78,21 +78,21 @@ When implementing a metaheuristic, adapting it, or tweaking its parameters, we a
 % Performance can measure other things: in terms of the quality of the solution, the time it takes to find a feasable solution, or the number of evaluations.
 % aiming to increase the efficiency of the search and energy consumption? - M
 However, relying on energy measurements to take decisions requires the latter to be reliable and reproducible. % the latter -> a framewok? - Mario
+% No, energy consumption
 
-A common approach in this context has been to try to decouple energy measurements from the operating context \cite{merelo25,bna25-anon}. %% swaps references to use natural order -Carlos
-%% Saving orphan lines -Carlos
-In this sense, many authors have proposed to keep most parameters fixed, including the temperature, lock clock frequencies and the selected core \cite{pereira2017energy} where the process is going to be running. Moreover, other researchers include additional steps like a cool-down period after every run (suggested, for instance, by \cite{cotta25}) or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue remains: in a real environment like the one most scientists can afford, i.e., a desktop computer, the operating context will influence results in complex ways. Furthermore, there is a second issue: the way a particular implementation will influence that same operating environment, creating hysteresis-like effects \cite{cotta25}. %% Add missing backslash -Carlos
+A common approach in this context has been to try to decouple energy measurements from the operating context \cite{merelo25,bna25-anon}.
+In this sense, many authors have proposed to keep most operating parameters fixed, including the external temperature, lock clock frequencies and the selected core \cite{pereira2017energy} where the process is going to be running. Moreover, other researchers include additional steps like a cool-down period after every run (suggested, for instance, by \cite{cotta25}) or simply running exclusively the implementation they are interested in \cite{MANCEBO2021106560}. However, the main issue remains: in a real environment like the one most scientists can afford, i.e., a desktop computer, the operating context will influence results in complex ways, which means that the real result obtained in production might be completely different from the one obtained in measurements. Furthermore, there is a second issue: the way a particular implementation will influence that same operating environment, creating hysteresis-like effects \cite{cotta25}.
 
-We consider a different approach: to include the operating context variables in
-performance models, % Is not clear what a performence model is (at this point), we only talked about the difficulty of measuring, and that there are several approaches  - M
-% A performence model, is a model of the system, including the interaction of certain variables, a methodology for running the experiments, that mesures energy consumption. -M
+In our effort to obtain energy savings while optimizing the operation of the algorithm to achieve better fitness, we consider here a different approach: to include the operating context variables when making a statistital model of how energy is spent,
 so that we can understand how they influence energy consumption and how they interact with algorithm parameters; in general, we consider operating variables (mainly temperature, but also time needed to run which is impacted by power-saving measures) a {\em covariant} with the energy consumed, and modeled as such.
 % About "Time needed to run which is impacted by power-saving measures":
 % I think this is both ways, more time or heavy load can also trigger temperature preserving measures? - Mario
+% That is more or less correct, but that's already taken into account with the temperature.
 
-By understanding these interactions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms and implementations that are more energy-efficient, while still achieving good fitness levels.
+By understanding these interactions between algorithm operation, measurement methodology and operating conditions, we could pave the way to minimize the effect of these context variables on energy consumption, and make informed decisions about how to design algorithms, implementations or parametrizations that are more energy-efficient, while still achieving good fitness levels.
 % understanding the interaction between the operating context, the measuring approach (techniques), and the metaheuristic algorithm - Mario
 % I think is better to make it explicit - Mario
+% Measurement methodology included - JJ
 Because we should not forget that the objective of a metaheuristic is to optimize fitness, and we need to understand the tradeoffs involved in saving energy while still reaching a fitness level that is acceptable. By studying  implementation and algorithmic issues together, we can take informed decisions on the kind of direction we want to carry our algorithm implementations.
 
 In this work, we take steps in this direction, %% termino de editar -Carlos
