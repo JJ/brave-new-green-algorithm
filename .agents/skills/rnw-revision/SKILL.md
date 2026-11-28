@@ -1,75 +1,48 @@
 ---
 name: rnw-revision
 description: |
-  Skill to automatically review .Rnw LaTeX papers for orthographic, typographic, and consistency issues.
-  It checks spelling, grammar, figure/table citations, and ensures that the abstract and conclusions accurately reflect the content.
-  The skill produces a markdown report of findings and optionally fixes simple issues in-place.
+  Review .Rnw LaTeX papers for orthographic, typographic, and consistency issues.
+  Checks spelling, grammar, labels, citations, and abstract/conclusion alignment,
+  producing a review report or applying fixes directly in-place.
 ---
 
-# Overview
+# Review and Revise .Rnw Papers
 
-This skill provides a command‑line R script that scans a specified `.Rnw` file (or all `.Rnw` files in a directory) and performs the following checks:
+Directly inspect and revise `.Rnw` (LaTeX + knitr) papers for linguistic, typographic, and structural consistency.
 
-1. **Spelling & Grammar** – Uses the `hunspell` dictionary (via the `hunspell` R package) to flag unknown words and common typos.
-2. **Typographic Consistency** – Detects non‑ASCII characters, double spaces, repeated punctuation, and inconsistent use of en‑dash/em‑dash.
-3. **Figure / Table References** – Parses LaTeX `\label{}` and `\ref{}` pairs to find:
-   * Figures or tables that are defined but never referenced.
-   * References to undefined labels.
-   * Mismatched numbering (e.g., a reference to a figure using a table label).
-4. **Abstract / Conclusion Alignment** – Extracts the abstract and conclusion sections, runs a simple similarity check (TF‑IDF cosine similarity) against the main body to detect large divergence.
-5. **Citation Consistency** – Verifies that every `\cite{}` key exists in the supplied bibliography files (`.bib`).
+## Workflow
 
-The tool outputs a **Markdown report** (`<paper>-review.md`) listing all findings, their line numbers, and suggested fixes. For trivial issues (spelling, double spaces, missing references) the script can apply in‑place edits when invoked with the `--apply` flag.
+1. **Target Identification**:
+   - Identify the target file from the user's prompt (e.g., `smartgreens-27.Rnw`).
+   - If not specified, locate `.Rnw` files in the repository root or target directory.
 
-# Installation
+2. **Reading & Parsing**:
+   - Read the `.Rnw` file.
+   - Ignore or preserve knitr code chunks (`<<...>>= ... @`)—do not modify executable R code unless specifically asked.
+   - Identify associated `.bib` files referenced in `\bibliography{...}` or present in the repository.
 
-```bash
-# From the repository root
-cd .agents/skills/rnw-revision
-Rscript -e "install.packages(c('hunspell','stringr','tidyverse','tm','tools'), repos='https://cloud.r-project.org')"
-```
+3. **Core Checks**:
+   - **Spelling & Grammar**:
+     - Check English spelling, grammar, and academic phrasing in text and captions.
+     - Respect LaTeX commands, math environments (`$...$`), and inline code (`\texttt{...}`).
+   - **Typographic Consistency**:
+     - Convert straight quotes (`"text"`) to LaTeX directional quotes (`` ``text'' ``).
+     - Ensure correct dash usage: hyphens for compound words, en-dashes (`--`) for ranges and numbers, em-dashes (`---`) for parenthetical thoughts.
+     - Add non-breaking spaces (`~`) before citations (e.g., `~\cite{...}`) and cross-references (e.g., `Figure~\ref{...}`, `Table~\ref{...}`, `Section~\ref{...}`).
+     - Remove double spaces and fix repeated punctuation.
+   - **Figures & Tables**:
+     - Verify every `\label{...}` has a corresponding `\ref{...}` or `\autoref{...}` in text.
+     - Check that all `\ref{...}` targets exist.
+     - Ensure labels match environment types (e.g., `fig:...` in figures, `tab:...` in tables).
+   - **Citations**:
+     - Cross-check `\cite{...}` keys against existing entries in the repository's `.bib` files.
+     - Flag missing or malformed citation keys.
+   - **Abstract & Conclusion Alignment**:
+     - Verify that key takeaways, quantitative claims, and terminology in the abstract match those stated in the conclusions and results.
 
-# Usage
-
-```bash
-# Review a single paper (dry‑run, no changes)
-Rscript review_rnw.R --file path/to/paper.Rnw
-
-# Apply automatic fixes where safe
-Rscript review_rnw.R --file path/to/paper.Rnw --apply
-
-# Review every .Rnw file under the repository
-Rscript review_rnw.R --dir .
-```
-
-The script creates a `review_reports/` directory (created next to the paper) containing the markdown report.
-
-# Implementation Details
-
-- **Parsing**: The script reads the `.Rnw` file line‑by‑line, stripping knitr code chunks (`<<>>=` … `@`) before analysis.
-- **Spelling**: `hunspell::hunspell` with the default English dictionary; user‑provided custom dictionary can be added via `--dict path/to/extra.dic`.
-- **Reference Extraction**:
-  - Labels are captured with regex `\\label\{([^}]+)\}`.
-  - References with `\\ref\{([^}]+)\}` and `\\autoref\{([^}]+)\}`.
-  - Figure/table classification is inferred from surrounding environments (`figure`, `table`).
-- **Abstract & Conclusion**: The script looks for LaTeX sections `\begin{abstract}` / `\end{abstract}` and `\section{Conclusion}` (or similar). Content is tokenised and compared to the main body using `tm::TermDocumentMatrix`.
-- **Reporting**: Each issue is reported with:
-  * **Type** (Spelling, Typo, Reference, Alignment, Citation)
-  * **Location** (file, line number) 
-  * **Message** and **Suggested fix**.
-
-# Extending the Skill
-
-- Add language support by installing additional Hunspell dictionaries and passing `--lang xx`.
-- Hook the script into the project's `Makefile` (e.g., `make check-paper`) for CI enforcement.
-- Integrate with the Antigravity SDK to expose the skill as a sub‑agent.
-
-# Limitations
-
-- The similarity check is heuristic; it may flag legitimate abstract rewrites.
-- Only English language support provided out‑of‑the‑box.
-- Complex LaTeX macro definitions that generate labels dynamically are not fully resolved.
-
-# License
-
-MIT © 2026
+4. **Execution Modes**:
+   - **Dry Run / Review Report (default)**:
+     - Output a clear markdown summary detailing all findings grouped by category, with line numbers, context, and recommended fixes.
+   - **Apply Mode (`--apply`)**:
+     - If `--apply` is present in the prompt, directly edit the `.Rnw` file using safe in-place edits (typos, quotation marks, dashes, non-breaking spaces `~`, punctuation).
+     - Report applied fixes clearly, and list any substantive issues requiring author input.
