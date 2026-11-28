@@ -36,9 +36,10 @@
 
 \keywords{Green Computing, Energy Profiling Methodologies, Metaheuristics.}
 
-\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes them and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. We apply this model to different versions and configurations of an existing evolutionary algorithm that incorporates population stratification working on a numerical landscape; these different versions include implementation, algorithmic as well as parametrization variations. Via insights gathered by these models, we attain an algorithmic solution that reaches a fitness optimum at a very low cost or approximates it spending much less energy than others evaluated.}
+\abstract{Making an algorithm more effective often involves a series of trade-offs where performance or energy consumption is traded for the quality of solutions. The question arises of whether it is possible to minimize the cost of achieving new fitness levels by better understanding how and why the algorithm spends energy. In this paper, we are looking for this {\em very cheap lunch} by modelling energy consumption in terms not only of algorithm implementation and its parameters, but also of framework overhead and operating conditions. To this end, we define a measurement protocol that includes them and perform a statistical analysis addressing the influence and interaction effects of all parameters (both algorithmic and operating) and changes (in parametrization or implementation) under scrutiny. We apply this model to different versions and configurations of an existing evolutionary algorithm that incorporates population stratification working on a numerical optimization problem; these different versions include implementation, algorithmic as well as parametrization variations. Via insights gathered by these models, we attain an algorithmic solution that reaches a fitness optimum at a very low cost or approximates it spending much less energy than others evaluated.}
 
-% added "landscape" something was missing - Mario 
+% added "landscape" something was missing - Mario
+% numerical _optimization problem_ - JJ
 
 % It was not clear the role of stratification of the population.
 % I put based, because is an important feature, but it could be "that incorporates". - Mario
@@ -422,14 +423,18 @@ comparison_microopt_w <- process_deltas(comparison_microopt)
 
 comparison_microopt_w$initial_temp <- (comparison_microopt_w$initial_temp_1 + comparison_microopt_w$initial_temp_2)/2
 comparison_microopt_w$final_temp <- (comparison_microopt_w$final_temp_1 + comparison_microopt_w$final_temp_2)/2
-comparison_bm <- ggplot(comparison_microopt_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) + geom_point(alpha=0.5) + labs(x = "Diff Fitness", y = "Delta PKG") + theme(legend.position = "bottom") + theme_minimal() ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5) # ggplot(comparison_microopt_w, aes(x = delta_seconds, y = delta_PKG, color=factor(alpha), shape=factor(group))) +
-#   geom_point(alpha=0.5) +
-#   labs(x = "Delta Seconds",
-#     y = "Delta PKG"
-#   ) + theme(legend.position = "bottom") + theme_minimal()
+
+comparison_bm <- ggplot(comparison_microopt_w, aes(x = diff_fitness, y = delta_PKG, fill=group,color=group)) +
+  geom_point(alpha=0.5) +
+  labs(x = "Diff Fitness",
+    y = "Delta PKG"
+  ) + theme(legend.position = "bottom") + theme_minimal()
+
+ggMarginal(comparison_bm, type="density", groupFill=T, alpha=0.5)
 @
 
-In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better. % But the results are safe? - Mario
+In Figure \ref{fig:ppsn.microopt} we plot again $\Delta$PKG against the difference in fitness, same as we have done in Figure \ref{fig:ppsn.baseline}. Taking into account that it is a programming-only change, we find that the distribution of fitness as well as the distribution of energy tends to have peaks in an area of lower consumption/better fitness. On one side, this means that we have effectively optimized energy consumption through this optimization; on the other side, programming changes might have fixed some bug that has made fitness better. % But the results are safe? -
+% They pass tests, so they are safe - JJ
 
 <<smartgreens.microopt.energy.fitness, message=FALSE, echo=FALSE>>=
 # Energy effort per fitness level: energy-fitness product (median delta_PKG x
@@ -673,7 +678,7 @@ We can only advance a supposition of the possible causes of this change: every g
 
 At any rate, what is clear is that algorithmic as well as simple parametric decisions will have an impact in every aspect of the performance, and that this is impossible to predict in advance: a sound measuring protol, like the one we are using here, as well as statistical analysis beyond central measures, is needed to understand what is really happening and why it is happening.
 
-The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain hue in this graph % Which graph - Mario
+The model presented above shows that evaluations are not the only factor in energy expenses, and that there are non-linear effects on the operating conditions that cause that, for a similar number of evaluations, {\sf microopt} spends less energy, but at the end of the day what matters is fitness, so we can also look for a certain color in this chart % Which graph - Mario
 and see that the fitness obtained for a certain energy expense is always much lower. In general, this graph shows that the {\em low\_mutation} spends more energy because it is running for more evaluations, and this happens because it is able to maintain a high diversity in the population, not getting stuck at a value for {\tt max\_gens} and thus stopping.
 
 <<ppsn.cero.alpha, message=FALSE, echo=FALSE, fig.cap="Comparison of energy consumed vs. final fitness for the low mutation and zero alpha set of experiments.", fig.height=3, fig.pos="h!tbp", fig.env="figure*">>=
